@@ -12,3 +12,14 @@ Thumbs.db
 *.swp
 *.tmp
 *.log
+
+# Product build outputs and recordings
+build/
+**/target/
+*.xdf
+*.xdf.partial
+*.mp4
+*.mkv
+*.avi
+*.csv
+*.session.json

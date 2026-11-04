@@ -1,0 +1,224 @@
+{
+  "schema": "vlc-plus-source-extraction/v1",
+  "upstreamRepository": "https://github.com/GeorgeFejer91/affect-tracker-research",
+  "upstreamCommit": "16106a70b57136c7243e85a5a05d83b0789bdd2c",
+  "upstreamBranch": "codex/segment-vlc-player-ui",
+  "files": [
+    {
+      "path": "docs/third-party.md",
+      "upstreamPath": "experiments/vlc-flubber/PLAYER-THIRD-PARTY.md",
+      "upstreamSha256": "493a71af31d357f93ec1e1c92d43be082a6830f373337a53d5183df6bec0bb2e",
+      "adapted": true,
+      "adaptation": "Standalone repository paths, documentation and installer identity; upstream runtime code unchanged."
+    },
+    {
+      "path": "docs/stock-vlc-integration.md",
+      "upstreamPath": "experiments/vlc-flubber/STOCK-VLC-INTEGRATION.md",
+      "upstreamSha256": "29abc3d7a5a7903ab459ecdedd4270daada36578b859fb970dfb34a3d525dbef",
+      "adapted": true,
+      "adaptation": "Standalone repository paths, documentation and installer identity; upstream runtime code unchanged."
+    },
+    {
+      "path": "assets/face/.gitignore",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/.gitignore",
+      "upstreamSha256": "5f7f3e2a440ec4e875cf02f2c98281b3362c530de684e3db72bc5ba12cd7555c",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/NOTICE.md",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/NOTICE.md",
+      "upstreamSha256": "80c87b4b616eb9459fe5048d915dba00a3f4b0e78e4a90295ac2abde16064c4d",
+      "adapted": true,
+      "adaptation": "Rebase the three historical relative license/vendor links; preserve attribution and scientific text."
+    },
+    {
+      "path": "assets/face/affect-face-atlas-v3.json",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/affect-face-atlas-v3.json",
+      "upstreamSha256": "c834ace775119565f5ef01941ea0fa9209c2358682545192835a63a9ec7b9395",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-atlas-packs-v1.json",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-atlas-packs-v1.json",
+      "upstreamSha256": "752da7a03801c667362710ef4fd4b5ad2c2f9c430e490aff9e44f6415e8f69bc",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-reference-v3.png",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-reference-v3.png",
+      "upstreamSha256": "fe02511689ff10ecdc084f14775d64e1fb61a609d31194fe1aaf9562c5cd2772",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-synthetic-01.png",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-synthetic-01.png",
+      "upstreamSha256": "3bc4507012ca30c272b8b5c1185d8e1e7b13a485932d1b321f66ae5253274337",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-synthetic-02.png",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-synthetic-02.png",
+      "upstreamSha256": "fa9df35b5c6f053c58b68c8f17ea7c6e0f40f1077b461a319b3a7bbef2bbaf5d",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-synthetic-03.png",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-synthetic-03.png",
+      "upstreamSha256": "6f108acfdf01a4bbe33f8df427ae1ec230a2c4d529ce16b657f5e8b8ae106512",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-synthetic-04.png",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-synthetic-04.png",
+      "upstreamSha256": "b3d7425c5e3d8eb6c38490770162bd3a5b77461c20e7cd11e61d259b79defc90",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-synthetic-05.png",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-synthetic-05.png",
+      "upstreamSha256": "3c25fea8f378fab6fc73902d7f0835ce5997901b5252ef7b77b3da0b2c4466ad",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-synthetic-06.png",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-synthetic-06.png",
+      "upstreamSha256": "b1b2156478ce5cfa028b3d6c9d710f53bf4dcbf79b988148ee5b871073c18547",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-synthetic-07.png",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-synthetic-07.png",
+      "upstreamSha256": "cc0bda8a8992f6136c4e6b2355b0708f9c18f98d75482a21834deccd333d97cf",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/photo-synthetic-08.png",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/photo-synthetic-08.png",
+      "upstreamSha256": "c355fb9970f0c220346350af7ed3bfa67cf9b92aa2ab3b6fcb5d64684e638eb2",
+      "adapted": false
+    },
+    {
+      "path": "assets/face/vlc-face-atlases.json",
+      "upstreamPath": "experiments/vlc-flubber/assets/face/vlc-face-atlases.json",
+      "upstreamSha256": "4cd8f94187d7df44b851200c18bebdf7b87a8cfb6b6c0a93b68ec683c16c47a2",
+      "adapted": false
+    },
+    {
+      "path": "installer-stock-vlc.iss",
+      "upstreamPath": "experiments/vlc-flubber/installer-stock-vlc.iss",
+      "upstreamSha256": "99de28b204890da994af66592d505b02f9552fbc30b4ada039fd4cb3c554f61a",
+      "adapted": true,
+      "adaptation": "Standalone repository paths, documentation and installer identity; upstream runtime code unchanged."
+    },
+    {
+      "path": "package-stock-vlc.ps1",
+      "upstreamPath": "experiments/vlc-flubber/package-stock-vlc.ps1",
+      "upstreamSha256": "f6e9e4e68361c942b7594fa84b8b0d03aaa0f091cdf1c0f01c626430f340dfbd",
+      "adapted": true,
+      "adaptation": "Standalone repository paths, documentation and installer identity; upstream runtime code unchanged."
+    },
+    {
+      "path": "vlc-qt/.gitignore",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/.gitignore",
+      "upstreamSha256": "92423f3f1a56b9bff7315762d3d1171bb40bd09bdfd450647562e38ac81b4e08",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/README.md",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/README.md",
+      "upstreamSha256": "c928a758c12878786e63802eb80c37c984b496ae66ac163d55c49f4f5481073c",
+      "adapted": true,
+      "adaptation": "Standalone repository paths, documentation and installer identity; upstream runtime code unchanged."
+    },
+    {
+      "path": "vlc-qt/apply-patch.ps1",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/apply-patch.ps1",
+      "upstreamSha256": "a8289be85a9a803dfefe941e06b7695cc67a9e020b076dcfa1a8db1d1d517653",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/bridge/.cargo/config.toml",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/bridge/.cargo/config.toml",
+      "upstreamSha256": "53329a3ce3b81a3bcb1c083a46a8d47a09a459b457c8f2f5441fd13d9445d8b3",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/bridge/Cargo.lock",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/bridge/Cargo.lock",
+      "upstreamSha256": "b635526f9873e15335ce963efd69b62e8cc4e5331d5c8eedbd59ba1e9019c441",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/bridge/Cargo.toml",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/bridge/Cargo.toml",
+      "upstreamSha256": "0336c2fdfd87dd7f5e72d56cb31e5643ec3057f9a535292c2a1c715516124509",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/bridge/src/lib.rs",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/bridge/src/lib.rs",
+      "upstreamSha256": "d1f34eb4902ea8245cffdfce9113fc9beaf7d2cca32273fbfc3e769acebd04cd",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/build-bridge.ps1",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/build-bridge.ps1",
+      "upstreamSha256": "4c84e09d257b78d052f2fb7e93e4ec8551fba4bfa9115c92c16b72457b185c92",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/flubber_bridge.hpp",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_bridge.hpp",
+      "upstreamSha256": "806f20ff8e7b3f08103035bba7dc9d6c958c5829a7b9308b54aad661dd91cf88",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/flubber_panel.hpp",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
+      "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/flubberctl.ps1",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubberctl.ps1",
+      "upstreamSha256": "c9cc0564c01fd9e32e318a2d147b7e84bc6ccc2a67ea12ba86caffd7da7a4204",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/panel-check.cpp",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
+      "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/test-panel.ps1",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/test-panel.ps1",
+      "upstreamSha256": "3bd594a0aab58187ec71079c011c3f969ceb20f0fa6eae3a09264690daa1ff4b",
+      "adapted": false
+    },
+    {
+      "path": "vlc-qt/vlc-3.0.20-flubber.patch",
+      "upstreamPath": "experiments/vlc-flubber/vlc-qt/vlc-3.0.20-flubber.patch",
+      "upstreamSha256": "c12c4e801db760e702dbd5170b2038d33e82a1e4017570a4bda642e5fc5a9c6e",
+      "adapted": false
+    },
+    {
+      "path": "licenses/AFFECT-RESEARCH-BSD-3-Clause.txt",
+      "upstreamPath": "LICENSE",
+      "upstreamSha256": "ace6e742a1e0c29488d5797ec398549427f5fcd77273cb0afd7f7d399e0d8b63",
+      "adapted": false
+    }
+  ],
+  "upstreamVlcSource": {
+    "version": "3.0.20",
+    "url": "https://download.videolan.org/pub/videolan/vlc/3.0.20/vlc-3.0.20.tar.xz",
+    "sha256": "adc7285b4d2721cddf40eb5270cada2aaa10a334cb546fd55a06353447ba29b5",
+    "licenseFile": "COPYING"
+  },
+  "generatedFixture": {
+    "path": "examples/planner-appearance.v1.json",
+    "producer": "site/src/research/vlc-flubber-appearance.js#createVlcFlubberAppearance",
+    "upstreamCommit": "16106a70b57136c7243e85a5a05d83b0789bdd2c",
+    "sha256": "593ddcafee73c54d2af2761594cfa3724a17dbfcd2983a71aa99e4b5c04058e9"
+  }
+}

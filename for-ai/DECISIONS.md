@@ -29,3 +29,24 @@ For later decisions, add one compact entry with:
 
 Do not rewrite accepted history to hide a changed direction. Add a superseding
 decision and link both entries.
+
+## D-0002 — Standalone Qt player, private first
+
+- Date: 2026-11-04
+- Status: Accepted
+- Decision: Extract the current VLC Qt implementation into `vlc-plus`, using
+  the authenticated owner's private GitHub repository. Keep recorders and the
+  Research Planner/Runner as independent projects. Private is the For-AI
+  default because visibility was unspecified.
+- Consequences: Retain exact source provenance and notices; adapt packaging
+  paths and installer identity, with no runtime semantic change.
+
+## D-0003 — One experiment contract, explicit compatibility gaps
+
+- Date: 2026-11-04
+- Status: Accepted
+- Decision: Target the same versioned Planner recipe for Runner and VLC+.
+  Existing standalone appearance and VLC settings JSON remain separate formats.
+- Consequences: Full recipe intake requires strict versioned readers,
+  capability rejection and independent correspondence evidence. Extraction
+  does not imply questionnaire, sequence, timing or recovery support.
