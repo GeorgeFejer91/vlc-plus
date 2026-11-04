@@ -9,11 +9,11 @@ Evidence must match its claim. Use `VERIFIED`, `PARTIAL`, `BLOCKED`, or
 - No source/build/license path requires an Affect Research sibling checkout.
 - The common-recipe target and current appearance-only support are explicit.
 - Required notices and a complete committed source archive accompany packaging.
-- Repository context passes; the intended private remote matches local HEAD.
+- Repository context passes; the intended public remote matches local HEAD.
 
 ## Focused checks
 
-From the repository root, with Python 3, PowerShell, Git and MSVC Cargo:
+From the repository root, with Python 3.12+, PowerShell 7, Git and MSVC Cargo:
 
 ```powershell
 python scripts/check-source.py
@@ -102,3 +102,36 @@ Inspect CI for the exact published commit; record failure or pending state.
   task is source extraction and publication; no installer release is claimed.
 - Publication, independent review and exact CI result: see the sole active
   checklist/handoff in [PROJECT.md](PROJECT.md).
+
+## Windows installer milestone
+
+`build-windows.ps1` is the complete build/package entry. It builds native
+prerequisites and generated Qt sources, then the Qt module/launcher, bridge and
+panel check; packaging uses the pinned original VLC ZIP as its fresh input.
+`build-receipt.json` records actual GCC/Qt/Rust/Cargo/linker/Inno identities,
+package inventory and output hashes. The local MSYS bootstrap lock is not a
+promise that a rolling CI toolchain is byte-identically reproducible.
+
+`scripts/test-installer.ps1` requires a clean disposable Windows account (or
+proven absence of every existing VLC+ uninstall registration). It installs to
+a fresh folder without shortcuts or admin, verifies every immutable payload
+hash/source identity, then runs the independent native player probe using its
+own synthetic H.264 clip. The probe has no host Qt/plugin path and uses an
+owned child PID, loopback controls and exact source-id LSL discovery. It checks
+actual decoded frames, natural-end and manual-stop runs, pause/resume, active-video
+CSV cadence, unique replay files, bounded shutdown and its own portable UI
+settings. The exact Qt platform plugin load path must belong to the package.
+Uninstall verifies registration ownership, preserves settings and retains all
+evidence. Visible video/physical input/display onset are not proven offscreen.
+
+Matching sources and original notices are required for the actual shipped
+MSYS2 DLLs and locked Rust crates. Source package signatures are verified using
+the selected MSYS2 keyring. A failed license/source lookup blocks packaging;
+do not omit a dependency to make the candidate pass. Do not publish unrelated
+compiler installations. Hold installer publication until the fresh installed
+check and independent review findings are resolved with named evidence.
+
+The installed probe accepts the documented VLC 3 terminal-state observation
+on manual Stop as well as natural completion. Its receipt explicitly records
+`terminalEndMayIncludeManualStop`; `End` alone is not an experiment-completion
+signal. This limitation blocks that scientific interpretation, not playback.

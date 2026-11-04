@@ -23,3 +23,6 @@ build/
 *.avi
 *.csv
 *.session.json
+!test/fixtures/validation.mp4
+**/__pycache__/
+*.pyc

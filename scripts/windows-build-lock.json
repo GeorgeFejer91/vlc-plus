@@ -1,0 +1,14 @@
+{
+  "schema": "vlc-plus-windows-build/v1",
+  "vlcSource": {
+    "version": "3.0.20",
+    "file": "vlc-3.0.20.tar.xz",
+    "url": "https://download.videolan.org/pub/videolan/vlc/3.0.20/vlc-3.0.20.tar.xz",
+    "sha256": "adc7285b4d2721cddf40eb5270cada2aaa10a334cb546fd55a06353447ba29b5"
+  },
+  "localMsysBootstrap": {
+    "version": "2026-09-27",
+    "url": "https://github.com/msys2/msys2-installer/releases/download/2026-09-27/msys2-base-x86_64-20260927.sfx.exe",
+    "sha256": "ad336cccfda47758b5e15cda993fbba421115cb0b126697daef1ee4dfe37209f"
+  }
+}
