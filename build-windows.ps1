@@ -47,7 +47,18 @@ try {
     }
     & cargo test --locked --manifest-path (Join-Path $root 'vlc-qt\bridge\Cargo.toml')
     if ($LASTEXITCODE -ne 0) { throw 'Rust bridge tests failed.' }
-    & (Join-Path $root 'vlc-qt\build-bridge.ps1')
+    $rustLinkLog = Join-Path $root 'build\rust-link-args.txt'
+    Push-Location (Join-Path $root 'vlc-qt\bridge')
+    try {
+        & cargo rustc --release --locked --lib -- --print=link-args *> $rustLinkLog
+        if ($LASTEXITCODE -ne 0) { Get-Content $rustLinkLog -Tail 30; throw 'Rust release link failed.' }
+    } finally { Pop-Location }
+    $linker = $null
+    foreach ($match in [regex]::Matches([IO.File]::ReadAllText($rustLinkLog), '"([^"\r\n]+[\\/](?:link|lld-link)\.exe)"')) {
+        $candidate = $match.Groups[1].Value.Replace('\\', '\')
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { $linker = $candidate; break }
+    }
+    if (-not $linker) { throw 'The actual MSVC linker was not captured in the release link command.' }
     & (Join-Path $root 'vlc-qt\test-panel.ps1') -QtBin $mingw -AppearanceJson (Join-Path $root 'examples\planner-appearance.v1.json')
     if ($BuildOnly) { Write-Output 'Native build and focused checks complete.'; return }
 
@@ -63,7 +74,28 @@ try {
     if (-not (Test-Path -LiteralPath $InnoCompiler -PathType Leaf)) { throw 'Supply -InnoCompiler with the Inno Setup 6 ISCC.exe path.' }
     & $InnoCompiler (Join-Path $root 'installer-stock-vlc.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
-    Write-Output (Join-Path $root 'build\stock-vlc-package\out\VLC_Plus_Setup_0.3.1_x64.exe')
+    $installer = Join-Path $root 'build\stock-vlc-package\out\VLC_Plus_Setup_0.3.1_x64.exe'
+    $sourceBundle = Join-Path $root 'build\stock-vlc-package\out\VLC_Plus_Source_0.3.1.zip'
+    $innoEngine = Join-Path (Split-Path -Parent $InnoCompiler) 'ISCmplr.dll'
+    $receipt = [ordered]@{
+        schema = 'vlc-plus-build-receipt/v1'
+        sourceCommit = (& git -C $root rev-parse HEAD).Trim()
+        installerSha256 = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+        sourceBundleSha256 = (Get-FileHash -LiteralPath $sourceBundle -Algorithm SHA256).Hash.ToLowerInvariant()
+        vlcSourceSha256 = $lock.vlcSource.sha256
+        gcc = (& (Join-Path $mingw 'gcc.exe') --version | Select-Object -First 1)
+        qt = (& (Join-Path $mingw 'qmake-qt5.exe') -query QT_VERSION)
+        rustc = @(& rustc -vV)
+        cargo = (& cargo --version)
+        linker = @{ name = [IO.Path]::GetFileName($linker); version = (Get-Item -LiteralPath $linker).VersionInfo.FileVersion; sha256 = (Get-FileHash -LiteralPath $linker).Hash.ToLowerInvariant() }
+        inno = @{ engineVersion = (Get-Item -LiteralPath $innoEngine).VersionInfo.FileVersion; compilerSha256 = (Get-FileHash -LiteralPath $InnoCompiler).Hash.ToLowerInvariant(); engineSha256 = (Get-FileHash -LiteralPath $innoEngine).Hash.ToLowerInvariant() }
+        packagesSha256 = (Get-FileHash -LiteralPath (Join-Path $root 'build\toolchain-packages.txt')).Hash.ToLowerInvariant()
+        operatingSystem = [Environment]::OSVersion.VersionString
+        runnerImage = "$env:ImageOS $env:ImageVersion".Trim()
+        bitIdenticalReproducibilityClaimed = $false
+    }
+    [IO.File]::WriteAllText((Join-Path (Split-Path -Parent $installer) 'build-receipt.json'), (($receipt | ConvertTo-Json -Depth 5) + "`n"), [Text.UTF8Encoding]::new($false))
+    Write-Output $installer
 }
 finally {
     $env:PATH = $previousPath

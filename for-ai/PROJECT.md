@@ -77,26 +77,25 @@ with scientific timing, physical input or research qualification.
 
 ## Session handoff
 
-2026-11-04: active branch `codex/windows-installer`, baseline `247c4e5`.
-An isolated MSYS2 toolchain now exists under `build/toolchain/msys64`: GCC
-16.2.0 and Qt 5.15.19. Official MSYS2/VLC downloads passed their SHA-256 locks.
-Native configure and libcompat/libvlccore/libvlc builds succeeded. The first
-Qt-module build exposed missing generated UI headers; the build now explicitly
-requests upstream Qt generated sources before linking the module. Full native
-build is still in progress; inspect `build/windows-build.log` and current Git
-state before resuming. No installer has passed a fresh installed run yet.
+2026-11-04: branch `codex/windows-installer`, checkpoint `2ef68dd` plus fixes.
+The complete local VLC Qt module/launcher build succeeded with GCC 16.2.0 /
+Qt 5.15.19. Rust bridge tests (3/3), release DLL and Windows offscreen Qt panel
+checks passed. Actual Rust linking was observed through `--print=link-args`
+(MSVC linker 14.42.34433.0 locally). No installed-player pass is claimed yet.
 
-The new repeatable build entry is `build-windows.ps1`; installed checks use a
-synthetic six-second H.264 fixture, real player LSL/decode statistics and CSV,
-with Qt offscreen and a private portable settings profile. The independent
-probe compiles, but has not yet run against a completed package. No rendering,
-physical-input or scientific qualification claim is made from this progress.
+Independent review found packaging/proof gaps. Fixes now stage the pinned VLC
+ZIP freshly; include qoffscreen and prove its loaded path; guard existing
+product registrations and owned uninstall; check CSV close, naming, duration
+and cadence; preserve per-package runtime notices and matching signed MSYS2
+and locked Rust sources. Source collection and installed runtime tests still
+need to run. Inspect current Git diff and `build/windows-build.log` on resume.
 
-Automatic approval review rejected local Inno Setup compiler installation
-(`blocked by policy`). The safe path is the preinstalled Inno Setup compiler
-on GitHub's Windows-2025 runner. `windows-installer.yml` builds, installs,
-checks and uninstalls a fresh candidate there, then uploads artifacts.
-Next: finish the Qt/launcher build, checkpoint reviewed build changes and run
-that workflow; investigate real failures before publishing the installer.
-Affect Research parent source remains unchanged; shared Planner-master intake
-and research qualification remain separate open milestones.
+Local Inno compiler installation was rejected (`blocked by policy`); use the
+preinstalled compiler on the owned GitHub Windows runner for installer output.
+An initial separate compiler artifact was removed, and that job was dropped.
+Only player/installer/source/evidence artifacts belong in the publication.
+The first installer CI run `41917153520` was cancelled as superseded by build
+fixes, not counted as a pass. Next: checkpoint fixes, stage/test the actual
+payload, run corrected installer CI, fix failures and publish verified bytes.
+The parent Research source is unchanged. Common Planner-master execution,
+physical input/display onset and research qualification remain open scopes.

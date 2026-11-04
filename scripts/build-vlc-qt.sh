@@ -28,10 +28,14 @@ fi
 make -j"$jobs" -C compat CFLAGS='-g -O2 -Wno-error=incompatible-pointer-types'
 make -j"$jobs" -C src CFLAGS='-g -O2 -Wno-error=incompatible-pointer-types'
 make -j"$jobs" -C lib libvlc.la CFLAGS='-g -O2 -Wno-error=incompatible-pointer-types'
-make -j"$jobs" -C modules --eval 'vlc-plus-qt-generated: $(nodist_libqt_plugin_la_SOURCES)' vlc-plus-qt-generated
+make -j"$jobs" -C modules -f - vlc-plus-qt-generated <<'MAKE'
+include Makefile
+vlc-plus-qt-generated: $(nodist_libqt_plugin_la_SOURCES) module.rc.lo
+MAKE
 make -j"$jobs" -C modules libqt_plugin.la \
     am__append_4=../modules/module.rc.lo LIBS_qt=-lwinmm \
     CFLAGS='-g -O2 -Wno-error=incompatible-pointer-types' \
     CXXFLAGS="-g -O2 -I/mingw64/include/QtGui/$qt_version/QtGui -I/mingw64/include/QtGui/$qt_version"
 make -j"$jobs" -C bin vlc.exe CFLAGS='-g -O2 -Wno-error=incompatible-pointer-types'
+strip --strip-unneeded modules/.libs/libqt_plugin.dll bin/.libs/vlc.exe
 pacman -Q > "$root/build/toolchain-packages.txt"

@@ -10,21 +10,6 @@ permissions:
   contents: read
 
 jobs:
-  compiler:
-    runs-on: windows-2025
-    steps:
-      - name: Preserve the preinstalled portable Inno compiler
-        shell: pwsh
-        run: |
-          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6'
-          if (-not (Test-Path (Join-Path $compiler 'ISCC.exe'))) { throw 'Preinstalled Inno compiler missing' }
-          Copy-Item -LiteralPath $compiler -Destination "$env:RUNNER_TEMP/InnoCompiler" -Recurse
-          Get-FileHash (Join-Path $compiler 'ISCC.exe') -Algorithm SHA256
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: preinstalled-inno-compiler
-          path: ${{ runner.temp }}/InnoCompiler
-
   installer:
     runs-on: windows-2025
     timeout-minutes: 90
@@ -70,6 +55,8 @@ jobs:
           name: vlc-plus-windows-x64
           path: |
             build/stock-vlc-package/out/*.exe
+            build/stock-vlc-package/out/*.zip
+            build/stock-vlc-package/out/build-receipt.json
             build/stock-vlc-package/stage/manifest.json
             build/stock-vlc-package/stage/source/vlc-plus-source.zip
             build/toolchain-packages.txt

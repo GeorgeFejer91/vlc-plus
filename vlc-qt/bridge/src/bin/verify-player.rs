@@ -38,6 +38,33 @@ fn csv_files(folder: &Path) -> Result<Vec<PathBuf>> {
     Ok(files)
 }
 
+fn closed_csv(path: &Path) -> Result<Vec<u8>> {
+    let started = Instant::now();
+    loop {
+        let mut options = fs::OpenOptions::new();
+        options.read(true);
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::OpenOptionsExt;
+            options.share_mode(0);
+        }
+        match options.open(path) {
+            Ok(mut file) => {
+                let mut bytes = Vec::new();
+                file.read_to_end(&mut bytes)?;
+                return Ok(bytes);
+            }
+            Err(error)
+                if matches!(error.raw_os_error(), Some(32 | 33))
+                    && started.elapsed() < Duration::from_secs(3) =>
+            {
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+}
+
 fn main() -> Result<()> {
     let args = std::env::args_os().skip(1).collect::<Vec<_>>();
     if args.len() != 3 {
@@ -46,6 +73,9 @@ fn main() -> Result<()> {
     let exe = fs::canonicalize(&args[0])?;
     let media = fs::canonicalize(&args[1])?;
     let evidence = fs::canonicalize(&args[2])?;
+    if evidence.join("player.log").exists() {
+        return Err("use a fresh evidence directory; prior logs are retained".into());
+    }
     let media = PathBuf::from(media.to_string_lossy().trim_start_matches(r"\\?\"));
     if media.file_name().and_then(|value| value.to_str()) != Some("validation.mp4") {
         return Err("probe requires its own synthetic validation.mp4".into());
@@ -75,6 +105,7 @@ fn main() -> Result<()> {
         ])
         .arg(format!("--rc-host=127.0.0.1:{port}"))
         .env("QT_QPA_PLATFORM", "offscreen")
+        .env("QT_DEBUG_PLUGINS", "1")
         .current_dir(exe.parent().ok_or("player has no directory")?)
         .stdin(Stdio::null())
         .stdout(Stdio::from(log.try_clone()?))
@@ -152,6 +183,8 @@ fn main() -> Result<()> {
     }
     command(&mut socket, &format!("add {}", media.display()))?;
     let mut labels = Vec::new();
+    let mut marker_log = File::create(evidence.join("observed-markers.txt"))?;
+    let mut rc_log = File::create(evidence.join("rc-output.txt"))?;
     let mut stamps = Vec::new();
     let mut rc_output = String::new();
     let began = Instant::now();
@@ -182,6 +215,7 @@ fn main() -> Result<()> {
                 return Err("unexpected marker channel count".into());
             }
             let label = values[0].clone();
+            writeln!(marker_log, "{label}")?;
             if label == "validation.mp4_Start" {
                 if first_start.is_none() {
                     first_start = Some(Instant::now());
@@ -193,7 +227,10 @@ fn main() -> Result<()> {
         }
         let mut buffer = [0; 4096];
         match socket.read(&mut buffer) {
-            Ok(length) => rc_output.push_str(&String::from_utf8_lossy(&buffer[..length])),
+            Ok(length) => {
+                rc_log.write_all(&buffer[..length])?;
+                rc_output.push_str(&String::from_utf8_lossy(&buffer[..length]));
+            }
             Err(error)
                 if matches!(
                     error.kind(),
@@ -224,7 +261,7 @@ fn main() -> Result<()> {
             if files.len() != 1 {
                 return Err("first run did not create exactly one CSV".into());
             }
-            first_csv = Some((files[0].clone(), fs::read(&files[0])?));
+            first_csv = Some((files[0].clone(), closed_csv(&files[0])?));
             command(&mut socket, &format!("add {}", media.display()))?;
             replayed = true;
         }
@@ -278,14 +315,35 @@ fn main() -> Result<()> {
         return Err("replay did not create a second CSV".into());
     }
     let mut rows = Vec::new();
+    let mut csv_seconds = Vec::new();
     for path in files {
-        let text = fs::read_to_string(path)?;
+        let filename = path
+            .file_stem()
+            .and_then(|name| name.to_str())
+            .ok_or("invalid CSV filename")?;
+        let parts = filename
+            .strip_prefix("validation-flubber-")
+            .ok_or("unexpected CSV name")?
+            .split('-')
+            .collect::<Vec<_>>();
+        if parts.len() != 3
+            || parts[0].parse::<u128>()? == 0
+            || parts[1].parse::<u32>()? != player.0.id()
+            || parts[2].parse::<u32>()? >= 100
+        {
+            return Err(
+                "CSV filename does not match the player-owned unique naming contract".into(),
+            );
+        }
+        let natural = path == first_path;
+        let text = fs::read_to_string(&path)?;
         let mut lines = text.lines();
         if lines.next() != Some("time_s,valence,arousal") {
             return Err("invalid CSV header".into());
         }
         let mut previous = -1.0;
         let mut count = 0;
+        let mut first_time = None;
         for line in lines {
             let values = line
                 .split(',')
@@ -301,12 +359,21 @@ fn main() -> Result<()> {
                 return Err("invalid CSV values or chronology".into());
             }
             previous = values[0];
+            first_time.get_or_insert(values[0]);
             count += 1;
         }
-        if count < 20 {
-            return Err("too few CSV rows".into());
+        let first_time = first_time.ok_or("CSV has no samples")?;
+        let csv_rate = (count - 1) as f64 / (previous - first_time);
+        let duration_ok = if natural {
+            (5.5..=6.4).contains(&previous) && count >= 150
+        } else {
+            (0.6..=1.8).contains(&previous) && count >= 20
+        };
+        if first_time > 0.25 || !duration_ok || !(28.0..=32.0).contains(&csv_rate) {
+            return Err(format!("CSV duration/cadence mismatch: natural={natural}, rows={count}, first={first_time:.3}, last={previous:.3}, Hz={csv_rate:.2}").into());
         }
         rows.push(count);
+        csv_seconds.push(previous);
     }
     if stamps.len() < 100 {
         return Err("too few independent affect samples".into());
@@ -315,9 +382,8 @@ fn main() -> Result<()> {
     if !(28.0..=32.0).contains(&rate) {
         return Err(format!("observed LSL rate {rate:.2} Hz").into());
     }
-    fs::write(evidence.join("rc-output.txt"), rc_output)?;
     let receipt = format!(
-        "{{\n  \"schema\": \"vlc-plus-installed-probe/v1\",\n  \"result\": \"VERIFIED\",\n  \"offscreen\": true,\n  \"physicalInputTested\": false,\n  \"decodedVideoFrames\": {decoded},\n  \"affectSamples\": {},\n  \"observedLslHz\": {rate:.4},\n  \"csvRows\": {rows:?},\n  \"markers\": {labels:?},\n  \"shutdownMs\": {}\n}}\n",
+        "{{\n  \"schema\": \"vlc-plus-installed-probe/v1\",\n  \"result\": \"VERIFIED\",\n  \"offscreen\": true,\n  \"physicalInputTested\": false,\n  \"decodedVideoFrames\": {decoded},\n  \"affectSamples\": {},\n  \"observedLslHz\": {rate:.4},\n  \"csvRows\": {rows:?},\n  \"csvActiveSeconds\": {csv_seconds:?},\n  \"markers\": {labels:?},\n  \"shutdownMs\": {}\n}}\n",
         stamps.len(), quitting.elapsed().as_millis()
     );
     fs::write(evidence.join("installed-probe.json"), &receipt)?;

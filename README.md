@@ -5,9 +5,9 @@ valence/arousal ratings. It keeps VLC's menus, playlist and transport controls
 and adds a native feedback panel with Classic Flubber, an affect grid and
 synthetic photo-face feedback. The three layers can be shown together.
 
-The current implementation is extracted from Affect Research commit
-`16106a70b57136c7243e85a5a05d83b0789bdd2c`. Its inherited VLC candidate version
-is 0.3.0. This repository has its own source, build inputs and agent guidance.
+The player was extracted from Affect Research commit
+`16106a70b57136c7243e85a5a05d83b0789bdd2c`. The standalone Windows
+installer candidate is version 0.3.1. This repository has its own source, build inputs and agent guidance.
 No installed executable or new research-qualified release is supplied by this
 extraction.
 
@@ -47,9 +47,20 @@ using the original Planner exporter at the pinned extraction commit.
 - The pinned official VLC 3.0.20 source and Windows runtime.
 - MSYS2 MinGW64 GCC and matching Qt 5; inherited verified toolchain was
   GCC 16.2.0 / Qt 5.15.19. Revalidate any different toolchain.
-- Inno Setup 6 for the optional installer.
+- Inno Setup 6 for the installer (GitHub Windows runners provide it).
+- PowerShell 7 and Python 3.12 or newer for build/package verification.
 
-Follow the [build and packaging guide](docs/stock-vlc-integration.md).
+Use `./build-windows.ps1 -MsysRoot <MSYS2 root> -InnoCompiler <ISCC.exe>`;
+follow the [build and packaging guide](docs/stock-vlc-integration.md). The
+[Windows installer workflow](.github/workflows/windows-installer.yml) also
+performs a fresh install, real decoded-video/LSL/CSV check and uninstall in its
+own clean Windows account. It does not republish compiler tools.
+
+VLC+ uses a separate executable-local portable settings profile. Matching
+project, Rust and signed MSYS2 source archives accompany the installer as a
+separate source bundle. The build pins VLC inputs and records the actual
+compiler/dependency identities; byte-identical binary reproducibility is not
+claimed.
 These checks do not need an Affect Research checkout:
 
 ```powershell

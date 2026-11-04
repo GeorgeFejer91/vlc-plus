@@ -16,8 +16,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $project = $PSScriptRoot
 $build = Join-Path $project 'build'
-$downloads = Join-Path $build 'package\downloads'
-$unpacked = Join-Path $build 'package\unpacked\vlc'
+$downloads = Join-Path $build 'downloads'
 $stage = Join-Path $build 'stock-vlc-package\stage'
 $source = Join-Path $project 'vlc-qt'
 $archive = Join-Path $downloads 'vlc-3.0.20-win64.zip'
@@ -27,9 +26,7 @@ if (-not (Test-Path -LiteralPath $source -PathType Container)) {
     throw 'The tracked VLC Qt integration source is missing.'
 }
 
-foreach ($directory in @($downloads, $unpacked)) {
-    New-Item -ItemType Directory -Force -Path $directory | Out-Null
-}
+New-Item -ItemType Directory -Force -Path $downloads | Out-Null
 if (-not (Test-Path -LiteralPath $archive -PathType Leaf) -or
     (Get-Item -LiteralPath $archive).Length -ne 76999622) {
     & curl.exe --fail --location --retry 3 --continue-at - --silent --show-error `
@@ -41,16 +38,18 @@ if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $archiveHash
     throw 'Pinned VLC archive hash mismatch.'
 }
 
-$vlc = Join-Path $unpacked 'vlc-3.0.20'
-if (-not (Test-Path -LiteralPath (Join-Path $vlc 'vlc.exe') -PathType Leaf)) {
-    & tar.exe -xf $archive -C $unpacked
-    if ($LASTEXITCODE -ne 0) { throw 'Pinned VLC archive extraction failed.' }
-}
-if (-not (Test-Path -LiteralPath (Join-Path $vlc 'plugins\gui\libqt_plugin.dll') -PathType Leaf)) {
-    throw 'Pinned VLC archive has an unexpected Qt layout.'
-}
-$stockPluginHash = (Get-FileHash -LiteralPath (Join-Path $vlc 'plugins\gui\libqt_plugin.dll') -Algorithm SHA256).Hash
-$stockExeHash = (Get-FileHash -LiteralPath (Join-Path $vlc 'vlc.exe') -Algorithm SHA256).Hash
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$stock = [IO.Compression.ZipFile]::OpenRead($archive)
+try {
+    $entry = $stock.GetEntry('vlc-3.0.20/plugins/gui/libqt_plugin.dll')
+    if ($null -eq $entry) { throw 'Pinned VLC archive has an unexpected Qt layout.' }
+    $stream = $entry.Open()
+    try { $stockPluginHash = (Get-FileHash -InputStream $stream -Algorithm SHA256).Hash } finally { $stream.Dispose() }
+    $entry = $stock.GetEntry('vlc-3.0.20/vlc.exe')
+    if ($null -eq $entry) { throw 'Pinned VLC archive has no launcher.' }
+    $stream = $entry.Open()
+    try { $stockExeHash = (Get-FileHash -InputStream $stream -Algorithm SHA256).Hash } finally { $stream.Dispose() }
+} finally { $stock.Dispose() }
 if ($stockPluginHash -ne 'A0FC9A46EE42A8A98F5455E727E9C9006F0354454D8F6CF39FFD86053E5AD6A4' -or
     $stockExeHash -ne '6A72CC8649A63B017844C4C1F3885A250D1A982FFE5F1E58B6F1432FE9198E62') {
     throw 'Extracted VLC files do not match the pinned archive.'
@@ -82,7 +81,24 @@ if (Test-Path -LiteralPath $stage) {
     Remove-Item -LiteralPath $stage -Recurse -Force
 }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
-Copy-Item -Path (Join-Path $vlc '*') -Destination $stage -Recurse -Force
+$stock = [IO.Compression.ZipFile]::OpenRead($archive)
+try {
+    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($entry in $stock.Entries) {
+        if (-not $entry.FullName.StartsWith('vlc-3.0.20/', [StringComparison]::Ordinal)) { throw 'Unexpected archive root.' }
+        $relative = $entry.FullName.Substring('vlc-3.0.20/'.Length)
+        if (-not $relative) { continue }
+        $destination = [IO.Path]::GetFullPath((Join-Path $stage $relative))
+        if (-not $destination.StartsWith($stage + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Archive entry escaped staging.' }
+        if (-not $seen.Add($relative)) { throw 'Duplicate archive entry.' }
+        if (-not $entry.Name) {
+            New-Item -ItemType Directory -Force -Path $destination | Out-Null
+        } else {
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+            [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $destination, $false)
+        }
+    }
+} finally { $stock.Dispose() }
 
 $plugin = Join-Path $stage 'plugins\gui\libqt_plugin.dll'
 Copy-Item -LiteralPath $QtPluginPath -Destination $plugin -Force
@@ -103,21 +119,24 @@ New-Item -ItemType Directory -Force -Path $portable | Out-Null
 # exact transitive MinGW DLL imports used by the modified Qt module.
 $objdump = Join-Path $MinGwBin 'objdump.exe'
 $qwindows = Join-Path $MinGwBin '..\share\qt5\plugins\platforms\qwindows.dll'
+$qoffscreen = Join-Path $MinGwBin '..\share\qt5\plugins\platforms\qoffscreen.dll'
 $vistaStyle = Join-Path $MinGwBin '..\share\qt5\plugins\styles\qwindowsvistastyle.dll'
 $svgIcon = Join-Path $MinGwBin '..\share\qt5\plugins\iconengines\qsvgicon.dll'
 $svgImage = Join-Path $MinGwBin '..\share\qt5\plugins\imageformats\qsvg.dll'
 if (-not (Test-Path -LiteralPath $objdump -PathType Leaf) -or
     -not (Test-Path -LiteralPath $qwindows -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $qoffscreen -PathType Leaf) -or
     -not (Test-Path -LiteralPath $vistaStyle -PathType Leaf) -or
     -not (Test-Path -LiteralPath $svgIcon -PathType Leaf) -or
     -not (Test-Path -LiteralPath $svgImage -PathType Leaf)) {
     throw 'MinGW objdump or Qt Windows/SVG plugins are missing.'
 }
 $platform = Join-Path $stage 'qt5\plugins\platforms\qwindows.dll'
+$offscreen = Join-Path $stage 'qt5\plugins\platforms\qoffscreen.dll'
 $style = Join-Path $stage 'qt5\plugins\styles\qwindowsvistastyle.dll'
 $iconEngine = Join-Path $stage 'qt5\plugins\iconengines\qsvgicon.dll'
 $imageFormat = Join-Path $stage 'qt5\plugins\imageformats\qsvg.dll'
-foreach ($pair in @(@($qwindows, $platform), @($vistaStyle, $style),
+foreach ($pair in @(@($qwindows, $platform), @($qoffscreen, $offscreen), @($vistaStyle, $style),
                    @($svgIcon, $iconEngine), @($svgImage, $imageFormat))) {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $pair[1]) | Out-Null
     Copy-Item -LiteralPath $pair[0] -Destination $pair[1]
@@ -125,7 +144,7 @@ foreach ($pair in @(@($qwindows, $platform), @($vistaStyle, $style),
 @('[Paths]', 'Plugins=qt5/plugins') |
     Set-Content -LiteralPath (Join-Path $stage 'qt.conf') -Encoding ascii
 $queue = [Collections.Generic.Queue[string]]::new()
-foreach ($binary in @($launcher, $plugin, $bridge, $platform, $style,
+foreach ($binary in @($launcher, $plugin, $bridge, $platform, $offscreen, $style,
                      $iconEngine, $imageFormat)) { $queue.Enqueue($binary) }
 $visited = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 $runtimeDlls = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -186,6 +205,13 @@ Copy-Item -LiteralPath (Join-Path $project 'LICENSE') `
     -Destination (Join-Path $stage 'licenses\VLC-PLUS-GPL-2.0.txt')
 Copy-Item -Path (Join-Path $project 'licenses\*') -Destination (Join-Path $stage 'licenses')
 
+$dependencyBinaries = @($qwindows, $qoffscreen, $vistaStyle, $svgIcon, $svgImage) +
+    @($runtimeDlls | ForEach-Object { Join-Path $MinGwBin $_ })
+$dependencyInput = Join-Path $build 'dependency-binaries.json'
+[IO.File]::WriteAllText($dependencyInput, (ConvertTo-Json -InputObject @($dependencyBinaries) -Depth 2), [Text.UTF8Encoding]::new($false))
+& python (Join-Path $project 'scripts\package-dependencies.py') --project $project --stage $stage --mingw $MinGwBin --binaries $dependencyInput
+if ($LASTEXITCODE -ne 0) { throw 'Runtime dependency notices/source preservation failed.' }
+
 $manifest = [ordered]@{
     schema = 'vlc-plus-package/v1'
     vlcVersion = '3.0.20'
@@ -199,6 +225,7 @@ foreach ($name in @('vlc.exe', 'libvlc.dll', 'libvlccore.dll',
                    'plugins\gui\libqt_plugin.dll',
                    'flubber_bridge.dll', 'qt.conf',
                    'qt5\plugins\platforms\qwindows.dll',
+                   'qt5\plugins\platforms\qoffscreen.dll',
                    'qt5\plugins\styles\qwindowsvistastyle.dll',
                    'qt5\plugins\iconengines\qsvgicon.dll',
                    'qt5\plugins\imageformats\qsvg.dll',
