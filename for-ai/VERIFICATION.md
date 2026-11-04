@@ -118,7 +118,7 @@ a fresh folder without shortcuts or admin, verifies every immutable payload
 hash/source identity, then runs the independent native player probe using its
 own synthetic H.264 clip. The probe has no host Qt/plugin path and uses an
 owned child PID, loopback controls and exact source-id LSL discovery. It checks
-actual decoded frames, natural End vs manual Stop, pause/resume, active-video
+actual decoded frames, natural-end and manual-stop runs, pause/resume, active-video
 CSV cadence, unique replay files, bounded shutdown and its own portable UI
 settings. The exact Qt platform plugin load path must belong to the package.
 Uninstall verifies registration ownership, preserves settings and retains all
@@ -130,3 +130,8 @@ the selected MSYS2 keyring. A failed license/source lookup blocks packaging;
 do not omit a dependency to make the candidate pass. Do not publish unrelated
 compiler installations. Hold installer publication until the fresh installed
 check and independent review findings are resolved with named evidence.
+
+The installed probe accepts the documented VLC 3 terminal-state observation
+on manual Stop as well as natural completion. Its receipt explicitly records
+`terminalEndMayIncludeManualStop`; `End` alone is not an experiment-completion
+signal. This limitation blocks that scientific interpretation, not playback.

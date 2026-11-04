@@ -8,8 +8,9 @@ synthetic photo-face feedback. The three layers can be shown together.
 The player was extracted from Affect Research commit
 `16106a70b57136c7243e85a5a05d83b0789bdd2c`. The standalone Windows
 installer candidate is version 0.3.1. This repository has its own source, build inputs and agent guidance.
-No installed executable or new research-qualified release is supplied by this
-extraction.
+Installer readiness and exact tested scope are recorded in
+[verification](for-ai/VERIFICATION.md). This is experimental software; no
+research qualification or physical display-onset guarantee is claimed.
 
 ## Use and recording
 
@@ -24,6 +25,10 @@ unique `time_s,valence,arousal` CSV in its writable source folder. CSV time is
 not a measured display-onset or decoded-frame timestamp. A separate recorder,
 such as Flubbercorder or Remote LSL Recorder, can subscribe and write XDF;
 VLC+ itself does not write XDF.
+
+**Marker limit:** `End` reports VLC 3 input teardown, which can also occur on
+manual Stop/Next. It does not prove natural completion. `Stop` closes the CSV
+session. Do not infer protocol completion from `End` alone.
 
 ## Planner and Runner compatibility
 

@@ -21,6 +21,7 @@ require(manifest["schema"] == "vlc-plus-source-extraction/v1", "Unknown extracti
 adapted = {
     "package-stock-vlc.ps1", "installer-stock-vlc.iss", "vlc-qt/README.md",
     "docs/stock-vlc-integration.md", "docs/third-party.md", "assets/face/NOTICE.md",
+    "vlc-qt/flubber_bridge.hpp",
 }
 paths = set()
 for entry in manifest["files"]:
@@ -37,9 +38,9 @@ for entry in manifest["files"]:
     if not path.is_file() or path.is_symlink():
         continue
     require(entry["adapted"] == (name in adapted), f"Unexpected adaptation: {name}")
-    if not entry["adapted"]:
+    if not entry["adapted"] or "standaloneSha256" in entry:
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        require(digest == entry["upstreamSha256"], f"Upstream content drift: {name}")
+        require(digest == entry.get("standaloneSha256", entry["upstreamSha256"]), f"Upstream content drift: {name}")
 
 fixture_info = manifest["generatedFixture"]
 fixture = ROOT / fixture_info["path"]
@@ -87,4 +88,4 @@ if errors:
     for error in errors:
         print(f"FAIL: {error}", file=sys.stderr)
     sys.exit(1)
-print(f"PASS: {len(paths)} imported files, unchanged runtime/atlas bytes, Planner fixture, standalone paths and local links")
+print(f"PASS: {len(paths)} imported files, verified import/adaptation and atlas bytes, Planner fixture, standalone paths and local links")

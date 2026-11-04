@@ -91,12 +91,14 @@ def main():
             key = (base, version_file)
             notices = []
             for posix in output([str(pacman), "-Qlq", owner]).splitlines():
-                if "/share/licenses/" not in posix:
+                if "/share/" not in posix or not (
+                    "/share/licenses/" in posix or re.match(r"^(license|copying|notice)", Path(posix).name, re.I)
+                ):
                     continue
                 path = msys / posix.lstrip("/")
                 if not path.is_file():
                     continue
-                relative = Path("licenses/msys2") / owner / posix.split("/share/licenses/", 1)[1]
+                relative = Path("licenses/msys2") / owner / posix.split("/share/", 1)[1]
                 target = stage / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(path, target)
@@ -120,8 +122,14 @@ def main():
                     raise ValueError(f"Matching source archive unavailable for {base} {version_file}")
                 environment = dict(os.environ, MSYSTEM="MINGW64", CHERE_INVOKING="1",
                                    VLCPLUS_SOURCE=str(archive), VLCPLUS_SIGNATURE=str(archive) + ".sig")
-                subprocess.run([str(bash), "-lc", 'pacman-key --verify "$(cygpath -u "$VLCPLUS_SIGNATURE")" "$(cygpath -u "$VLCPLUS_SOURCE")"'],
-                               env=environment, check=True)
+                # Match pacman-key's signature AND trust gates directly. Some MSYS2
+                # pacman-key releases require lock-never but omit it from --init.
+                verified = subprocess.run([str(bash), "-lc",
+                    'gpg --homedir /etc/pacman.d/gnupg --batch --status-fd 1 --verify "$(cygpath -u "$VLCPLUS_SIGNATURE")" "$(cygpath -u "$VLCPLUS_SOURCE")"'],
+                    env=environment, check=True, capture_output=True, text=True, encoding="utf-8")
+                print(verified.stderr, end="", flush=True)
+                if not re.search(r"^\[GNUPG:\] TRUST_(FULLY|ULTIMATE)\b", verified.stdout, re.M):
+                    raise ValueError(f"Source signature is not trusted by the selected MSYS2 keyring: {archive.name}")
                 target = sources / "msys2" / archive.name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(archive, target)

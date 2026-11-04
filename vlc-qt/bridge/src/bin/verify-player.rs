@@ -280,7 +280,14 @@ fn main() -> Result<()> {
     }
     let expected = ["Start", "Pause", "Resume", "End", "Stop", "Start", "Stop"]
         .map(|suffix| format!("validation.mp4_{suffix}"));
-    if labels != expected {
+    // VLC 3 sets END_S during input teardown, including manual Stop. The
+    // GUI poll may observe that state before the input disappears. Preserve
+    // the existing stream; never claim End proves natural completion.
+    let with_terminal = [
+        "Start", "Pause", "Resume", "End", "Stop", "Start", "End", "Stop",
+    ]
+    .map(|suffix| format!("validation.mp4_{suffix}"));
+    if labels != expected && labels != with_terminal {
         return Err(format!("marker chronology mismatch: {labels:?}").into());
     }
     let decoded = rc_output
@@ -369,7 +376,8 @@ fn main() -> Result<()> {
         } else {
             (0.6..=1.8).contains(&previous) && count >= 20
         };
-        if first_time > 0.25 || !duration_ok || !(28.0..=32.0).contains(&csv_rate) {
+        if !(0.0..=0.25).contains(&first_time) || !duration_ok || !(28.0..=32.0).contains(&csv_rate)
+        {
             return Err(format!("CSV duration/cadence mismatch: natural={natural}, rows={count}, first={first_time:.3}, last={previous:.3}, Hz={csv_rate:.2}").into());
         }
         rows.push(count);
@@ -383,7 +391,7 @@ fn main() -> Result<()> {
         return Err(format!("observed LSL rate {rate:.2} Hz").into());
     }
     let receipt = format!(
-        "{{\n  \"schema\": \"vlc-plus-installed-probe/v1\",\n  \"result\": \"VERIFIED\",\n  \"offscreen\": true,\n  \"physicalInputTested\": false,\n  \"decodedVideoFrames\": {decoded},\n  \"affectSamples\": {},\n  \"observedLslHz\": {rate:.4},\n  \"csvRows\": {rows:?},\n  \"csvActiveSeconds\": {csv_seconds:?},\n  \"markers\": {labels:?},\n  \"shutdownMs\": {}\n}}\n",
+        "{{\n  \"schema\": \"vlc-plus-installed-probe/v1\",\n  \"result\": \"VERIFIED\",\n  \"offscreen\": true,\n  \"physicalInputTested\": false,\n  \"terminalEndMayIncludeManualStop\": true,\n  \"decodedVideoFrames\": {decoded},\n  \"affectSamples\": {},\n  \"observedLslHz\": {rate:.4},\n  \"csvRows\": {rows:?},\n  \"csvActiveSeconds\": {csv_seconds:?},\n  \"markers\": {labels:?},\n  \"shutdownMs\": {}\n}}\n",
         stamps.len(), quitting.elapsed().as_millis()
     );
     fs::write(evidence.join("installed-probe.json"), &receipt)?;

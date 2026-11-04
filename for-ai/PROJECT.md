@@ -27,9 +27,9 @@ player, with exact source/dependency provenance and fresh installed evidence.
 The source extraction is complete (PR #1); its checks alone did not establish
 installed-player readiness. This checklist is the sole plan/state owner.
 
-- [ ] Establish the native toolchain and one repeatable pinned-VLC Qt/launcher
+- [x] Establish the native toolchain and one repeatable pinned-VLC Qt/launcher
   build. Record actual compiler/Qt/dependency versions and archive hashes.
-- [ ] Build/test the Rust bridge and Windows Qt panel; retain strict settings
+- [x] Build/test the Rust bridge and Windows Qt panel; retain strict settings
   rejection and all three feedback modes without changing research semantics.
 - [ ] Stage a complete independently runnable player with notices, matching
   source and hashes; compile the standalone installer without administrator
@@ -77,25 +77,28 @@ with scientific timing, physical input or research qualification.
 
 ## Session handoff
 
-2026-11-04: branch `codex/windows-installer`, checkpoint `2ef68dd` plus fixes.
-The complete local VLC Qt module/launcher build succeeded with GCC 16.2.0 /
-Qt 5.15.19. Rust bridge tests (3/3), release DLL and Windows offscreen Qt panel
-checks passed. Actual Rust linking was observed through `--print=link-args`
-(MSVC linker 14.42.34433.0 locally). No installed-player pass is claimed yet.
+2026-11-04: branch `codex/windows-installer`. Full native build succeeded with
+GCC 16.2.0 / Qt 5.15.19; Rust tests 3/3, release DLL and Windows offscreen Qt
+panel passed. Actual MSVC linker 14.42.34433.0 was captured locally. Source CI
+passed `a7ce6f2`; installer CI failed on missing generated-source directories,
+now fixed. Source signatures use the selected MSYS2 GPG trust database with
+both valid-signature and full/ultimate-trust gates (pacman-key's --init omits a
+lock-never option its verify wrapper requires). ICU licenses live under share/icu.
 
-Independent review found packaging/proof gaps. Fixes now stage the pinned VLC
-ZIP freshly; include qoffscreen and prove its loaded path; guard existing
-product registrations and owned uninstall; check CSV close, naming, duration
-and cadence; preserve per-package runtime notices and matching signed MSYS2
-and locked Rust sources. Source collection and installed runtime tests still
-need to run. Inspect current Git diff and `build/windows-build.log` on resume.
+Independent review packaging findings are being closed with fresh pinned-ZIP
+staging, full manifests, qoffscreen load-path evidence, guarded/owned installer
+testing and exact runtime notices + matching signed sources. Local source
+collection is running. Native offscreen playback decoded video, published LSL
+and wrote CSV, but caught a shutdown crash in flubber_bridge.dll_unloaded.
+PreventUnloadHint is the minimal runtime lifetime fix; rebuild and rerun pending.
+Manual Stop can produce End because VLC 3 uses END_S for teardown; document
+that existing marker limitation and never call it natural completion proof.
 
-Local Inno compiler installation was rejected (`blocked by policy`); use the
-preinstalled compiler on the owned GitHub Windows runner for installer output.
-An initial separate compiler artifact was removed, and that job was dropped.
-Only player/installer/source/evidence artifacts belong in the publication.
-The first installer CI run `41917153520` was cancelled as superseded by build
-fixes, not counted as a pass. Next: checkpoint fixes, stage/test the actual
-payload, run corrected installer CI, fix failures and publish verified bytes.
+Local Inno installation was rejected by automatic policy. Installer generation
+and install/uninstall tests use the owned GitHub Windows runner's preinstalled
+compiler. The unrelated compiler artifact was deleted and its job removed.
+No installed-player or installer pass/release is claimed yet. Next: verify the
+shutdown fix, checkpoint and run corrected CI, resolve actual failures, publish
+exact tested installer/source/evidence, then update this checklist.
 The parent Research source is unchanged. Common Planner-master execution,
 physical input/display onset and research qualification remain open scopes.

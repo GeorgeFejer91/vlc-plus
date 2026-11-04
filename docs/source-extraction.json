@@ -170,7 +170,9 @@
       "path": "vlc-qt/flubber_bridge.hpp",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_bridge.hpp",
       "upstreamSha256": "806f20ff8e7b3f08103035bba7dc9d6c958c5829a7b9308b54aad661dd91cf88",
-      "adapted": false
+      "adapted": true,
+      "adaptation": "Retain Rust/LSL DLL mapping through process exit with QLibrary PreventUnloadHint; join owned worker and close CSV/outlets before release.",
+      "standaloneSha256": "59dad41d70922f195175c6443a6171c7fcd7fd74058b3366cdf1f3711dfa7a6b"
     },
     {
       "path": "vlc-qt/flubber_panel.hpp",

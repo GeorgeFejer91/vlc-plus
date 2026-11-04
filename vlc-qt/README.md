@@ -145,7 +145,10 @@ error in the player.
   asynchronously. `status` reports starting/live/failed. `update` copies
   bounded coordinates, state, media time, filename and path into Rust-owned
   memory. It never holds a caller buffer after return. The Qt timer stops
-  before `free`; `free` signals and joins the worker before `QLibrary` unloads.
+  before `free`; `free` signals and joins the owned worker.
+  `QLibrary::PreventUnloadHint` retains code through process exit because
+  Rust/LSL may retain process-lifetime threads or TLS destructors. Unloading
+  immediately after join caused an observed shutdown access violation.
 - The Rust worker owns a high-resolution waitable timer and balanced Windows
   timer period, and publishes 30 Hz LSL samples even while VLC is idle. Its
   separate bounded CSV writer opens a fresh file on video Start and closes on
@@ -154,8 +157,10 @@ error in the player.
 - Qt maps live VLC input states to the bridge and briefly latches a real
   `END_S`/`ERROR_S` state. `InputManager::delInput()` also emits a synthetic
   `END_S` for Stop/Next, so the latch requires a still-live input in the same
-  core state. Natural End versus Stop/Next still needs installed runtime
-  verification with an independent LSL receiver.
+  core state. VLC 3 core also sets `END_S` during manual teardown. Installed
+  testing observed `End` on manual Stop; it is a terminal-input observation,
+  **not proof of natural video completion**. Preserve this stream format; a
+  future completion-reason contract needs an authoritative source and version.
 - The Qt boundary casts the live panel/main `winId()` to HWND for foreground,
   capture and client-rectangle checks; no HWND crosses into Rust. The bridge
   also converts six `QLibrary` symbols to fixed C ABI function pointers.

@@ -30,6 +30,10 @@ make -j"$jobs" -C src CFLAGS='-g -O2 -Wno-error=incompatible-pointer-types'
 make -j"$jobs" -C lib libvlc.la CFLAGS='-g -O2 -Wno-error=incompatible-pointer-types'
 make -j"$jobs" -C modules -f - vlc-plus-qt-generated <<'MAKE'
 include Makefile
+.PHONY: vlc-plus-qt-dirs
+vlc-plus-qt-dirs:
+	mkdir -p $(sort $(dir $(nodist_libqt_plugin_la_SOURCES)))
+$(nodist_libqt_plugin_la_SOURCES): | vlc-plus-qt-dirs
 vlc-plus-qt-generated: $(nodist_libqt_plugin_la_SOURCES) module.rc.lo
 MAKE
 make -j"$jobs" -C modules libqt_plugin.la \

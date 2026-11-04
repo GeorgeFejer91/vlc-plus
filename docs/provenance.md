@@ -6,9 +6,13 @@ branch `codex/segment-vlc-player-ui`, exact commit
 `16106a70b57136c7243e85a5a05d83b0789bdd2c`.
 
 The [manifest](source-extraction.json) identifies every imported file, its
-original path and SHA-256. Runtime C++/Rust, the patch and atlases are copied
-unchanged. Entries marked `adapted` have standalone documentation, packaging
-paths or installer identity changes. Git history records those adaptations.
+original path and SHA-256. The extraction copied runtime C++/Rust, the patch and atlases unchanged.
+The standalone installer milestone additionally fixes the bridge DLL lifetime:
+`PreventUnloadHint` keeps Rust/LSL code mapped through process exit after the
+owned worker joins, preventing an observed unloaded-DLL access violation. The
+manifest records the upstream digest and exact adapted header digest. Other
+`adapted` entries cover documentation, packaging and installer identity.
+Git history records those adaptations.
 The original full history stays in Affect Research; this is a reviewed source
 snapshot, not a claim to have imported that repository's complete Git history.
 

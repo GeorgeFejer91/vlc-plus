@@ -14,6 +14,9 @@ public:
         : library_( QDir( QCoreApplication::applicationDirPath() ).filePath( "flubber_bridge.dll" ) ),
           handle_( NULL ), update_( NULL ), interrupt_( NULL ), free_( NULL ), status_( NULL ), error_( NULL )
     {
+        /* Rust/LSL may retain process-lifetime threads or TLS destructors after
+         * the owned worker joins. Keep their code mapped until process exit. */
+        library_.setLoadHints( QLibrary::PreventUnloadHint );
         if( !library_.load() ) { startupError_ = library_.errorString(); return; }
         Create create = reinterpret_cast<Create>( library_.resolve( "flubber_bridge_new" ) );
         update_ = reinterpret_cast<Update>( library_.resolve( "flubber_bridge_update" ) );
@@ -32,7 +35,7 @@ public:
     ~FlubberBridge()
     {
         /* Caller stops its GUI timer first. Rust joins its worker and closes
-         * outlets/CSV before the DLL is unloaded. Never hold a VLC pointer. */
+         * owned outlets/CSV. PreventUnloadHint retains DLL code until exit. */
         if( handle_ ) free_( handle_ );
         if( library_.isLoaded() ) library_.unload();
     }
