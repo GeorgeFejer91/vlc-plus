@@ -50,3 +50,15 @@ decision and link both entries.
 - Consequences: Full recipe intake requires strict versioned readers,
   capability rejection and independent correspondence evidence. Extraction
   does not imply questionnaire, sequence, timing or recovery support.
+
+## D-0004 — Public repository and collaborator access
+
+- Date: 2026-11-04
+- Status: Accepted
+- Decision: The user explicitly authorized public visibility for VLC+ and
+  Affect Research, and collaborator access for Antonin Fourcade (`afourcade`).
+  Grant write access, preserving owner/admin authority.
+- Evidence: GitHub reported both repositories public; write invitations for
+  `afourcade` were pending acceptance on both at the time of the change.
+- Supersedes: D-0002's initial private-visibility choice only. Independent
+  project boundaries, provenance and research evidence requirements remain.
