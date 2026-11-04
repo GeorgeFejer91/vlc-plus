@@ -89,9 +89,12 @@ Inspect CI for the exact published commit; record failure or pending state.
 - VERIFIED: all three Rust bridge tests, including live LSL samples and exact
   Start/Interrupt/Stop labels; release bridge build succeeded.
 - VERIFIED: official VLC source SHA-256 and patch application to a fresh tree.
+- VERIFIED in CI: Windows source/syntax/context/bridge checks and Linux Qt
+  offscreen panel tests passed for `490ddc4` (run linked in `PROJECT.md`).
+- VERIFIED: the complete committed-source archive contains every imported
+  file and runs its audit independently, with no generated binaries/recordings.
 - NOT RUN locally: isolated Qt panel and full modified VLC build; the matching
-  MinGW64 Qt toolchain is unavailable in this environment. CI panel evidence
-  is recorded in the active project state once the workflow runs.
+  MinGW64 Qt toolchain is unavailable in this environment.
 - NOT RUN: fresh installed player/physical input/research qualification. The
   task is source extraction and publication; no installer release is claimed.
 - Publication, independent review and exact CI result: see the sole active

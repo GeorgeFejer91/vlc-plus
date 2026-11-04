@@ -9,8 +9,9 @@ video-filter prototype and Flubbercorder sources are outside this repository.
 
 1. Download the official source archive and verify SHA-256
    `adc7285b4d2721cddf40eb5270cada2aaa10a334cb546fd55a06353447ba29b5`.
-   [The native runbook](../vlc-qt/README.md) records the upstream URL and exact
-   inherited MinGW/Qt configure and build commands.
+   [The extraction manifest](source-extraction.json) records the download URL;
+   [the native runbook](../vlc-qt/README.md) gives the inherited MinGW/Qt
+   configure and build commands.
 2. Apply `vlc-qt/apply-patch.ps1 -SourceRoot <clean VLC 3.0.20 source>`.
    It checks application before changing that source tree and copies both
    tracked headers into the Qt module.
