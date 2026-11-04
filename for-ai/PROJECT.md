@@ -66,22 +66,23 @@ This is the sole plan/state owner. Execute inline in the following order:
   publish participant data, secrets, films or generated packages accidentally.
 - Historical receipts qualify only their named upstream artifact and scope.
   This extraction does not reactivate or qualify features in Affect Research.
-- Private repository visibility remains private until explicitly changed.
+- The GitHub repository is public by explicit user authorization on 2026-11-04.
+  Review source, history and assets before any further publication.
 
 ## Session handoff
 
-2026-11-04: extraction implementation `490ddc4` is published on
-`codex/standalone-extraction` in the private repository. Its
-[Windows and Qt CI](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/41823570146)
-passed. A materialized committed source archive passes the same audit without
-an Affect Research checkout. The independent review's missing-packaging-file
-finding was fixed; the minor build-guide link was corrected. PR CI then
-exposed a detached-HEAD null-output bug in the context checker; removing the
-unnecessary string method passed the local failure-to-pass regression.
-Inspect the latest PR checks for that fix. PR #1 is the
-source/default-branch integration record; inspect its merged revision and
-fresh Git state at the next entry. The original Affect Research checkout is
-unchanged. No installed-player qualification is claimed.
+2026-11-04: extraction is merged through
+[PR #1](https://github.com/GeorgeFejer91/vlc-plus/pull/1) at `3f894b3` on `main`.
+Its [Windows and Qt CI](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/41824381652)
+passed, and the clean local checkout matched remote `main`. The complete
+committed-source archive passes its audit without an Affect Research checkout.
+No installed-player qualification is claimed.
+
+The user subsequently authorized public visibility for this repository and
+Affect Research, and collaborator access for Antonin Fourcade (`afourcade`).
+Both repositories were verified public. Write-access invitations were verified
+pending for both; acceptance belongs to the invitee. Recheck live GitHub state
+before reporting current permissions. Affect Research source is unchanged.
 
 Next product milestone: select exact Planner/Runner schema revisions and
 implement strict common-recipe intake/capability rejection under
