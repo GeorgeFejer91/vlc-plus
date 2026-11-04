@@ -1,0 +1,43 @@
+name: Standalone source checks
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Source and provenance
+        run: python scripts/check-source.py
+      - name: PowerShell syntax
+        shell: pwsh
+        run: |
+          $scripts = @('package-stock-vlc.ps1') + @(Get-ChildItem vlc-qt -Filter '*.ps1' | ForEach-Object FullName)
+          foreach ($script in $scripts) {
+            $parseErrors = $null
+            [void][Management.Automation.Language.Parser]::ParseFile((Resolve-Path $script), [ref]$null, [ref]$parseErrors)
+            if ($parseErrors) { throw ($parseErrors | Out-String) }
+          }
+      - name: Rust bridge
+        run: cargo test --locked --manifest-path vlc-qt/bridge/Cargo.toml
+      - name: For-AI context
+        shell: pwsh
+        run: ./for-ai/scripts/check-context.ps1 -ProjectRoot .
+
+  qt-panel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Qt build dependencies
+        run: sudo apt-get update && sudo apt-get install -y qtbase5-dev
+      - name: Build and check panel offscreen
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          mkdir -p build/panel-check/assets/face
+          cp assets/face/photo-reference-v3.png assets/face/photo-synthetic-01.png build/panel-check/assets/face/
+          g++ -std=c++11 -fPIC -O1 -Ivlc-qt vlc-qt/panel-check.cpp $(pkg-config --cflags --libs Qt5Widgets Qt5Gui Qt5Core) -o build/panel-check/panel-check
+          build/panel-check/panel-check examples/planner-appearance.v1.json build/panel-check/panel-check.png

@@ -1,0 +1,67 @@
+{
+  "schema": "vlc-flubber-appearance/v1",
+  "visual": {
+    "transparency": 0.05,
+    "flubber": {
+      "showOutline": true,
+      "outlineThickness": 2,
+      "showHalo": true
+    },
+    "colors": {
+      "up": "#f2c94c",
+      "down": "#2f80ed",
+      "left": "#eb5757",
+      "right": "#27ae60",
+      "idle": "#9ca3af",
+      "outline": "#f8fafc",
+      "halo": "#93c5fd",
+      "cursor": "#ffffff"
+    }
+  },
+  "presentation": {
+    "colorAnchors": "axes",
+    "halo": {
+      "widthPercent": 150,
+      "gradient": true,
+      "steepness": 1
+    }
+  },
+  "mappings": {
+    "oscillationFrequency": {
+      "min": 0.5,
+      "max": 2.5,
+      "drivenBy": "y-axis",
+      "reverse": false
+    },
+    "edgeSmoothness": {
+      "min": 0,
+      "max": 1,
+      "drivenBy": "x-axis",
+      "reverse": false
+    },
+    "projectionAmplitude": {
+      "min": 0.2,
+      "max": 0.4,
+      "drivenBy": "y-axis",
+      "reverse": false
+    },
+    "pulseSynchrony": {
+      "min": 0.2,
+      "max": 1,
+      "drivenBy": "x-axis",
+      "reverse": false
+    },
+    "waveSizeVariation": {
+      "min": 0,
+      "max": 0.8,
+      "drivenBy": "x-axis",
+      "reverse": true
+    },
+    "saturation": {
+      "min": 0,
+      "max": 1,
+      "drivenBy": "radius",
+      "reverse": false
+    }
+  }
+}
