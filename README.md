@@ -22,7 +22,9 @@ layers, input and layout; hotkeys and local RC commands are described in the
 The Rust bridge publishes `VLC_Flubber_Affect` and `VLC_Flubber_Markers` LSL
 outlets on a nominal independent 30 Hz schedule. Each played video receives a
 unique `time_s,valence,arousal` CSV in its writable source folder. CSV time is
-not a measured display-onset or decoded-frame timestamp. A separate recorder,
+not a measured display-onset or decoded-frame timestamp. Acquisition starts
+after VLC reports its first positive media time; the first CSV row can be
+about 0.4 seconds into a clip, rather than at time zero. A separate recorder,
 such as Flubbercorder or Remote LSL Recorder, can subscribe and write XDF;
 VLC+ itself does not write XDF.
 
