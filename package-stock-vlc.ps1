@@ -91,6 +91,14 @@ Copy-Item -LiteralPath $LauncherExePath -Destination $launcher -Force
 $bridge = Join-Path $stage 'flubber_bridge.dll'
 Copy-Item -LiteralPath $BridgeDllPath -Destination $bridge -Force
 
+# VLC already supports an executable-local portable profile. Use it so VLC+
+# never shares Qt settings with an ordinary VLC installation.
+$portable = Join-Path $stage 'portable'
+New-Item -ItemType Directory -Force -Path $portable | Out-Null
+[IO.File]::WriteAllText((Join-Path $portable 'README.txt'),
+    "VLC+ stores its own settings in this portable profile. Regular VLC settings are separate.`n",
+    [Text.UTF8Encoding]::new($false))
+
 # The MSYS2 Qt 5 build is dynamic. Deploy its Windows platform plugin and the
 # exact transitive MinGW DLL imports used by the modified Qt module.
 $objdump = Join-Path $MinGwBin 'objdump.exe'
@@ -179,6 +187,7 @@ Copy-Item -LiteralPath (Join-Path $project 'LICENSE') `
 Copy-Item -Path (Join-Path $project 'licenses\*') -Destination (Join-Path $stage 'licenses')
 
 $manifest = [ordered]@{
+    schema = 'vlc-plus-package/v1'
     vlcVersion = '3.0.20'
     officialArchiveSha256 = $archiveHash
     stockExeSha256 = $stockExeHash
@@ -201,9 +210,13 @@ foreach ($name in @('vlc.exe', 'libvlc.dll', 'libvlccore.dll',
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Expected package file is missing: $name"
     }
-    $manifest.files[$name] = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
 }
-$manifest | ConvertTo-Json -Depth 4 |
-    Set-Content -LiteralPath (Join-Path $stage 'manifest.json') -Encoding utf8
+foreach ($file in Get-ChildItem -LiteralPath $stage -Recurse -File | Sort-Object FullName) {
+    if ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Linked package files are unsupported.' }
+    $relative = $file.FullName.Substring($stage.Length + 1).Replace('\', '/')
+    $manifest.files[$relative] = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+[IO.File]::WriteAllText((Join-Path $stage 'manifest.json'),
+    (($manifest | ConvertTo-Json -Depth 4) + "`n"), [Text.UTF8Encoding]::new($false))
 
 Write-Output "Stock VLC Flubber candidate staged: $stage"

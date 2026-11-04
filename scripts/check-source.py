@@ -47,6 +47,12 @@ require(hashlib.sha256(fixture.read_bytes()).hexdigest() == fixture_info["sha256
         "Planner-generated fixture drift")
 require(json.loads(fixture.read_text())["schema"] == "vlc-flubber-appearance/v1",
         "Fixture is not the standalone Planner appearance format")
+video_fixture = ROOT / "test/fixtures/validation.mp4"
+require(video_fixture.is_file(), "Synthetic installed-player video fixture is missing")
+if video_fixture.is_file():
+    require(hashlib.sha256(video_fixture.read_bytes()).hexdigest() ==
+            "82fc7904c7967c396122d13eeae89486084db97e168faf12ad0ef34a625720ee",
+            "Synthetic video fixture differs from the declared generated input")
 for name in paths | {fixture_info["path"]}:
     if name.endswith(".json"):
         try:

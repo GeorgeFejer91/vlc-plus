@@ -1,5 +1,5 @@
 #define ProductName "VLC+"
-#define ProductVersion "0.3.0"
+#define ProductVersion "0.3.1"
 
 [Setup]
 AppId={{F836C1D9-43B0-4A71-95D7-2854030B68AE}
@@ -9,7 +9,7 @@ AppPublisher=George Fejer
 DefaultDirName={localappdata}\Programs\VLCPlus
 DefaultGroupName=VLC+
 OutputDir=build\stock-vlc-package\out
-OutputBaseFilename=VLC_Plus_Setup_0.3.0_x64
+OutputBaseFilename=VLC_Plus_Setup_0.3.1_x64
 Compression=zip/1
 SolidCompression=no
 PrivilegesRequired=lowest

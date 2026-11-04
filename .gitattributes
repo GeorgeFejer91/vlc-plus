@@ -2,5 +2,6 @@
 *.png binary
 *.ico binary
 *.xz binary
+*.mp4 binary
 # Unified diff context markers and patch terminators retain upstream whitespace.
 *.patch whitespace=-blank-at-eol,-blank-at-eof

@@ -1,0 +1,75 @@
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/windows-installer']
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  compiler:
+    runs-on: windows-2025
+    steps:
+      - name: Preserve the preinstalled portable Inno compiler
+        shell: pwsh
+        run: |
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6'
+          if (-not (Test-Path (Join-Path $compiler 'ISCC.exe'))) { throw 'Preinstalled Inno compiler missing' }
+          Copy-Item -LiteralPath $compiler -Destination "$env:RUNNER_TEMP/InnoCompiler" -Recurse
+          Get-FileHash (Join-Path $compiler 'ISCC.exe') -Algorithm SHA256
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preinstalled-inno-compiler
+          path: ${{ runner.temp }}/InnoCompiler
+
+  installer:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        id: msys
+        with:
+          msystem: MINGW64
+          update: true
+          path-type: inherit
+          install: >-
+            make diffutils patch autoconf automake libtool gettext-devel pkgconf
+            mingw-w64-x86_64-gcc mingw-w64-x86_64-qt5-base
+            mingw-w64-x86_64-qt5-svg mingw-w64-x86_64-qt5-tools
+            mingw-w64-x86_64-qt5-winextras mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-libgcrypt mingw-w64-x86_64-gettext-tools
+      - name: Build and package
+        shell: pwsh
+        run: ./build-windows.ps1 -MsysRoot '${{ steps.msys.outputs.msys2-location }}' -Jobs 2
+      - name: Fresh installed-player check
+        shell: pwsh
+        run: ./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.1_x64.exe
+      - name: Preserve native build diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-build-diagnostics
+          path: |
+            build/windows-build.log
+            build/toolchain-packages.txt
+            build/vlc-native/config.log
+            build/validation/**/installer-check.json
+            build/validation/**/installed-probe.json
+            build/validation/**/integrity.json
+            build/validation/**/post-run-integrity.json
+            build/validation/**/player.log
+            build/validation/**/install.log
+          if-no-files-found: ignore
+      - name: Installer and provenance
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vlc-plus-windows-x64
+          path: |
+            build/stock-vlc-package/out/*.exe
+            build/stock-vlc-package/stage/manifest.json
+            build/stock-vlc-package/stage/source/vlc-plus-source.zip
+            build/toolchain-packages.txt
