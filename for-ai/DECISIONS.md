@@ -62,3 +62,19 @@ decision and link both entries.
   `afourcade` were pending acceptance on both at the time of the change.
 - Supersedes: D-0002's initial private-visibility choice only. Independent
   project boundaries, provenance and research evidence requirements remain.
+
+## D-0005 — Experimental Windows installer and bridge lifetime
+
+- Date: 2026-11-04
+- Status: Accepted
+- Decision: Ship a per-user standalone installer with its own portable profile,
+  immutable payload manifest, actual toolchain receipt and matching dependency
+  notices/sources. Validate the exact fresh install in a clean Windows account.
+- Runtime fix: retain the Rust/LSL DLL mapping through process exit using
+  QLibrary PreventUnloadHint. Still stop the GUI timer, join owned workers and
+  drain CSV before releasing the bridge. Immediate DLL unload caused an
+  observed access violation from process-lifetime code/TLS.
+- Consequences: the experimental release qualifies its named offscreen scope.
+  Preserve the existing marker stream but disclose VLC 3's terminal End
+  ambiguity and initial CSV acquisition gap. Scientific completion/onset and
+  the full shared Planner recipe need separate contracts and qualification.

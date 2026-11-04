@@ -27,26 +27,13 @@ and position. It is separate from the standard Experiment Runner.
   The crate-local Cargo config links the MSVC CRT statically. `labstream` 0.1.2
   and its components are MIT-licensed Rust dependencies; they are linked into
   the DLL, with no separate `lsl.dll` import.
-- With MSYS2 MinGW64 GCC 16.2.0 and Qt 5.15.19 in the MinGW64 shell, the
-  verified native build commands from an out-of-tree build directory are:
-
-  ```sh
-  BUILDCC=gcc ../vlc-3.0.20/configure --cache-file=../config.cache \
-    --disable-lua --disable-skins2 \
-    --disable-nls --disable-update-check --disable-avcodec --disable-avformat \
-    --disable-swscale --disable-a52 --disable-mad
-  make -j8 -C modules libqt_plugin.la \
-    am__append_4=../modules/module.rc.lo LIBS_qt=-lwinmm \
-    CFLAGS='-g -O2 -Wno-error=incompatible-pointer-types' \
-    CXXFLAGS='-g -O2 -I/mingw64/include/QtGui/5.15.19/QtGui -I/mingw64/include/QtGui/5.15.19'
-  make -j8 -C bin vlc.exe CFLAGS='-g -O2 -Wno-error=incompatible-pointer-types'
-  ```
-
-  Stage the real binaries from `modules/.libs/libqt_plugin.dll` and
-  `bin/.libs/vlc.exe`. Qt must find `qt5/plugins/platforms/qwindows.dll`,
-  `qt5/plugins/iconengines/qsvgicon.dll`, and
-  `qt5/plugins/imageformats/qsvg.dll`; `qt.conf` points Plugins at
-  `qt5/plugins`. The SVG icon engine restores VLC's stock toolbar icons.
+- Use the complete root entry `build-windows.ps1`, which builds native
+  prerequisites and generated Qt sources before linking the plugin/launcher.
+  The old abbreviated manual commands omitted those clean-build prerequisites.
+  See the [build and packaging guide](../docs/stock-vlc-integration.md).
+- The real outputs are `modules/.libs/libqt_plugin.dll` and `bin/.libs/vlc.exe`.
+  Packaging includes `qwindows.dll`, `qoffscreen.dll`, the Vista style and SVG
+  plugins; `qt.conf` points Plugins at `qt5/plugins`.
 - Run `test-panel.ps1 -QtBin <MinGW64 Qt bin> -AppearanceJson <Planner-exported JSON>`
   to compile the isolated panel check, reject duplicate keys, verify imported
   fill/transparency and manual controls, and render a black idle PNG without
@@ -171,13 +158,16 @@ error in the player.
   process exit; this is an outstanding shutdown bound to test in the installed
   player.
 
-## Current evidence and gates
+## Current evidence and limits
 
-`cargo test --locked` in `bridge/` exercises fresh CSV names, selected CSV
-constraints, and a live independent LSL inlet at 28–32 Hz with exact
-`clip.mp4_Start`/`_Interrupt`/`_Stop` markers and a 30 Hz video CSV. The isolated Qt panel
-check compiles with MinGW64 Qt 5.15.19 and renders the imported Planner
-appearance on black. These checks do not establish the complete VLC module's
-compile, installed menu/command behavior, fullscreen layout, D3D mouse input,
-or natural End/Stop/Next marker distinctions. Those must be checked against the
-exact patched VLC candidate before calling the player finished.
+The [installer verification record](../for-ai/VERIFICATION.md) identifies the
+exact passing source commit and fresh Windows install test. It covers real
+H.264 decoding, independent LSL, pause/resume, replay, CSV naming/cadence,
+portable settings, package-local Qt loading, bounded shutdown and uninstall.
+The Qt panel check covers appearance/settings and synthetic input.
+
+These offscreen checks do not qualify fullscreen/D3D behavior, physical
+mouse/keyboard capture, display onset or experiment timing. `End` is an input
+teardown observation, including manual Stop/Next; it is not natural-completion
+proof. CSV acquisition starts after the first positive media-time update,
+observed around 0.4 seconds. Full Planner-master execution remains open.

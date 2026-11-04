@@ -7,10 +7,19 @@ synthetic photo-face feedback. The three layers can be shown together.
 
 The player was extracted from Affect Research commit
 `16106a70b57136c7243e85a5a05d83b0789bdd2c`. The standalone Windows
-installer candidate is version 0.3.1. This repository has its own source, build inputs and agent guidance.
+installer is version 0.3.1 (experimental). This repository has its own source, build inputs and agent guidance.
 Installer readiness and exact tested scope are recorded in
 [verification](for-ai/VERIFICATION.md). This is experimental software; no
 research qualification or physical display-onset guarantee is claimed.
+
+## Install
+
+Download the [Windows x64 installer](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.1-experimental.1/VLC_Plus_Setup_0.3.1_x64.exe)
+from the [0.3.1 experimental release](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.1-experimental.1).
+Run it for your own account, then open a video in a writable folder. The
+installer is unsigned. It uses its own settings profile and does not register
+file associations. Matching sources, SHA-256 checksums and build/installed
+verification receipts are attached to the release.
 
 ## Use and recording
 
@@ -76,9 +85,9 @@ cargo test --locked --manifest-path vlc-qt/bridge/Cargo.toml
 powershell -NoProfile -File for-ai/scripts/check-context.ps1 -ProjectRoot .
 ```
 
-The isolated Qt panel test can run offscreen. Fresh installed playback,
-physical input, codecs, timing, shutdown and independent recording checks
-remain separate gates in [verification](for-ai/VERIFICATION.md).
+The fresh installed H.264/LSL/CSV and uninstall checks passed offscreen.
+Physical input, other codecs, display onset and scientific timing remain
+separate scopes in [verification](for-ai/VERIFICATION.md).
 
 ## Source and licenses
 
