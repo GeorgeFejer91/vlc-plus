@@ -20,7 +20,7 @@ This compatibility goal stays **open**. Full master execution, questionnaires,
 variant/participant selection and recovery are not implemented in VLC+.
 See [Planner integration](PLANNER-INTEGRATION.md).
 
-## Active milestone: Windows installer readiness
+## Completed milestone: experimental Windows installer readiness
 
 Goal: deliver a usable standalone Windows x64 installer for the existing VLC+
 player, with exact source/dependency provenance and fresh installed evidence.
@@ -40,7 +40,7 @@ installed-player readiness. This checklist is the sole plan/state owner.
   evidence from visible/physical-desktop checks.
 - [x] Verify install/uninstall behavior and rerun the applicable focused/CI
   checks. Obtain independent review and fix important findings.
-- [ ] Publish the tested installer, source/provenance and checksums; verify
+- [x] Publish the tested installer, source/provenance and checksums; verify
   downloadable bytes and record exact branch/commit/release evidence.
 
 No full Planner-master consumer is added in this milestone. The common-recipe
@@ -90,8 +90,17 @@ bundle. A separate local staged check with pylsl 1.18.2 / liblsl 1.17.x received
 248 samples at 30.0006 Hz and the playback markers; that receipt identifies its
 own stage commit/hash, not the CI installer.
 
-The candidate artifact is being downloaded and hash-checked before release.
-Next: publish the tested experimental installer/source/receipts, verify public
-download bytes, complete this milestone and merge the readiness documentation.
+[Release v0.3.1-experimental.1](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.1-experimental.1)
+is public. All 11 uploaded assets match their verified local sizes and server
+SHA-256 digests. A fresh anonymous public installer download verified all
+399,669,521 bytes against `f594ab045f93599fa0eef37ae34c048b940acfa77dc6083c859b21ebf36180d4`.
+The installer/source/receipts/checksums are also in ignored local
+`build/release-0.3.1/`. Readiness documentation is in
+[PR #4](https://github.com/GeorgeFejer91/vlc-plus/pull/4).
+
+This milestone is complete for the stated experimental offscreen scope. Next
+product work is the explicit common-recipe intake/capability contract in
+[Planner integration](PLANNER-INTEGRATION.md); physical-input and scientific
+qualification require their own evidence and are not implied by this release.
 The parent Research source is unchanged. Common Planner-master execution,
 physical input/display onset and research qualification remain open scopes.
