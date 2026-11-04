@@ -75,7 +75,10 @@ This is the sole plan/state owner. Execute inline in the following order:
 [Windows and Qt CI](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/41823570146)
 passed. A materialized committed source archive passes the same audit without
 an Affect Research checkout. The independent review's missing-packaging-file
-finding was fixed; the minor build-guide link was corrected. PR #1 is the
+finding was fixed; the minor build-guide link was corrected. PR CI then
+exposed a detached-HEAD null-output bug in the context checker; removing the
+unnecessary string method passed the local failure-to-pass regression.
+Inspect the latest PR checks for that fix. PR #1 is the
 source/default-branch integration record; inspect its merged revision and
 fresh Git state at the next entry. The original Affect Research checkout is
 unchanged. No installed-player qualification is claimed.

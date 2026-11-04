@@ -86,6 +86,9 @@ Inspect CI for the exact published commit; record failure or pending state.
 - VERIFIED: 33 imported file entries; runtime and atlas digests unchanged;
   standalone package references, Planner fixture and local links checked.
 - VERIFIED: native PowerShell syntax and `cargo fmt --check`.
+- VERIFIED: the context checker tolerates no branch-name output (detached
+  HEAD); local regression failed before removing the unnecessary `.Trim()`
+  and passed afterward. PR CI exercises the real detached checkout.
 - VERIFIED: all three Rust bridge tests, including live LSL samples and exact
   Start/Interrupt/Stop labels; release bridge build succeeded.
 - VERIFIED: official VLC source SHA-256 and patch application to a fresh tree.
