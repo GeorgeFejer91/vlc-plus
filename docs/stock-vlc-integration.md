@@ -1,54 +1,62 @@
 # Build and package the standalone Qt player
 
-The current player modifies official VLC 3.0.20's Qt interface. The source
-patch, native headers, Rust bridge and isolated panel check are in `vlc-qt/`.
-No Affect Research sibling checkout is required. The prior LibVLC shell,
-video-filter prototype and Flubbercorder sources are outside this repository.
+VLC+ modifies official VLC 3.0.20's Qt interface. No Affect Research sibling
+checkout is required. The build uses the pinned source and runtime hashes in
+[scripts/windows-build-lock.json](../scripts/windows-build-lock.json) and
+[the package script](../package-stock-vlc.ps1).
 
-## Build
+## Windows build
 
-1. Download the official source archive and verify SHA-256
-   `adc7285b4d2721cddf40eb5270cada2aaa10a334cb546fd55a06353447ba29b5`.
-   [The extraction manifest](source-extraction.json) records the download URL;
-   [the native runbook](../vlc-qt/README.md) gives the inherited MinGW/Qt
-   configure and build commands.
-2. Apply `vlc-qt/apply-patch.ps1 -SourceRoot <clean VLC 3.0.20 source>`.
-   It checks application before changing that source tree and copies both
-   tracked headers into the Qt module.
-3. Build the modified Qt plugin and actual launcher from that pinned tree.
-   Use `modules/.libs/libqt_plugin.dll` and `bin/.libs/vlc.exe`; the libtool
-   wrapper is not the installed launcher.
-4. Run `vlc-qt/build-bridge.ps1` with MSVC Cargo available. Its output is
-   `vlc-qt/bridge/target/release/flubber_bridge.dll`.
-5. Before packaging, commit the reviewed source, assets, notices and scripts.
-   From this repository root run:
+Use Windows x64, PowerShell 7, Python 3.12+, Git, MSVC Rust and MSYS2 MINGW64.
+The checked toolchain uses GCC 16.2.0 and Qt 5.15.19. In an MSYS2 MINGW64 shell,
+install the same packages listed in the
+[installer workflow](../.github/workflows/windows-installer.yml). Inno Setup 6
+is needed for installer output; the GitHub Windows runner provides it.
+
+From a clean, committed checkout:
 
 ```powershell
-./package-stock-vlc.ps1 -QtPluginPath <built libqt_plugin.dll> `
-  -LauncherExePath <built vlc.exe> -BridgeDllPath <built flubber_bridge.dll> `
-  -MinGwBin <matching MSYS2 mingw64 bin>
+./build-windows.ps1 -MsysRoot <MSYS2 root> -InnoCompiler <ISCC.exe>
 ```
 
-The script downloads/hash-checks the pinned official Windows VLC archive,
-checks the modified launcher/plugin and stages the runtime, Qt dependencies,
-atlases, notices and a complete committed `source/vlc-plus-source.zip` under
-`build/stock-vlc-package/stage`. It records
-this standalone repository's source commit and package-file hashes. It never
-searches the parent Affect Research repository for source or licenses.
+The entry script verifies the official source archive, restores and patches a
+generated source tree, configures an out-of-tree build, builds native
+prerequisites and generated Qt sources, then builds the actual Qt DLL and
+launcher, Rust bridge, and offscreen panel check. `-BuildOnly` stops after the
+native and focused checks.
 
-Compile `installer-stock-vlc.iss` using Inno Setup 6 to produce the optional
-VLC+ installer. The standalone installer has its own AppId and install folder.
-The extracted source is not an installer release; do not copy historical
-installed receipts onto a new package.
+Packaging always extracts the verified original Windows ZIP into an empty
+stage. It replaces only the selected native binaries, resolves Qt/MinGW DLLs,
+adds the feedback assets, isolated portable profile, original notices and
+exact committed project source. It collects matching signed MSYS2 source
+packages and locked Rust vendor sources in a separate companion ZIP.
 
-## Checks
+Outputs are under `build/stock-vlc-package/out`:
+
+- `VLC_Plus_Setup_0.3.1_x64.exe`
+- `VLC_Plus_Source_0.3.1.zip`
+- `build-receipt.json`
+
+The receipt records actual compiler/linker/Qt/Inno identities and artifact
+hashes; `build/toolchain-packages.txt` records package versions. VLC inputs are
+pinned. Rolling toolchain packages are recorded, so byte-identical binary
+reproducibility is not claimed.
+
+## Fresh installed verification
 
 ```powershell
-python scripts/check-source.py
-cargo test --locked --manifest-path vlc-qt/bridge/Cargo.toml
-./vlc-qt/test-panel.ps1 -QtBin <matching Qt bin> -AppearanceJson examples/planner-appearance.v1.json
+./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.1_x64.exe
 ```
 
-The panel helper sets Qt's offscreen platform. Runtime tests still require
-separate installed video/input/LSL/CSV checks. Obtain the user's opt-in before
-foregrounding their live desktop for an interactive check.
+Use a disposable clean Windows account. The script refuses an existing VLC+
+registration, installs into a fresh test directory, verifies all immutable
+hashes and source identity, and launches only its own player process offscreen.
+It checks actual synthetic-video decoding, independent LSL, pause/resume,
+replay, unique CSV files, cadence, package-local Qt loading, portable settings
+and bounded shutdown, then uninstalls its owned registration and checks that
+preferences remain. Evidence is retained under `build/validation`.
+
+This does not test physical input or display onset. Obtain explicit opt-in
+before foregrounding the user's live desktop. Current installed evidence and
+the terminal-marker/CSV-start limitations are in
+[verification](../for-ai/VERIFICATION.md).

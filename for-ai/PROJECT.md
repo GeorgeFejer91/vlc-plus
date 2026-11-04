@@ -20,7 +20,7 @@ This compatibility goal stays **open**. Full master execution, questionnaires,
 variant/participant selection and recovery are not implemented in VLC+.
 See [Planner integration](PLANNER-INTEGRATION.md).
 
-## Active milestone: Windows installer readiness
+## Completed milestone: experimental Windows installer readiness
 
 Goal: deliver a usable standalone Windows x64 installer for the existing VLC+
 player, with exact source/dependency provenance and fresh installed evidence.
@@ -31,16 +31,16 @@ installed-player readiness. This checklist is the sole plan/state owner.
   build. Record actual compiler/Qt/dependency versions and archive hashes.
 - [x] Build/test the Rust bridge and Windows Qt panel; retain strict settings
   rejection and all three feedback modes without changing research semantics.
-- [ ] Stage a complete independently runnable player with notices, matching
+- [x] Stage a complete independently runnable player with notices, matching
   source and hashes; compile the standalone installer without administrator
   requirements. Version the first standalone candidate explicitly.
-- [ ] Install the exact candidate in a fresh test directory and verify its
+- [x] Install the exact candidate in a fresh test directory and verify its
   manifest, actual decoded video, native feedback/controls, LSL/markers, CSV
   naming/timing and bounded shutdown. Distinguish synthetic input/offscreen
   evidence from visible/physical-desktop checks.
-- [ ] Verify install/uninstall behavior and rerun the applicable focused/CI
+- [x] Verify install/uninstall behavior and rerun the applicable focused/CI
   checks. Obtain independent review and fix important findings.
-- [ ] Publish the tested installer, source/provenance and checksums; verify
+- [x] Publish the tested installer, source/provenance and checksums; verify
   downloadable bytes and record exact branch/commit/release evidence.
 
 No full Planner-master consumer is added in this milestone. The common-recipe
@@ -77,28 +77,30 @@ with scientific timing, physical input or research qualification.
 
 ## Session handoff
 
-2026-11-04: branch `codex/windows-installer`. Full native build succeeded with
-GCC 16.2.0 / Qt 5.15.19; Rust tests 3/3, release DLL and Windows offscreen Qt
-panel passed. Actual MSVC linker 14.42.34433.0 was captured locally. Source CI
-passed `a7ce6f2`; installer CI failed on missing generated-source directories,
-now fixed. Source signatures use the selected MSYS2 GPG trust database with
-both valid-signature and full/ultimate-trust gates (pacman-key's --init omits a
-lock-never option its verify wrapper requires). ICU licenses live under share/icu.
+2026-11-04: implementation merged in PR #3 (`627cb3e`). Exact installer source
+is `d2588cad1c2e0ef385e7b0eaf9b2f874efe3d7da`. Windows installer CI
+[41924794994](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/41924794994)
+passed: install/uninstall exit 0, package/source integrity, actual H.264 decode,
+29.9991 Hz LSL, separate CSVs (169/31 rows), portable settings and package-local
+Qt loading, clean shutdown in 151 ms. All Windows/Qt source checks pass.
+Independent review findings were addressed; PreventUnloadHint fixes the
+observed unloaded Rust/LSL DLL shutdown crash while still joining/draining
+owned workers. The archived Rust sources resolve/check offline with the vendor
+bundle. A separate local staged check with pylsl 1.18.2 / liblsl 1.17.x received
+248 samples at 30.0006 Hz and the playback markers; that receipt identifies its
+own stage commit/hash, not the CI installer.
 
-Independent review packaging findings are being closed with fresh pinned-ZIP
-staging, full manifests, qoffscreen load-path evidence, guarded/owned installer
-testing and exact runtime notices + matching signed sources. Local source
-collection is running. Native offscreen playback decoded video, published LSL
-and wrote CSV, but caught a shutdown crash in flubber_bridge.dll_unloaded.
-PreventUnloadHint is the minimal runtime lifetime fix; rebuild and rerun pending.
-Manual Stop can produce End because VLC 3 uses END_S for teardown; document
-that existing marker limitation and never call it natural completion proof.
+[Release v0.3.1-experimental.1](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.1-experimental.1)
+is public. All 11 uploaded assets match their verified local sizes and server
+SHA-256 digests. A fresh anonymous public installer download verified all
+399,669,521 bytes against `f594ab045f93599fa0eef37ae34c048b940acfa77dc6083c859b21ebf36180d4`.
+The installer/source/receipts/checksums are also in ignored local
+`build/release-0.3.1/`. Readiness documentation is in
+[PR #4](https://github.com/GeorgeFejer91/vlc-plus/pull/4).
 
-Local Inno installation was rejected by automatic policy. Installer generation
-and install/uninstall tests use the owned GitHub Windows runner's preinstalled
-compiler. The unrelated compiler artifact was deleted and its job removed.
-No installed-player or installer pass/release is claimed yet. Next: verify the
-shutdown fix, checkpoint and run corrected CI, resolve actual failures, publish
-exact tested installer/source/evidence, then update this checklist.
+This milestone is complete for the stated experimental offscreen scope. Next
+product work is the explicit common-recipe intake/capability contract in
+[Planner integration](PLANNER-INTEGRATION.md); physical-input and scientific
+qualification require their own evidence and are not implied by this release.
 The parent Research source is unchanged. Common Planner-master execution,
 physical input/display onset and research qualification remain open scopes.

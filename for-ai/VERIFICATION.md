@@ -5,7 +5,8 @@ Evidence must match its claim. Use `VERIFIED`, `PARTIAL`, `BLOCKED`, or
 
 ## Standalone extraction acceptance
 
-- Native runtime sources and atlases match the pinned upstream blobs.
+- Unmodified imports/atlases match upstream; declared adaptations retain
+  upstream identity and the bridge lifetime fix has an exact standalone hash.
 - No source/build/license path requires an Affect Research sibling checkout.
 - The common-recipe target and current appearance-only support are explicit.
 - Required notices and a complete committed source archive accompany packaging.
@@ -54,7 +55,8 @@ installer. Inspect file hashes and `source/vlc-plus-source.zip` against the
 recorded commit. Test an exact fresh installed package with real original
 video, mouse/keyboard input, focus loss, pause/resume, natural End/Stop/Next,
 all feedback layers, CSV failures and an independent LSL/XDF receiver.
-A stuck native outlet startup and bounded shutdown remain open runtime checks.
+Normal shutdown is verified below; a deliberately stuck native outlet startup
+remains an untested failure case.
 
 Obtain explicit opt-in before foregrounding the user's live desktop. Do not
 close unrelated applications. Unit tests, offscreen rendering, successful
@@ -81,7 +83,7 @@ only under the user's extraction/publication authorization. Never force push.
 The final gate requires clean Git and local HEAD equal to remote `main`.
 Inspect CI for the exact published commit; record failure or pending state.
 
-## Evidence for the extraction milestone (2026-11-04)
+## Historical extraction evidence (before installer work)
 
 - VERIFIED: 33 imported file entries; runtime and atlas digests unchanged;
   standalone package references, Planner fixture and local links checked.
@@ -135,3 +137,46 @@ The installed probe accepts the documented VLC 3 terminal-state observation
 on manual Stop as well as natural completion. Its receipt explicitly records
 `terminalEndMayIncludeManualStop`; `End` alone is not an experiment-completion
 signal. This limitation blocks that scientific interpretation, not playback.
+
+## Verified Windows candidate (2026-11-04)
+
+Exact source: `d2588cad1c2e0ef385e7b0eaf9b2f874efe3d7da`, merged by
+[PR #3](https://github.com/GeorgeFejer91/vlc-plus/pull/3).
+[Installer CI 41924794994](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/41924794994)
+is VERIFIED, including fresh install and uninstall, both exit 0. Installer
+SHA-256: `f594ab045f93599fa0eef37ae34c048b940acfa77dc6083c859b21ebf36180d4`.
+
+The CI build used GCC 16.2.0, Qt 5.15.19, Rust/Cargo 1.99.1, MSVC linker
+14.51.36260.0 and self-reported Inno Setup 6.7.1. The compiler files expose
+0.0.0.0 version resources; the receipt preserves their exact SHA-256 identities
+and the CI compiler output supplies the engine version.
+
+The installed probe observed 204 decoded frames at its statistics checkpoint,
+264 independent affect samples at 29.9991 Hz, exact documented pause/resume,
+end/stop and replay chronology, two CSVs with 169/31 rows, first samples at
+0.405/0.403 s and last active times 6.005565/1.402968 s. Normal shutdown was
+151 ms. Every immutable installed file and exact project-source identity were
+verified before/after playback. The loaded Qt platform plugin came from the
+package; the portable profile persisted the requested feedback/input settings
+and survived uninstall. Windows bridge/source and Qt panel CI checks pass.
+
+The local source companion additionally passed an offline frozen Rust check
+using only its shipped vendor sources. Corruption, path escapes and duplicate
+manifests were rejected by the integrity verifier. A separate local staged
+pylsl/liblsl interoperability check passed; it is scoped to that stage's own
+bridge digest, not substituted for CI installer evidence.
+
+The [experimental release](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.1-experimental.1)
+carries exact build, installed-probe, integrity and installer receipts,
+matching source and checksums. No physical input, fullscreen/D3D, other codecs,
+XDF recording or scientific timing qualification is claimed. Full Planner
+master/sequence/questionnaire execution remains unimplemented. `End` cannot
+prove natural completion, and CSV does not promise acquisition at time zero.
+
+Publication is VERIFIED: all 11 release asset sizes and GitHub-computed SHA-256
+digests match the local verified files. The release tag points to the exact
+CI-tested source above. A fresh anonymous public download returned the complete
+399,669,521-byte installer with the same SHA-256. Matching source ZIP SHA-256:
+`9eadee1cbf1c2d59c07b767a23054d45b1c2b4e150d507118e783d0326004bb7`.
+The local installer is under `build/release-0.3.1/`; that generated directory is
+ignored and is not committed into Git.
