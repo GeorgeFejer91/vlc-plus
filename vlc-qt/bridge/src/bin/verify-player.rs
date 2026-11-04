@@ -106,6 +106,7 @@ fn main() -> Result<()> {
         .arg(format!("--rc-host=127.0.0.1:{port}"))
         .env("QT_QPA_PLATFORM", "offscreen")
         .env("QT_DEBUG_PLUGINS", "1")
+        .env("QT_FORCE_STDERR_LOGGING", "1")
         .current_dir(exe.parent().ok_or("player has no directory")?)
         .stdin(Stdio::null())
         .stdout(Stdio::from(log.try_clone()?))
