@@ -361,18 +361,32 @@ public:
     {
         if( !arrowMode_ && !ratingActive_ ) setAffect( valence, arousal );
     }
-    bool handleArrowKey( QKeyEvent *event )
+    bool handleInputKey( QKeyEvent *event )
     {
-        if( !arrowMode_ || ( rateAllowed_ && !rateAllowed_() ) ||
-            ( event->modifiers() & ~Qt::KeypadModifier ) ) return false;
-        const double step = stepPercent_ / 100.0;
+        if( event->type() != QEvent::KeyPress && event->type() != QEvent::ShortcutOverride ) return false;
+        const Qt::KeyboardModifiers modifiers = event->modifiers() & ~Qt::KeypadModifier;
+        if( event->key() == Qt::Key_F && modifiers == Qt::AltModifier )
+        {
+            if( event->type() == QEvent::KeyPress && !event->isAutoRepeat() ) setArrowMode( !arrowMode_ );
+            event->accept();
+            return true;
+        }
+        if( !arrowMode_ || modifiers ) return false;
+        int x = 0, y = 0;
         switch( event->key() )
         {
-            case Qt::Key_Left: setAffect( affectX_ - step, affectY_ ); break;
-            case Qt::Key_Right: setAffect( affectX_ + step, affectY_ ); break;
-            case Qt::Key_Up: setAffect( affectX_, affectY_ + step ); break;
-            case Qt::Key_Down: setAffect( affectX_, affectY_ - step ); break;
+            case Qt::Key_Left: x = -1; break;
+            case Qt::Key_Right: x = 1; break;
+            case Qt::Key_Up: y = 1; break;
+            case Qt::Key_Down: y = -1; break;
             default: return false;
+        }
+        // Claim arrows before Qt/VLC shortcuts. Keep the existing supported-input
+        // gate (including pause); ShortcutOverride never changes affect.
+        if( event->type() == QEvent::KeyPress && ( !rateAllowed_ || rateAllowed_() ) )
+        {
+            const double step = stepPercent_ / 100.0;
+            setAffect( affectX_ + x * step, affectY_ + y * step );
         }
         event->accept();
         return true;
@@ -440,7 +454,7 @@ public:
             line->addWidget( new QLabel( tr( "Y" ), row ) ); line->addWidget( y[i] );
             display->addRow( name, row );
         }
-        display->addRow( new QLabel( tr( "Ctrl+Shift+1/2/3 selects the main feedback. Ctrl+Shift+A/M selects arrow or mouse input." ), &dialog ) );
+        display->addRow( new QLabel( tr( "Alt+F: toggle affect arrows (Left/Right valence, Up/Down arousal).\nCtrl+Shift+1/2/3: main feedback." ), &dialog ) );
         QFormLayout *flubberForm = page( tr( "Flubber" ) );
         QJsonObject visual = pendingPreset.value( "visual" ).toObject();
         QJsonObject shape = visual.value( "flubber" ).toObject();
@@ -725,6 +739,7 @@ protected:
             if( target && target->window() == window() )
             {
                 QKeyEvent *key = static_cast<QKeyEvent *>( event );
+                if( handleInputKey( key ) ) return true;
                 const Qt::KeyboardModifiers modifiers = key->modifiers() & ~Qt::KeypadModifier;
                 int digit = int( key->nativeVirtualKey() ) - 0x31;
                 if( digit < 0 || digit > 2 ) digit = key->key() - Qt::Key_1;
@@ -744,14 +759,6 @@ protected:
                     key->accept(); return true;
                 }
             }
-        }
-        if( arrowMode_ && event->type() == QEvent::KeyPress &&
-            !QApplication::activeModalWidget() && !QApplication::activePopupWidget() &&
-            ratingWindowIsForeground() && ( !rateAllowed_ || rateAllowed_() ) )
-        {
-            QWidget *target = qobject_cast<QWidget *>( watched );
-            if( target && target->window() == window() &&
-                handleArrowKey( static_cast<QKeyEvent *>( event ) ) ) return true;
         }
         if( ratingActive_ && ( event->type() == QEvent::ApplicationDeactivate ||
             ( watched == window() && event->type() == QEvent::WindowDeactivate ) ) )
@@ -1017,8 +1024,8 @@ private:
     void updateInputTooltip()
     {
         setToolTip( arrowMode_
-            ? QObject::tr( "Arrow-key control is active. Use Ctrl+Shift+M for mouse control." )
-            : QObject::tr( "Mouse control is active. Click to capture the pointer; Escape releases it. Use Ctrl+Shift+A for arrow keys." ) );
+            ? QObject::tr( "Affect arrows are ON: Left/Right changes valence; Up/Down changes arousal. Alt+F restores VLC arrow controls." )
+            : QObject::tr( "VLC arrow controls are ON. Alt+F switches arrows to valence/arousal. Click for mouse rating; Escape releases it." ) );
     }
     bool ratingWindowIsForeground() const
     {

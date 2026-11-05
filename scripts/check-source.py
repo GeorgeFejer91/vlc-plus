@@ -21,7 +21,8 @@ require(manifest["schema"] == "vlc-plus-source-extraction/v1", "Unknown extracti
 adapted = {
     "package-stock-vlc.ps1", "installer-stock-vlc.iss", "vlc-qt/README.md",
     "docs/stock-vlc-integration.md", "docs/third-party.md", "assets/face/NOTICE.md",
-    "vlc-qt/flubber_bridge.hpp",
+    "vlc-qt/flubber_bridge.hpp", "vlc-qt/flubber_panel.hpp", "vlc-qt/panel-check.cpp",
+    "vlc-qt/bridge/src/lib.rs",
 }
 paths = set()
 for entry in manifest["files"]:
@@ -54,6 +55,13 @@ if video_fixture.is_file():
     require(hashlib.sha256(video_fixture.read_bytes()).hexdigest() ==
             "82fc7904c7967c396122d13eeae89486084db97e168faf12ad0ef34a625720ee",
             "Synthetic video fixture differs from the declared generated input")
+sample = ROOT / "examples/media/dictator-3-study.mp4"
+require(sample.is_file(), "Bundled Great Dictator clip is missing")
+if sample.is_file():
+    require(hashlib.sha256(sample.read_bytes()).hexdigest() ==
+            "b5327e7465ec92a4c93f3236a1ebab4556cdf508e24eafe6c593eac1e13afd49",
+            "Bundled Great Dictator clip differs from its permission/provenance notice")
+require((ROOT / "examples/media/NOTICE.md").is_file(), "Bundled media notice is missing")
 for name in paths | {fixture_info["path"]}:
     if name.endswith(".json"):
         try:

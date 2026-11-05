@@ -8,6 +8,10 @@
 #include <QTimer>
 #include <QSpinBox>
 #include <QVBoxLayout>
+#ifndef Q_OS_WIN
+#include <QShortcut>
+#include <QtTest/QTest>
+#endif
 #include <cstdio>
 
 int main( int argc, char **argv )
@@ -101,20 +105,76 @@ int main( int argc, char **argv )
         if( !qFuzzyCompare( sessionPanel.valence() + 1.f, 1.f ) ) return false;
         sessionPanel.setRateAllowedHandler( []() { return true; } );
         sessionPanel.setArrowMode( true );
-        if( !sessionPanel.handleArrowKey( &right ) ||
+        if( !sessionPanel.handleInputKey( &right ) ||
             !qFuzzyCompare( sessionPanel.valence() + 1.f, 1.2f ) ) return false;
         sessionPanel.setVideoAffect( -.8, -.8 );
         if( !qFuzzyCompare( sessionPanel.valence() + 1.f, 1.2f ) ) return false;
         QKeyEvent modified( QEvent::KeyPress, Qt::Key_Right, Qt::ControlModifier );
-        if( sessionPanel.handleArrowKey( &modified ) ) return false;
+        if( sessionPanel.handleInputKey( &modified ) ) return false;
         sessionPanel.setArrowMode( false );
-        if( sessionPanel.handleArrowKey( &right ) ) return false;
+        if( sessionPanel.handleInputKey( &right ) ) return false;
         sessionPanel.setVideoAffect( -.5, .5 );
         return qFuzzyCompare( sessionPanel.valence() + 1.f, .5f ) &&
                qFuzzyCompare( sessionPanel.arousal() + 1.f, 1.5f ) &&
                settings.value( "Flubber/inputMode" ).toString() == QLatin1String( "mouse" );
     };
     if( !ratioCheck( "100", 400 ) || !ratioCheck( "10", 73 ) ) return 14;
+    QSettings keySettings( temp.filePath( "keys.ini" ), QSettings::IniFormat );
+    FlubberPanel keysPanel( &keySettings );
+    bool inputAllowed = true;
+    keysPanel.setRateAllowedHandler( [&]() { return inputAllowed; } );
+    QKeyEvent toggle( QEvent::KeyPress, Qt::Key_F, Qt::AltModifier );
+    if( !keysPanel.handleInputKey( &toggle ) || !keysPanel.arrowMode() ) return 23;
+    QKeyEvent claim( QEvent::ShortcutOverride, Qt::Key_Up, Qt::NoModifier );
+    if( !keysPanel.handleInputKey( &claim ) || !claim.isAccepted() || keysPanel.arousal() != 0 ) return 24;
+    QKeyEvent up( QEvent::KeyPress, Qt::Key_Up, Qt::NoModifier );
+    if( !keysPanel.handleInputKey( &up ) || keysPanel.arousal() <= 0 ) return 25;
+    const float arousal = keysPanel.arousal();
+    inputAllowed = false;
+    if( !keysPanel.handleInputKey( &up ) || keysPanel.arousal() != arousal ) return 26;
+    QKeyEvent repeat( QEvent::KeyPress, Qt::Key_F, Qt::AltModifier, QString(), true );
+    if( !keysPanel.handleInputKey( &repeat ) || !keysPanel.arrowMode() ) return 27;
+    if( !keysPanel.handleInputKey( &toggle ) || keysPanel.arrowMode() || keysPanel.handleInputKey( &up ) ) return 28;
+#ifndef Q_OS_WIN
+    // Exercise Qt's real shortcut map from a video-like sibling widget. The
+    // Windows offscreen platform has no native foreground HWND; its dispatch
+    // logic is covered above, while this integration runs in Linux Qt CI.
+    QWidget shortcutHost;
+    QVBoxLayout shortcutLayout( &shortcutHost );
+    QWidget videoFocus;
+    videoFocus.setFocusPolicy( Qt::StrongFocus );
+    FlubberPanel shortcutPanel( &keySettings, &shortcutHost );
+    shortcutPanel.setRateAllowedHandler( [&]() { return inputAllowed; } );
+    shortcutLayout.addWidget( &videoFocus );
+    shortcutLayout.addWidget( &shortcutPanel );
+    int vlcCommands = 0;
+    for( int key : { Qt::Key_Left, Qt::Key_Right, Qt::Key_Up, Qt::Key_Down } )
+    {
+        QShortcut *shortcut = new QShortcut( QKeySequence( key ), &shortcutHost );
+        QObject::connect( shortcut, &QShortcut::activated, [&]() { ++vlcCommands; } );
+    }
+    shortcutHost.show();
+    QApplication::setActiveWindow( &shortcutHost );
+    videoFocus.setFocus(); app.processEvents();
+    QTest::keyClick( &videoFocus, Qt::Key_Up );
+    if( vlcCommands != 1 ) return 29;
+    QTest::keyClick( &videoFocus, Qt::Key_F, Qt::AltModifier );
+    if( !shortcutPanel.arrowMode() ) return 30;
+    inputAllowed = true;
+    QTest::keyClick( &videoFocus, Qt::Key_Up );
+    QTest::keyClick( &videoFocus, Qt::Key_Right );
+    if( vlcCommands != 1 || shortcutPanel.arousal() <= 0 || shortcutPanel.valence() <= 0 ) return 31;
+    inputAllowed = false;
+    const float held = shortcutPanel.arousal();
+    QTest::keyClick( &videoFocus, Qt::Key_Up );
+    if( vlcCommands != 1 || shortcutPanel.arousal() != held ) return 32;
+    inputAllowed = true;
+    QTest::keyClick( &videoFocus, Qt::Key_Up );
+    if( vlcCommands != 1 || shortcutPanel.arousal() <= held ) return 34;
+    QTest::keyClick( &videoFocus, Qt::Key_F, Qt::AltModifier );
+    QTest::keyClick( &videoFocus, Qt::Key_Up );
+    if( shortcutPanel.arrowMode() || vlcCommands != 2 ) return 33;
+#endif
     if( settings.value( "Flubber/panelHeight" ).toInt() != 200 ) return 15;
     panel.setLayout( FlubberPanel::GridKind, { true, 45, 18, 50 } );
     panel.setLayout( FlubberPanel::FaceKind, { true, 45, 82, 50 } );

@@ -28,6 +28,17 @@ control valence/arousal. **Flubber → Settings…** edits appearance, feedback
 layers, input and layout; hotkeys and local RC commands are described in the
 [native player guide](vlc-qt/README.md).
 
+In 0.3.2, press **Alt+F** to toggle affect arrows: Left/Right changes valence and Up/Down
+changes arousal. Press Alt+F again to restore normal VLC arrow controls. Affect can still be adjusted while paused, as in the existing player;
+CSV recording remains playback-gated. The existing step size and saved input
+mode are retained. The 0.3.2 installer release is being validated; the 0.3.1
+installer linked above does not include this new hotkey yet.
+
+The included [Great Dictator study clip](examples/media/dictator-3-study.mp4)
+is in `examples/media/` in the repository and installed application. Its
+[media notice](examples/media/NOTICE.md) records provenance, exact identity and
+redistribution permission separately from the software license.
+
 The Rust bridge publishes `VLC_Flubber_Affect` and `VLC_Flubber_Markers` LSL
 outlets on a nominal independent 30 Hz schedule. Each played video receives a
 unique `time_s,valence,arousal` CSV in its writable source folder. CSV time is

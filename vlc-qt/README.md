@@ -65,7 +65,14 @@ the affect coordinates. Click and release on the panel during playback to
 activate relative mouse rating. The pointer is confined to the player client
 area and hidden; horizontal and vertical movement map to the two normalized
 axes with the previous player's 60% height travel and 150 px per-event cap.
-Arrows move by the session step only during active rating. Escape releases the
+Alt+F toggles affect arrow control. Left/Right changes valence; Up/Down
+changes arousal by the existing session step when the current input allows
+affect adjustment (including pause). The player claims
+plain-arrow ShortcutOverride events before VLC volume/seek shortcuts, even
+while paused. With no supported input, keys are reserved without changing
+affect; the existing playback gate still owns CSV recording. Alt+F again restores VLC
+arrows and mouse affect input. Dialogs/popups and other windows retain their
+normal controls, and holding Alt+F does not toggle repeatedly. Escape releases the
 pointer. Focus/capture loss releases it, emits an `Interrupt` marker and
 requests pause. Stop, End, and input change also release it. VLC's stock
 keyboard commands remain available outside active rating. The video child

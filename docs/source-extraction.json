@@ -158,7 +158,9 @@
       "path": "vlc-qt/bridge/src/lib.rs",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/bridge/src/lib.rs",
       "upstreamSha256": "d1f34eb4902ea8245cffdfce9113fc9beaf7d2cca32273fbfc3e769acebd04cd",
-      "adapted": false
+      "adapted": true,
+      "adaptation": "Test-only LSL discovery now matches the test process source IDs so an already-running VLC+ cannot capture the test receiver; runtime unchanged.",
+      "standaloneSha256": "d8d79186d2fd2593dba3c9e4bb38cffc7aca7f83929abb06cb62b15600dd8e20"
     },
     {
       "path": "vlc-qt/build-bridge.ps1",
@@ -178,7 +180,9 @@
       "path": "vlc-qt/flubber_panel.hpp",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
-      "adapted": false
+      "adapted": true,
+      "adaptation": "Alt+F toggles affect arrows and claims ShortcutOverride before VLC; retain the original supported-input gate and test shortcut routing.",
+      "standaloneSha256": "a8cf9280914e475e338a2ddb2aeeae148d8c144704abe2ae902423c710e2fea0"
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -190,7 +194,9 @@
       "path": "vlc-qt/panel-check.cpp",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
-      "adapted": false
+      "adapted": true,
+      "adaptation": "Alt+F toggles affect arrows and claims ShortcutOverride before VLC; retain the original supported-input gate and test shortcut routing.",
+      "standaloneSha256": "5d34c22552f82e6c974c35cfd2ffc6c59b6239b8567873472bffd5e4a15c5ae2"
     },
     {
       "path": "vlc-qt/test-panel.ps1",

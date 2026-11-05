@@ -196,6 +196,11 @@ foreach ($name in $faceFiles) {
     if (-not (Test-Path -LiteralPath $from -PathType Leaf)) { throw "Face asset missing: $name" }
     Copy-Item -LiteralPath $from -Destination (Join-Path $faceDestination $name)
 }
+$sampleDestination = Join-Path $stage 'examples\media'
+New-Item -ItemType Directory -Force -Path $sampleDestination | Out-Null
+foreach ($sample in @('dictator-3-study.mp4', 'NOTICE.md')) {
+    Copy-Item -LiteralPath (Join-Path $project ('examples\media\' + $sample)) -Destination (Join-Path $sampleDestination $sample)
+}
 $sourceCommit = (& git -C $repository rev-parse HEAD).Trim()
 $sourceArchive = Join-Path $sourceDestination 'vlc-plus-source.zip'
 & git -C $repository archive --format=zip --output $sourceArchive HEAD
@@ -230,6 +235,8 @@ foreach ($name in @('vlc.exe', 'libvlc.dll', 'libvlccore.dll',
                    'qt5\plugins\iconengines\qsvgicon.dll',
                    'qt5\plugins\imageformats\qsvg.dll',
                    'source\vlc-plus-source.zip',
+                   'examples\media\dictator-3-study.mp4',
+                   'examples\media\NOTICE.md',
                    'licenses\VLC-PLUS-GPL-2.0.txt',
                    'licenses\AFFECT-RESEARCH-BSD-3-Clause.txt') + @($runtimeDlls | Sort-Object) +
                    @($faceFiles | ForEach-Object { Join-Path 'assets\face' $_ })) {

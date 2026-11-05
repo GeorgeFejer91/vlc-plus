@@ -39,5 +39,5 @@ jobs:
         run: |
           mkdir -p build/panel-check/assets/face
           cp assets/face/photo-reference-v3.png assets/face/photo-synthetic-01.png build/panel-check/assets/face/
-          g++ -std=c++11 -fPIC -O1 -Ivlc-qt vlc-qt/panel-check.cpp $(pkg-config --cflags --libs Qt5Widgets Qt5Gui Qt5Core) -o build/panel-check/panel-check
+          g++ -std=c++11 -fPIC -O1 -Ivlc-qt vlc-qt/panel-check.cpp $(pkg-config --cflags --libs Qt5Widgets Qt5Gui Qt5Core Qt5Test) -o build/panel-check/panel-check
           build/panel-check/panel-check examples/planner-appearance.v1.json build/panel-check/panel-check.png

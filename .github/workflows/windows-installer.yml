@@ -2,6 +2,11 @@ name: Windows installer
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Publish the tested 0.3.2 experimental installer from main
+        type: boolean
+        default: false
   push:
     branches: ['codex/windows-installer']
     tags: ['v*']
@@ -32,7 +37,7 @@ jobs:
         run: ./build-windows.ps1 -MsysRoot '${{ steps.msys.outputs.msys2-location }}' -Jobs 2
       - name: Fresh installed-player check
         shell: pwsh
-        run: ./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.1_x64.exe
+        run: ./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.2_x64.exe
       - name: Preserve native build diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -60,3 +65,26 @@ jobs:
             build/stock-vlc-package/stage/manifest.json
             build/stock-vlc-package/stage/source/vlc-plus-source.zip
             build/toolchain-packages.txt
+  publish:
+    needs: installer
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify exact tested release inputs
+        run: |
+          gh run download "$GITHUB_RUN_ID" --name vlc-plus-windows-x64 --dir candidate
+          gh run download "$GITHUB_RUN_ID" --name native-build-diagnostics --dir diagnostics
+          python scripts/prepare-release.py --candidate candidate --diagnostics diagnostics --source-commit "$GITHUB_SHA" --output release
+      - name: Publish experimental installer and sources
+        run: |
+          existing_tag=$(git ls-remote --tags origin refs/tags/v0.3.2-experimental.1)
+          test -z "$existing_tag"
+          gh release create v0.3.2-experimental.1 release/* --target "$GITHUB_SHA" --prerelease --title "VLC+ 0.3.2 - Alt+F affect arrows" --notes-file docs/release-notes.md
