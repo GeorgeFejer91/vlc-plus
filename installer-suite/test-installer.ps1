@@ -48,7 +48,9 @@ Start-Sleep -Seconds 2
 if (@(App 'vlc' "$vlc\vlc.exe").Count -ne 1 -or @(App 'remote-lsl-recorder' $recorderExe).Count -ne 1 -or @(Get-Process -Id $playerId,$recorderId -ErrorAction SilentlyContinue).Count -ne 2) { throw 'Repeated shortcut duplicated/replaced an app.' }
 # Refuse the joint update while the recorder is open, without touching either app.
 $before = (Get-FileHash -LiteralPath $recorderExe).Hash
-Run-Setup (Resolve-Path -LiteralPath $InstallerPath).Path @('/VERYSILENT','/SUPPRESSMSGBOXES','/CURRENTUSER','/NORESTART') 8
+# Inno 7 means PrepareToInstall refused; 8 additionally requires a restart.
+# https://jrsoftware.org/ishelp/topic_setupexitcodes.htm
+Run-Setup (Resolve-Path -LiteralPath $InstallerPath).Path @('/VERYSILENT','/SUPPRESSMSGBOXES','/CURRENTUSER','/NORESTART') 7
 if (-not (Get-Process -Id $recorderId -ErrorAction SilentlyContinue) -or (Get-FileHash -LiteralPath $recorderExe).Hash -ne $before) { throw 'Blocked installation disturbed Recorder.' }
 # Removing only the suite must preserve each independently owned program.
 Run-Setup "$suite\unins000.exe" @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
