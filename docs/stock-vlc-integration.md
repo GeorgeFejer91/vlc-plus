@@ -33,8 +33,8 @@ packages and locked Rust vendor sources in a separate companion ZIP.
 
 Outputs are under `build/stock-vlc-package/out`:
 
-- `VLC_Plus_Setup_0.3.1_x64.exe`
-- `VLC_Plus_Source_0.3.1.zip`
+- `VLC_Plus_Setup_0.3.2_x64.exe`
+- `VLC_Plus_Source_0.3.2.zip`
 - `build-receipt.json`
 
 The receipt records actual compiler/linker/Qt/Inno identities and artifact
@@ -45,7 +45,7 @@ reproducibility is not claimed.
 ## Fresh installed verification
 
 ```powershell
-./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.1_x64.exe
+./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.2_x64.exe
 ```
 
 Use a disposable clean Windows account. The script refuses an existing VLC+

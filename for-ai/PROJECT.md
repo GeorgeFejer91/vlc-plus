@@ -20,6 +20,19 @@ This compatibility goal stays **open**. Full master execution, questionnaires,
 variant/participant selection and recovery are not implemented in VLC+.
 See [Planner integration](PLANNER-INTEGRATION.md).
 
+## Active milestone: Alt+F affect arrows and bundled study clip
+
+- [x] Trace existing keyboard routing; reproduce the absent Alt+F toggle with
+  a failing Windows panel check (exit 23), then pass the focused regression.
+- [x] Reuse the saved arrows/mouse mode and step size. Claim plain arrows at
+  ShortcutOverride before VLC commands, including while paused; never change
+  affect on shortcut probes; preserve the existing supported-input gate.
+- [x] Include the exact Great Dictator study clip with identity/provenance and
+  the user's 2026-11-05 explicit public-redistribution permission confirmation.
+- [ ] Pass the actual Qt shortcut-map integration and native/installer checks.
+- [ ] Review, merge and ship 0.3.2 with the sample in source and installer;
+  update the installed application and verify the requested hotkey scope.
+
 ## Completed milestone: experimental Windows installer readiness
 
 Goal: deliver a usable standalone Windows x64 installer for the existing VLC+
@@ -70,6 +83,8 @@ with scientific timing, physical input or research qualification.
   One versioned field has one meaning across readers.
 - Preserve attributions, source locks and partial recording evidence. Never
   publish participant data, secrets, films or generated packages accidentally.
+  The permission-scoped sample named in `examples/media/NOTICE.md` is explicitly
+  authorized for this release; this is not a general media-publication grant.
 - Historical receipts qualify only their named upstream artifact and scope.
   This extraction does not reactivate or qualify features in Affect Research.
 - The GitHub repository is public by explicit user authorization on 2026-11-04.
@@ -77,30 +92,23 @@ with scientific timing, physical input or research qualification.
 
 ## Session handoff
 
-2026-11-04: implementation merged in PR #3 (`627cb3e`). Exact installer source
-is `d2588cad1c2e0ef385e7b0eaf9b2f874efe3d7da`. Windows installer CI
-[41924794994](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/41924794994)
-passed: install/uninstall exit 0, package/source integrity, actual H.264 decode,
-29.9991 Hz LSL, separate CSVs (169/31 rows), portable settings and package-local
-Qt loading, clean shutdown in 151 ms. All Windows/Qt source checks pass.
-Independent review findings were addressed; PreventUnloadHint fixes the
-observed unloaded Rust/LSL DLL shutdown crash while still joining/draining
-owned workers. The archived Rust sources resolve/check offline with the vendor
-bundle. A separate local staged check with pylsl 1.18.2 / liblsl 1.17.x received
-248 samples at 30.0006 Hz and the playback markers; that receipt identifies its
-own stage commit/hash, not the CI installer.
+2026-11-05: working on `codex/alt-f-rating` from clean main `09744b1`.
+The user requested Alt+F to toggle normal VLC arrow commands vs valence/arousal
+and explicitly confirmed public redistribution permission for the exact Great
+Dictator study clip. Its identity/notice is in `examples/media/NOTICE.md`.
+The clip SHA-256 is `b5327e7465ec92a4c93f3236a1ebab4556cdf508e24eafe6c593eac1e13afd49`.
 
-[Release v0.3.1-experimental.1](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.1-experimental.1)
-is public. All 11 uploaded assets match their verified local sizes and server
-SHA-256 digests. A fresh anonymous public installer download verified all
-399,669,521 bytes against `f594ab045f93599fa0eef37ae34c048b940acfa77dc6083c859b21ebf36180d4`.
-The installer/source/receipts/checksums are also in ignored local
-`build/release-0.3.1/`. Readiness documentation is in
-[PR #4](https://github.com/GeorgeFejer91/vlc-plus/pull/4).
+The focused Windows panel check failed at absent Alt+F (exit 23), then passed
+with the new input dispatcher. It preserves existing step/mappings and guards,
+claims ShortcutOverride before VLC, preserves the supported-input callback
+(including paused adjustments), and ignores repeated Alt+F presses. Real Qt shortcut-map integration
+runs in Linux CI; Windows offscreen has no foreground HWND. The modified native Qt DLL/launcher built locally. An existing Rust test
+initially selected the already-running player by stream name; source-ID
+isolation corrected the test, and all 3 tests now pass while that player stays
+open. The Windows panel check passes; Linux shortcut-map CI is next. Next: verify CI/review, merge, build/test
+and publish the 0.3.2 installer with media, then update the installed copy.
 
-This milestone is complete for the stated experimental offscreen scope. Next
-product work is the explicit common-recipe intake/capability contract in
-[Planner integration](PLANNER-INTEGRATION.md); physical-input and scientific
-qualification require their own evidence and are not implied by this release.
-The parent Research source is unchanged. Common Planner-master execution,
-physical input/display onset and research qualification remain open scopes.
+Prior 0.3.1 installer milestone remains verified/public at its exact release
+and source `d2588cad1c2e0ef385e7b0eaf9b2f874efe3d7da`; its receipts do not qualify
+this new candidate. Full Planner-master execution and scientific qualification
+remain open. The parent Research source is unchanged.

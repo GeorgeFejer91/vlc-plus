@@ -26,3 +26,5 @@ build/
 !test/fixtures/validation.mp4
 **/__pycache__/
 *.pyc
+
+!examples/media/dictator-3-study.mp4

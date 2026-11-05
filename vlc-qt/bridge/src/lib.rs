@@ -640,16 +640,19 @@ mod tests {
         }
         assert_eq!(unsafe { flubber_bridge_status(bridge) }, 1);
         let timeout = Duration::from_secs(3);
-        let affect_info = labstream::resolve_first(&Query::name("VLC_Flubber_Affect"), timeout)
-            .unwrap()
-            .unwrap()
-            .fetch(timeout)
-            .unwrap();
-        let marker_info = labstream::resolve_first(&Query::name("VLC_Flubber_Markers"), timeout)
-            .unwrap()
-            .unwrap()
-            .fetch(timeout)
-            .unwrap();
+        let source = format!("vlc-flubber-{}", std::process::id());
+        let affect_info =
+            labstream::resolve_first(&Query::source_id(&format!("{source}-affect")), timeout)
+                .unwrap()
+                .unwrap()
+                .fetch(timeout)
+                .unwrap();
+        let marker_info =
+            labstream::resolve_first(&Query::source_id(&format!("{source}-markers")), timeout)
+                .unwrap()
+                .unwrap()
+                .fetch(timeout)
+                .unwrap();
         let mut affect = Inlet::builder(&affect_info)
             .buffer(Buffer::Seconds(2.))
             .recover(false)
