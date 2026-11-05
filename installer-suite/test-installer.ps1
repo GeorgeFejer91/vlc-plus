@@ -60,8 +60,16 @@ if (Test-Path -LiteralPath $shortcut) { throw 'Suite shortcut survived uninstall
 # These are the exact processes created above, in a fresh account; no recording was started.
 foreach ($idToClose in @($playerId,$recorderId)) {
     $p = Get-Process -Id $idToClose -ErrorAction Stop
-    [void]$p.CloseMainWindow()
-    if (-not $p.WaitForExit(30000)) { throw 'Test app did not close gracefully; leaving its files intact.' }
+    Write-Output "Closing owned $($p.ProcessName) window: $($p.MainWindowTitle)"
+    if ($idToClose -eq $playerId) {
+        # CloseMainWindow refuses a disabled parent with a first-run modal.
+        # Native LOCAL taskkill without /F requests closure of the owned GUI;
+        # never use /F, /T, /S, an image-name match, or a force fallback.
+        $close = Start-Process -FilePath "$env:WINDIR\System32\taskkill.exe" -ArgumentList @('/PID',"$playerId") -WindowStyle Hidden -PassThru
+        if (-not $close.WaitForExit(10000)) { throw 'The owned-player close request timed out.' }
+        if ($close.ExitCode -ne 0 -and -not $p.HasExited) { throw 'The owned player refused a nonforced close.' }
+    } else { [void]$p.CloseMainWindow() }
+    if (-not $p.WaitForExit(30000)) { throw "Test-owned $($p.ProcessName) did not close gracefully; leaving its files intact." }
 }
 Run-Setup "$recorder\uninstall.exe" @('/S')
 Run-Setup "$vlc\unins000.exe" @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
