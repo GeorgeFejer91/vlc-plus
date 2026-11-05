@@ -22,7 +22,7 @@ This compatibility goal stays **open**. Full master execution, questionnaires,
 variant/participant selection and recovery are not implemented in VLC+.
 See [Planner integration](PLANNER-INTEGRATION.md).
 
-## Active milestone: Alt+F affect arrows and bundled study clip
+## Completed milestone: Alt+F affect arrows and bundled study clip
 
 - [x] Trace existing keyboard routing; reproduce the absent Alt+F toggle with
   a failing Windows panel check (exit 23), then pass the focused regression.
@@ -45,7 +45,7 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   current-user launcher with no recording/remote commands.
 - [x] Pass launcher checks for quoted/local paths, missing-component rejection,
   opening both apps and reusing existing instances. Compile the Inno wrapper.
-- [ ] Ship the independently reviewed Recorder installer with safe refusal
+- [x] Ship the independently reviewed Recorder installer with safe refusal
   while it is open, exact source/provenance and numeric/marker XDF evidence.
 - [ ] Verify fresh joint installation, actual desktop shortcut/both windows,
   duplicate prevention, recording protection and independent uninstall in CI.
@@ -116,37 +116,113 @@ with scientific timing, physical input or research qualification.
 
 ## Session handoff
 
-2026-11-05: Alt+F and the authorized sample merged in PR #5, exact release
-source `3b23c248dfd744ebeb30c40e79a7fc5a1601fcd8`. Joint packaging and evidence
-documentation are on `codex/recorder-suite`.
+The user requested **push code first, then push this handoff** on 2026-11-05.
+Stop installation/release work at this checkpoint and leave the incomplete
+milestone open for the future agent. No participant recording or phone control
+was started. The structured installation goal is paused for this handoff.
 
-The input dispatcher claims ShortcutOverride before VLC, toggles only on
-non-repeat Alt+F KeyPress, and preserves the existing supported-input gate
-(including paused adjustments) and CSV playback gate. Windows panel and real
-Linux QShortcut-map checks pass; native Qt/launcher build passes. Test-only LSL
-discovery now selects the test process so a running player cannot capture it.
-Independent review has no remaining important findings.
+### Git and publication checkpoint
 
-[Installer/publish run 42051579756](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42051579756)
-passed: 701 immutable files verified, install/uninstall exit0, H.264 decode,
-30.0015 Hz LSL, unique CSVs and shutdown126ms.
-[0.3.2 experimental](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.2-experimental.1)
-is public with verified asset digests. The user explicitly confirmed public
-redistribution permission for the exact Great Dictator clip; its notice and
-SHA-256 are in `examples/media/NOTICE.md`, and it is in source and installer.
+- All product code is pushed and merged through PR #8. Candidate main is
+  `1c63cf20997df9a755adc4a61195de351b1b66bb`. Windows/Qt source CI passes
+  for reviewed PR #8 head `70d9eb0`; matching-tree main/branch runs were
+  still in progress at handoff and must be rechecked.
+- The committed-code checkpoint was separately pushed first to
+  `codex/suite-installed-evidence`, matching that exact main commit. This
+  handoff is a following documentation commit on the same branch. Verify Git
+  before resuming; do not assume this handoff has been merged to main.
+- VLC+ [0.3.2 experimental](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.2-experimental.1)
+  is public, built from `3b23c248dfd744ebeb30c40e79a7fc5a1601fcd8`.
+  Installer SHA-256:
+  `69800b0a4e4891830100c922d50b1706deffac4b1962a0cad12eb4170e81306c`.
+  [Exact installer run](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42051579756)
+  passes decode, 701 immutable files, nominal 30 Hz LSL, CSV and uninstall.
+- Recorder [0.1.7 experimental](https://github.com/GeorgeFejer91/Remote-LSL-Recorder/releases/tag/v0.1.7-experimental.1)
+  is public, built/tagged at `312a59f69614d3fb0a7849c0e559c19740f0df63`.
+  Installer SHA-256:
+  `8435bae7b06257e21ee1aeb5456615d7fda1a63bf47f2ddebec85108b24458ae`;
+  installed app SHA-256:
+  `e1c22554f5d23a28378cb491151d088e4fc84f9cb6b4ad5f6e10b68427a9c48c`.
+  [Exact installer smoke](https://github.com/GeorgeFejer91/Remote-LSL-Recorder/actions/runs/42086293188)
+  passes running-app install/uninstall refusal without termination, safe
+  same-version reinstall, clean exit and removal. Synthetic numeric/marker
+  XDF was independently parsed. Its separate repo main is synchronized at
+  `461d62265e3cffcb1bea024c6ade901e8f9132c5`; physical devices/phone stay open.
+- **No joint 0.3.3 release exists.** README retains the joint option first,
+  labels it in validation, and links the two available standalone downloads.
+  Do not present the joint package as ready or install a provisional candidate.
 
-The complete anonymous 0.3.2 installer download matches its release hash. This
-PC has 0.3.2 installed; 701 immutable files/source identity pass. Foreground
-hotkey/LSL/volume/paused-position checks pass using Windows key injection.
-The joint launcher/tests and wrapper
-compile pass locally; independent suite review has no remaining findings.
-Recorder packaging PR #3 removes both force-kill and historical-uninstaller
-routes. The lock pins its clean source `312a59f69614d3fb0a7849c0e559c19740f0df63`
-and rebuilt installer SHA-256 `8435bae7b06257e21ee1aeb5456615d7fda1a63bf47f2ddebec85108b24458ae`.
-Public promotion awaits exact hosted installer smoke; no provisional package
-is approved for installation.
+### What is verified
 
-Next: finish Recorder exact-installer smoke/public promotion, then hosted
-Windows suite smoke and publish three choices; install the exact tested joint
-package locally and observe the desktop shortcut. Full Planner-master execution and
-scientific qualification remain open; the parent Research source is unchanged.
+Alt+F claims ShortcutOverride before VLC, toggles saved arrows/mouse only on
+non-repeat KeyPress, and preserves supported playing/paused/opening input and
+CSV playback gates. Windows panel, real Linux Qt shortcut-map and all three
+Rust bridge tests pass. The installed foreground check used Windows injected
+keys: Alt+F changed saved mode; paused Down/Left changed LSL arousal/valence by
+the existing step with volume and position unchanged; normal arrows restored
+VLC volume. This is not physical-keyboard or display-onset qualification.
+
+The exact authorized Great Dictator clip is committed and packaged. Its
+`examples/media/NOTICE.md` records the user's explicit public redistribution
+permission and hash. This PC has VLC+0.3.2 installed; 701 immutable files and
+release source identity verify. The included clip visibly decoded here.
+
+`installer-suite/` implements three numbered installer assets with joint
+first, pins both components, and owns only its launcher/joint shortcuts.
+It refuses installation with either app open. Recorder's own installer removes
+stock force-kill and historical-uninstaller routes. Joint launch starts no
+recording or remote control. Independent review found no product-code issues;
+local C# checks and the complete build script pass.
+
+### Remaining failure and next action
+
+[Latest joint run 42089203636](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42089203636)
+**FAILED**. It passed fresh install, exact component identity, both windows
+from the actual desktop shortcut, repeated launch without duplication,
+open-app refusal preserving Recorder, and suite-only removal preserving both
+apps. Cleanup then logged `Closing owned vlc window: VLC media player` and
+failed because the owned VLC process did not exit within30seconds after a
+local nonforced `taskkill /PID` request. Publication was correctly skipped.
+Separate component uninstall assertions have therefore not completed in the
+joint test. Earlier runs corrected an expected Inno refusal code8 to documented
+code7 and showed that one `Process.CloseMainWindow()` also failed to close VLC.
+
+Next agent: diagnose the exact owned VLC windows/shutdown on the disposable
+runner before changing the harness again. Pinned VLC has an application-modal
+first-run privacy widget; Microsoft's CloseMainWindow API refuses a disabled
+parent, but the actual remaining shutdown cause is **not yet established**.
+A repeated-close hypothesis was reviewed then replaced before testing; do not
+claim it is verified. The existing installed-player probe already uses VLC's
+local RC `quit` command; a CI-only control fixture is a possible investigation,
+not an implemented fix. Preserve the real process-exit/uninstall assertions;
+never turn a failed cleanup into PASS or add a force-kill fallback. No privacy
+consent or settings have been changed on the user's PC.
+
+After the full joint smoke passes, the existing manual workflow can publish
+`v0.3.3-experimental.1` from main with `publish_release=true`. Its publication
+job validates exact current-run source, component hashes and a closed artifact
+inventory. Then verify public downloads, install that tested joint package
+here, verify both app identities and the bundled film, and observe both from
+its desktop shortcut. Keep recording and phone control opt-in.
+
+### Local resume aids and boundaries
+
+- Generated artifacts/receipts are ignored under `build/`: final safe Recorder
+  files in `recorder-component/`, verified VLC download in
+  `alt-f-release-0.3.2/`, local suite candidate/receipt in `suite-release/`,
+  and foreground hotkey receipt `alt-f-desktop-hotkey-check.json`. These are
+  local evidence, not a passed joint release. Old provisional candidates must
+  never be substituted for a newly tested exact artifact.
+- `build/install-tested-suite.ps1` is an uncommitted local helper prepared to
+  verify public build/smoke hashes, refuse open apps/recording CLI, scope temp
+  files to the project drive, install and verify registered payload/shortcut.
+  It has **not run**. Review it before use; system-drive free space was limited.
+- Recorder0.1.7 already existed on this PC before this work. It has **not** been
+  updated to the new safe package here. The joint launcher is **not installed**
+  here. No VLC/Recorder/LabRecorderCLI process was running at the checkpoint.
+- Both repos are public. `afourcade` has VLC write permission; a Recorder write
+  invitation was sent and may require acceptance. Recheck before claiming it
+  has been accepted.
+- Parent Affect Research source stays unchanged at
+  `25a429024ace0074119c2a44fb4e661670f0e84d`, on its existing safety branch.
+  Full Planner-master execution and scientific qualification remain open.
