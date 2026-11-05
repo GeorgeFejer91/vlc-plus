@@ -10,8 +10,12 @@ original path and SHA-256. The extraction copied runtime C++/Rust, the patch and
 The standalone installer milestone additionally fixes the bridge DLL lifetime:
 `PreventUnloadHint` keeps Rust/LSL code mapped through process exit after the
 owned worker joins, preventing an observed unloaded-DLL access violation. The
-manifest records the upstream digest and exact adapted header digest. Other
-`adapted` entries cover documentation, packaging and installer identity.
+manifest records the upstream digest and exact adapted header digest. The
+0.3.2 input adaptation adds the explicit Alt+F toggle and shortcut ownership
+while preserving the existing supported-input gate; its tests include actual
+Qt shortcut routing. The Rust source adaptation is test-only source-ID
+isolation from an already-running player. Other `adapted` entries cover
+documentation, packaging and installer identity.
 Git history records those adaptations.
 The original full history stays in Affect Research; this is a reviewed source
 snapshot, not a claim to have imported that repository's complete Git history.
@@ -36,3 +40,9 @@ notice are preserved separately, with historical relative notice links rebased. 
 Upstream reports describe installed experiments on their exact artifacts.
 This extraction must accumulate its own checks; see
 [verification](../for-ai/VERIFICATION.md).
+
+The bundled Great Dictator study clip is a separately authorized audiovisual
+asset, not imported runtime code. Its [notice](../examples/media/NOTICE.md)
+records the exact bytes/hash, source, attribution and the repository owner's
+2026-11-05 redistribution-permission confirmation. Software licenses do not
+relicense the film, soundtrack or edit.

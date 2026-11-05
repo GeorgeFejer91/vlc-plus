@@ -1,0 +1,20 @@
+VLC+ and Remote LSL Recorder
+
+Installs two separate programs for your Windows account and adds a desktop
+shortcut that opens both. Individual program entries are also available in
+the Start menu. Each program keeps its own settings and uninstaller.
+
+The launcher does not start a recording, enable phone access, or start an
+experiment. Select streams and start recording in Remote LSL Recorder, then
+play your video in VLC+. The Great Dictator study clip is in VLC+'s
+examples\media folder, with its separate media permission notice.
+
+Stop/save any recording and close VLC+ and Remote LSL Recorder before
+installing this bundle. The installer refuses while either app is open.
+
+Uninstalling the joint launcher removes its shortcuts. The two applications
+remain installed; uninstall them separately through Windows when desired.
+Recordings are never removed by the joint launcher.
+
+All three installer choices are available in the GitHub release: this joint
+installer first, VLC+ alone, and Remote LSL Recorder alone.

@@ -9,8 +9,10 @@ worker and CSV writer. Sampling is not owned by a rendering callback.
 
 Planner authors studies; Runner executes full protocols; VLC+ is an independent
 playback target. Flubbercorder and Remote LSL Recorder are separate recorders.
-No recorder, Planner editor, browser frontend or replacement media engine is
-included here.
+No recorder implementation, Planner editor, browser frontend or replacement
+media engine is included here. `installer-suite/` composes the independently
+maintained Remote LSL Recorder installer with VLC+ and owns only the joint
+launcher/shortcuts. Recorder retains recording, XDF and remote-control authority.
 
 ## Overall product goal
 
@@ -29,9 +31,30 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   affect on shortcut probes; preserve the existing supported-input gate.
 - [x] Include the exact Great Dictator study clip with identity/provenance and
   the user's 2026-11-05 explicit public-redistribution permission confirmation.
-- [ ] Pass the actual Qt shortcut-map integration and native/installer checks.
-- [ ] Review, merge and ship 0.3.2 with the sample in source and installer;
-  update the installed application and verify the requested hotkey scope.
+- [x] Pass the actual Qt shortcut-map integration and native/installer checks.
+- [x] Review, merge and ship 0.3.2 with the sample in source and installer;
+  anonymously download/hash it and update the installed application. Its 701
+  immutable installed files and release source identity pass verification.
+- [x] Observe the installed foreground hotkey on this PC: Alt+F changes saved
+  mode; paused Down/Left update arousal/valence with volume/position unchanged;
+  normal arrows restore VLC volume. Windows injected keys, not physical input.
+
+## Active milestone: separate Recorder and joint installer
+
+- [x] Keep both programs independent; pin component installers and add a small
+  current-user launcher with no recording/remote commands.
+- [x] Pass launcher checks for quoted/local paths, missing-component rejection,
+  opening both apps and reusing existing instances. Compile the Inno wrapper.
+- [ ] Ship the independently reviewed Recorder installer with safe refusal
+  while it is open, exact source/provenance and numeric/marker XDF evidence.
+- [ ] Verify fresh joint installation, actual desktop shortcut/both windows,
+  duplicate prevention, recording protection and independent uninstall in CI.
+- [ ] Review/merge/publish all three verified choices, joint first; confirm
+  public download identities and update the current evidence here.
+- [ ] Install the final tested joint package on this PC, verify the bundled
+  film and both installed apps, and open both from the desktop shortcut.
+  Recording and phone control remain explicit user actions. This local
+  installation is authorized by the user's 2026-11-05 goal instruction.
 
 ## Completed milestone: experimental Windows installer readiness
 
@@ -68,6 +91,7 @@ with scientific timing, physical input or research qualification.
 | `vlc-qt/bridge/` | Rust LSL worker, marker lifecycle and CSV writer |
 | `assets/face/` | Synthetic atlases, manifests and retained notices |
 | `package-stock-vlc.ps1`, `installer-stock-vlc.iss` | Windows staging and installer |
+| `installer-suite/` | Pinned separate component installers, joint installer and launcher; no acquisition authority |
 | `examples/` | Planner-generated interchange example |
 | `docs/` | Build, formats, provenance and third-party documentation |
 | `scripts/` | Standalone source validation |
@@ -92,23 +116,37 @@ with scientific timing, physical input or research qualification.
 
 ## Session handoff
 
-2026-11-05: working on `codex/alt-f-rating` from clean main `09744b1`.
-The user requested Alt+F to toggle normal VLC arrow commands vs valence/arousal
-and explicitly confirmed public redistribution permission for the exact Great
-Dictator study clip. Its identity/notice is in `examples/media/NOTICE.md`.
-The clip SHA-256 is `b5327e7465ec92a4c93f3236a1ebab4556cdf508e24eafe6c593eac1e13afd49`.
+2026-11-05: Alt+F and the authorized sample merged in PR #5, exact release
+source `3b23c248dfd744ebeb30c40e79a7fc5a1601fcd8`. Joint packaging and evidence
+documentation are on `codex/recorder-suite`.
 
-The focused Windows panel check failed at absent Alt+F (exit 23), then passed
-with the new input dispatcher. It preserves existing step/mappings and guards,
-claims ShortcutOverride before VLC, preserves the supported-input callback
-(including paused adjustments), and ignores repeated Alt+F presses. Real Qt shortcut-map integration
-runs in Linux CI; Windows offscreen has no foreground HWND. The modified native Qt DLL/launcher built locally. An existing Rust test
-initially selected the already-running player by stream name; source-ID
-isolation corrected the test, and all 3 tests now pass while that player stays
-open. The Windows panel check passes; Linux shortcut-map CI is next. Next: verify CI/review, merge, build/test
-and publish the 0.3.2 installer with media, then update the installed copy.
+The input dispatcher claims ShortcutOverride before VLC, toggles only on
+non-repeat Alt+F KeyPress, and preserves the existing supported-input gate
+(including paused adjustments) and CSV playback gate. Windows panel and real
+Linux QShortcut-map checks pass; native Qt/launcher build passes. Test-only LSL
+discovery now selects the test process so a running player cannot capture it.
+Independent review has no remaining important findings.
 
-Prior 0.3.1 installer milestone remains verified/public at its exact release
-and source `d2588cad1c2e0ef385e7b0eaf9b2f874efe3d7da`; its receipts do not qualify
-this new candidate. Full Planner-master execution and scientific qualification
-remain open. The parent Research source is unchanged.
+[Installer/publish run 42051579756](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42051579756)
+passed: 701 immutable files verified, install/uninstall exit0, H.264 decode,
+30.0015 Hz LSL, unique CSVs and shutdown126ms.
+[0.3.2 experimental](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.2-experimental.1)
+is public with verified asset digests. The user explicitly confirmed public
+redistribution permission for the exact Great Dictator clip; its notice and
+SHA-256 are in `examples/media/NOTICE.md`, and it is in source and installer.
+
+The complete anonymous 0.3.2 installer download matches its release hash. This
+PC has 0.3.2 installed; 701 immutable files/source identity pass. Foreground
+hotkey/LSL/volume/paused-position checks pass using Windows key injection.
+The joint launcher/tests and wrapper
+compile pass locally; independent suite review has no remaining findings.
+Recorder packaging PR #3 removes both force-kill and historical-uninstaller
+routes. The lock pins its clean source `312a59f69614d3fb0a7849c0e559c19740f0df63`
+and rebuilt installer SHA-256 `8435bae7b06257e21ee1aeb5456615d7fda1a63bf47f2ddebec85108b24458ae`.
+Public promotion awaits exact hosted installer smoke; no provisional package
+is approved for installation.
+
+Next: finish Recorder exact-installer smoke/public promotion, then hosted
+Windows suite smoke and publish three choices; install the exact tested joint
+package locally and observe the desktop shortcut. Full Planner-master execution and
+scientific qualification remain open; the parent Research source is unchanged.
