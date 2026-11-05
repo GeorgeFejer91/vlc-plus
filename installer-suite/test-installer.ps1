@@ -60,8 +60,17 @@ if (Test-Path -LiteralPath $shortcut) { throw 'Suite shortcut survived uninstall
 # These are the exact processes created above, in a fresh account; no recording was started.
 foreach ($idToClose in @($playerId,$recorderId)) {
     $p = Get-Process -Id $idToClose -ErrorAction Stop
-    [void]$p.CloseMainWindow()
-    if (-not $p.WaitForExit(30000)) { throw 'Test app did not close gracefully; leaving its files intact.' }
+    # A fresh app can own an extra first-launch window. Request closure of
+    # its current window until the exact test-owned process exits; never kill.
+    $deadline = [DateTime]::UtcNow.AddSeconds(30)
+    do {
+        $p.Refresh()
+        if ($p.HasExited) { break }
+        Write-Output "Closing owned $($p.ProcessName) window: $($p.MainWindowTitle)"
+        [void]$p.CloseMainWindow()
+        if ($p.WaitForExit(1000)) { break }
+    } while ([DateTime]::UtcNow -lt $deadline)
+    if (-not $p.HasExited) { throw "Test-owned $($p.ProcessName) did not close gracefully; leaving its files intact." }
 }
 Run-Setup "$recorder\uninstall.exe" @('/S')
 Run-Setup "$vlc\unins000.exe" @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
