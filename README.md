@@ -7,17 +7,28 @@ synthetic photo-face feedback. The three layers can be shown together.
 
 The player was extracted from Affect Research commit
 `16106a70b57136c7243e85a5a05d83b0789bdd2c`. The standalone Windows
-installer is version 0.3.1 (experimental). This repository has its own source, build inputs and agent guidance.
+installer is version 0.3.2 (experimental). This repository has its own source, build inputs and agent guidance.
 Installer readiness and exact tested scope are recorded in
 [verification](for-ai/VERIFICATION.md). This is experimental software; no
 research qualification or physical display-onset guarantee is claimed.
 
 ## Install
 
-Download the [Windows x64 installer](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.1-experimental.1/VLC_Plus_Setup_0.3.1_x64.exe)
-from the [0.3.1 experimental release](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.1-experimental.1).
-Run it for your own account, then open a video in a writable folder. The
-installer is unsigned. It uses its own settings profile and does not register
+Choose a Windows x64 installer from the
+[experimental suite release](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.3-experimental.1):
+
+1. [**VLC+ and Remote LSL Recorder together**](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/01_VLCPlus_and_LSL_Recorder_Setup_0.3.3_x64.exe) — installs both separate apps and a desktop shortcut that opens both.
+2. [VLC+ only (0.3.2)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/02_VLCPlus_0.3.2_Setup_x64.exe).
+3. [Remote LSL Recorder only (0.1.7)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/03_Remote_LSL_Recorder_0.1.7_Setup_x64.exe).
+
+Stop/save recordings and close both apps before installing or updating. Run
+the installer for your own account. The joint shortcut opens both apps;
+select streams and press Record in Recorder when ready. Recording and phone
+control are not enabled by the shortcut. Each app remains separately
+uninstallable; removing the joint launcher leaves both programs and data in
+place. See the [joint packaging guide](installer-suite/README.md).
+
+The installers are unsigned. VLC+ uses its own settings profile and does not register
 file associations. Matching sources, SHA-256 checksums and build/installed
 verification receipts are attached to the release.
 
@@ -31,8 +42,7 @@ layers, input and layout; hotkeys and local RC commands are described in the
 In 0.3.2, press **Alt+F** to toggle affect arrows: Left/Right changes valence and Up/Down
 changes arousal. Press Alt+F again to restore normal VLC arrow controls. Affect can still be adjusted while paused, as in the existing player;
 CSV recording remains playback-gated. The existing step size and saved input
-mode are retained. The 0.3.2 installer release is being validated; the 0.3.1
-installer linked above does not include this new hotkey yet.
+mode are retained.
 
 The included [Great Dictator study clip](examples/media/dictator-3-study.mp4)
 is in `examples/media/` in the repository and installed application. Its

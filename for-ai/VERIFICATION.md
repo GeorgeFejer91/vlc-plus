@@ -180,3 +180,61 @@ CI-tested source above. A fresh anonymous public download returned the complete
 `9eadee1cbf1c2d59c07b767a23054d45b1c2b4e150d507118e783d0326004bb7`.
 The local installer is under `build/release-0.3.1/`; that generated directory is
 ignored and is not committed into Git.
+
+## Alt+F candidate checks
+
+The new Windows panel regression first failed at exit 23 because Alt+F was
+absent, then passed with the input dispatcher. It checks toggle/repeat,
+ShortcutOverride without affect mutation, exclusive arrows while input is
+unavailable, and restoring normal keys. The production input callback remains
+unchanged: supported playing, paused and opening states can adjust affect;
+the Rust worker still owns the playback gate for CSV recording.
+
+[PR #5](https://github.com/GeorgeFejer91/vlc-plus/pull/5) source CI passes,
+including Linux Qt's real QShortcut-map integration from a video-like sibling
+widget. It observes normal VLC-style shortcuts before toggle, suppression and
+affect updates after toggle, retained ownership while input is unavailable,
+and restored shortcuts afterward. Windows offscreen cannot prove foreground
+HWND capture, so no physical-keyboard claim is taken from that test alone.
+
+The new native Qt module/launcher built locally. All three Rust tests pass
+with source-ID-isolated discovery while the user's player remains open. The
+new full installer validation/publication run is
+[42051579756](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42051579756),
+source `3b23c248dfd744ebeb30c40e79a7fc5a1601fcd8`. Both installer and publication jobs passed for this exact source. Fresh
+install/uninstall exit 0; 701 immutable files/source identity verified before
+and after playback. The installed probe observed 204 decoded frames at the
+statistics checkpoint, 264 affect samples at 30.0015 Hz, 169/31 CSV rows, and
+normal shutdown in 126 ms. These are new 0.3.2 receipts, not inherited 0.3.1 proof.
+
+[Release 0.3.2](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.2-experimental.1)
+is public. All uploaded server digests match the release checksum file. The
+installer SHA-256 is `69800b0a4e4891830100c922d50b1706deffac4b1962a0cad12eb4170e81306c`;
+matching source ZIP SHA-256 is
+`b93aa69a95091682ef6725cf921681ee786c0f57aedfe258aa9d737c88b7320e`.
+The bundled video matches the permission-scoped hash in its notice.
+
+The anonymous public installer download matches its release SHA-256. The
+0.3.2 update on this PC completed with exit 0; `verify-installed.py` verifies
+701 immutable files and exact release source identity. A foreground installed
+check using Windows Computer Use key injection additionally observed Alt+F
+persistently toggling arrows/mouse. With arrows active, paused Down and Left
+changed LSL arousal/valence by the existing 0.1 step while volume and video
+position stayed unchanged. With affect arrows off, Down/Up changed VLC volume
+and restored the baseline. The bundled film visibly decoded. This is injected
+key/foreground Windows evidence, not a physical keyboard or display-onset test.
+
+## Joint installer gates
+
+Run `installer-suite/test-launcher.ps1` for fixed installed-path resolution,
+both-app launch, existing-instance reuse and missing-component preflight.
+`installer-suite/build.ps1` requires clean committed source and pinned SHA-256
+component installers. See the [packaging guide](../installer-suite/README.md).
+
+Before publishing, the fresh GitHub-hosted Windows check must verify installed
+component identity, both windows from the actual desktop shortcut, repeated
+launch without duplication, safe refusal with Recorder open, suite-only
+removal preserving both apps, and separate app uninstallation. No recording
+or phone pairing starts. The Recorder project independently owns its XDF and
+no-kill installer evidence. These scopes do not replace physical-device,
+physical-input, end-to-end participant-session or scientific qualification.

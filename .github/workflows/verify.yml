@@ -15,12 +15,15 @@ jobs:
       - name: PowerShell syntax
         shell: pwsh
         run: |
-          $scripts = @('package-stock-vlc.ps1', 'build-windows.ps1') + @(Get-ChildItem vlc-qt,scripts -Filter '*.ps1' | ForEach-Object FullName)
+          $scripts = @('package-stock-vlc.ps1', 'build-windows.ps1') + @(Get-ChildItem vlc-qt,scripts,installer-suite -Filter '*.ps1' | ForEach-Object FullName)
           foreach ($script in $scripts) {
             $parseErrors = $null
             [void][Management.Automation.Language.Parser]::ParseFile((Resolve-Path $script), [ref]$null, [ref]$parseErrors)
             if ($parseErrors) { throw ($parseErrors | Out-String) }
           }
+      - name: Joint launcher
+        shell: pwsh
+        run: ./installer-suite/test-launcher.ps1
       - name: Rust bridge
         run: cargo test --locked --manifest-path vlc-qt/bridge/Cargo.toml
       - name: For-AI context

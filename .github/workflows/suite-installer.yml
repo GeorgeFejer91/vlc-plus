@@ -1,0 +1,62 @@
+name: VLC and Recorder joint installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Publish the three tested experimental installer choices from main
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  suite:
+    runs-on: windows-2025
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build from pinned standalone installers
+        shell: pwsh
+        run: ./installer-suite/build.ps1
+      - name: Fresh joint install and shortcut check
+        shell: pwsh
+        run: ./installer-suite/test-installer.ps1 -InstallerPath build/suite-release/01_VLCPlus_and_LSL_Recorder_Setup_0.3.3_x64.exe
+      - name: Preserve install evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: suite-evidence
+          path: build/suite-evidence/
+          if-no-files-found: ignore
+      - name: Three installers and matching sources
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: suite-release
+          path: build/suite-release/
+          compression-level: 0
+
+  publish:
+    needs: suite
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify the current run's tested bytes
+        run: |
+          gh run download "$GITHUB_RUN_ID" --name suite-release --dir release
+          gh run download "$GITHUB_RUN_ID" --name suite-evidence --dir evidence
+          python installer-suite/verify-release.py --release release --evidence evidence --source "$GITHUB_SHA"
+      - name: Publish three installer choices, joint first
+        run: |
+          existing_tag=$(git ls-remote --tags origin refs/tags/v0.3.3-experimental.1)
+          test -z "$existing_tag"
+          gh release create v0.3.3-experimental.1 release/* --target "$GITHUB_SHA" --prerelease --title "VLC+ and Remote LSL Recorder - three Windows installer options" --notes-file installer-suite/release-notes.md

@@ -1,0 +1,25 @@
+{
+  "schema": "vlc-recorder-suite-components/v1",
+  "bundleVersion": "0.3.3",
+  "vlc": {
+    "name": "VLC+",
+    "version": "0.3.2",
+    "repository": "GeorgeFejer91/vlc-plus",
+    "sourceCommit": "3b23c248dfd744ebeb30c40e79a7fc5a1601fcd8",
+    "url": "https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.2-experimental.1/VLC_Plus_Setup_0.3.2_x64.exe",
+    "file": "VLC_Plus_Setup_0.3.2_x64.exe",
+    "sha256": "69800b0a4e4891830100c922d50b1706deffac4b1962a0cad12eb4170e81306c",
+    "downloadName": "02_VLCPlus_0.3.2_Setup_x64.exe"
+  },
+  "recorder": {
+    "name": "Remote LSL Recorder",
+    "version": "0.1.7",
+    "repository": "GeorgeFejer91/Remote-LSL-Recorder",
+    "sourceCommit": "312a59f69614d3fb0a7849c0e559c19740f0df63",
+    "url": "https://github.com/GeorgeFejer91/Remote-LSL-Recorder/releases/download/v0.1.7-experimental.1/Remote-LSL-Recorder_0.1.7_x64-setup.exe",
+    "file": "Remote-LSL-Recorder_0.1.7_x64-setup.exe",
+    "sha256": "8435bae7b06257e21ee1aeb5456615d7fda1a63bf47f2ddebec85108b24458ae",
+    "applicationSha256": "e1c22554f5d23a28378cb491151d088e4fc84f9cb6b4ad5f6e10b68427a9c48c",
+    "downloadName": "03_Remote_LSL_Recorder_0.1.7_Setup_x64.exe"
+  }
+}
