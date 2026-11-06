@@ -22,7 +22,7 @@ research qualification or physical display-onset guarantee is claimed.
 
 Windows x64 installer choices:
 
-1. **VLC+ and Remote LSL Recorder together — in validation.** The joint installer and desktop shortcut are implemented; the joint release is not yet published. Current status and the remaining gate are in [the project handoff](for-ai/PROJECT.md#session-handoff).
+1. **VLC+ and Remote LSL Recorder together — in validation.** The joint installer and desktop shortcut are implemented; the joint release is not yet published. Current status and the remaining gate are in [the project handoff](for-ai/PROJECT.md#active-milestone-keyboard-joint-handoff-and-recording-qualification).
 2. [VLC+ only (0.3.2)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.2-experimental.1/VLC_Plus_Setup_0.3.2_x64.exe).
 3. [Remote LSL Recorder only (0.1.7)](https://github.com/GeorgeFejer91/Remote-LSL-Recorder/releases/download/v0.1.7-experimental.1/Remote-LSL-Recorder_0.1.7_x64-setup.exe).
 

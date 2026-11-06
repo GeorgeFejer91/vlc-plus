@@ -173,7 +173,7 @@
     "companion/panel-link.js": "Generated identical controller link module.",
     "scripts/check-panel-sharing.mjs": "Route the VLC+ self-contained controller in the browser fixture.",
     "scripts/check-record-and-play.mjs": "Use a bounded 30 second cold-navigation deadline, retain short action assertions, and verify the shared 18-entry hotkey guide including nine-character face cycling, layout and snapshot controls.",
-    "scripts/check-external-tabs.mjs": "Keep Connect disabled until its module handler is attached; log fixture protocol phases/errors.",
+    "scripts/check-external-tabs.mjs": "Keep Connect disabled until its module handler is attached; use enabled-button keyboard activation for protocol setup to avoid lost pointer clicks during host resize scrolling; report browser errors immediately and retain protocol/authentication assertions.",
     "companion/panels/respyra/remote-profile.js": "Adapt the bundled observer canonical route to the VLC+ self-contained controller, including regeneration.",
     "companion/panels/respyra/panel.json": "Adapt the bundled observer canonical route to the VLC+ self-contained controller, including regeneration.",
     "scripts/prepare-respyra-panel.mjs": "Adapt the bundled observer canonical route to the VLC+ self-contained controller, including regeneration.",
