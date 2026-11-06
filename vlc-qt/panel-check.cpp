@@ -273,11 +273,24 @@ int main( int argc, char **argv )
     if( shortcutPanel.arrowMode() || vlcCommands != 2 ) return 33;
     for( auto modifiers : arrowModifiers ) QTest::keyClick( &videoFocus, Qt::Key_Left, modifiers );
     if( modifiedVlcCommands != 8 ) return 60;
+    int vlcLayoutCommands = 0;
+    QShortcut vlcAltW( QKeySequence( Qt::ALT | Qt::Key_W ), &shortcutHost );
+    QObject::connect( &vlcAltW, &QShortcut::activated, [&]() { ++vlcLayoutCommands; } );
+    const auto videoLayout = shortcutPanel.layoutFor( shortcutPanel.primary() );
+    const float videoValence = shortcutPanel.valence(), videoArousal = shortcutPanel.arousal();
+    QTest::keyClick( &videoFocus, Qt::Key_W, Qt::AltModifier );
+    if( vlcLayoutCommands != 0 || shortcutPanel.layoutFor( shortcutPanel.primary() ).y != videoLayout.y - 2 ||
+        shortcutPanel.valence() != videoValence || shortcutPanel.arousal() != videoArousal ) return 76;
+    QTest::keyClick( &videoFocus, Qt::Key_J, Qt::AltModifier );
+    const QString videoSnapshot = keySettings.value( "Flubber/lastSettingsPath" ).toString();
+    if( !QFileInfo::exists( videoSnapshot ) ) return 77;
     QLineEdit textEntry( &shortcutHost );
     shortcutLayout.addWidget( &textEntry ); textEntry.show(); textEntry.setFocus(); app.processEvents();
     const auto primaryBeforeTyping = shortcutPanel.primary();
     QTest::keyClick( &textEntry, Qt::Key_G, Qt::AltModifier );
     if( shortcutPanel.primary() != primaryBeforeTyping ) return 55;
+    QTest::keyClick( &textEntry, Qt::Key_J, Qt::AltModifier );
+    if( keySettings.value( "Flubber/lastSettingsPath" ).toString() != videoSnapshot ) return 78;
 #endif
     if( settings.value( "Flubber/panelHeight" ).toInt() != 200 ) return 15;
     panel.setLayout( FlubberPanel::GridKind, { true, 45, 18, 50 } );
@@ -308,5 +321,103 @@ int main( int argc, char **argv )
         restored.primary() != FlubberPanel::GridKind ) return 22;
     qunsetenv( "VLC_FLUBBER_PANEL_PERCENT" );
     qunsetenv( "VLC_FLUBBER_STEP_PERCENT" );
+    QSettings snapshotSettings( temp.filePath( "snapshots.ini" ), QSettings::IniFormat );
+    FlubberPanel snapshotPanel( &snapshotSettings );
+    snapshotPanel.setPrimary( FlubberPanel::GridKind );
+    snapshotPanel.setAffect( .25, -.5 );
+    struct LayoutKey { int key; Qt::KeyboardModifiers modifiers; int size, x, y; };
+    const LayoutKey layoutKeys[] = {
+        { Qt::Key_W, Qt::AltModifier, 60, 50, 48 },
+        { Qt::Key_A, Qt::AltModifier, 60, 48, 50 },
+        { Qt::Key_S, Qt::AltModifier, 60, 50, 52 },
+        { Qt::Key_D, Qt::AltModifier, 60, 52, 50 },
+        { Qt::Key_Plus, Qt::AltModifier, 62, 50, 50 },
+        { Qt::Key_Equal, Qt::AltModifier, 62, 50, 50 },
+        { Qt::Key_Plus, Qt::AltModifier | Qt::ShiftModifier, 62, 50, 50 },
+        { Qt::Key_Plus, Qt::AltModifier | Qt::KeypadModifier, 62, 50, 50 },
+        { Qt::Key_Minus, Qt::AltModifier, 58, 50, 50 },
+        { Qt::Key_Minus, Qt::AltModifier | Qt::KeypadModifier, 58, 50, 50 }
+    };
+    for( bool arrows : { false, true } )
+    {
+        snapshotPanel.setArrowMode( arrows );
+        for( const auto &action : layoutKeys )
+        {
+            snapshotPanel.setLayout( FlubberPanel::GridKind, { true, 60, 50, 50 } );
+            QKeyEvent probe( QEvent::ShortcutOverride, action.key, action.modifiers );
+            if( !snapshotPanel.handleInputKey( &probe ) ||
+                snapshotPanel.layoutFor( FlubberPanel::GridKind ).size != 60 ||
+                snapshotPanel.layoutFor( FlubberPanel::GridKind ).x != 50 ||
+                snapshotPanel.layoutFor( FlubberPanel::GridKind ).y != 50 ) return 61;
+            QKeyEvent press( QEvent::KeyPress, action.key, action.modifiers );
+            if( !snapshotPanel.handleInputKey( &press ) ) return 62;
+            const auto moved = snapshotPanel.layoutFor( FlubberPanel::GridKind );
+            if( moved.size != action.size || moved.x != action.x || moved.y != action.y ||
+                snapshotPanel.valence() != .25f || snapshotPanel.arousal() != -.5f ) return 63;
+        }
+    }
+    snapshotPanel.setLayout( FlubberPanel::GridKind, { true, 100, 0, 0 } );
+    QKeyEvent top( QEvent::KeyPress, Qt::Key_W, Qt::AltModifier );
+    QKeyEvent grow( QEvent::KeyPress, Qt::Key_Plus, Qt::AltModifier );
+    snapshotPanel.handleInputKey( &top ); snapshotPanel.handleInputKey( &grow );
+    if( snapshotPanel.layoutFor( FlubberPanel::GridKind ).y != 0 ||
+        snapshotPanel.layoutFor( FlubberPanel::GridKind ).size != 100 ) return 64;
+    QKeyEvent saveProbe( QEvent::ShortcutOverride, Qt::Key_J, Qt::AltModifier );
+    if( !snapshotPanel.handleInputKey( &saveProbe ) || snapshotSettings.contains( "Flubber/lastSettingsPath" ) ) return 65;
+    QKeyEvent saveSnapshot( QEvent::KeyPress, Qt::Key_J, Qt::AltModifier );
+    if( !snapshotPanel.handleInputKey( &saveSnapshot ) ) return 66;
+    const QString firstSnapshot = snapshotSettings.value( "Flubber/lastSettingsPath" ).toString();
+    QFile snapshotFile( firstSnapshot );
+    if( !snapshotFile.open( QIODevice::ReadOnly ) ||
+        QJsonDocument::fromJson( snapshotFile.readAll() ).object() != snapshotPanel.settingsJson() ) return 67;
+    snapshotFile.close();
+    QKeyEvent saveRepeat( QEvent::KeyPress, Qt::Key_J, Qt::AltModifier, QString(), true );
+    snapshotPanel.handleInputKey( &saveRepeat );
+    if( snapshotSettings.value( "Flubber/lastSettingsPath" ).toString() != firstSnapshot ) return 68;
+    snapshotPanel.setLayout( FlubberPanel::GridKind, { true, 72, 34, 68 } );
+    snapshotPanel.handleInputKey( &saveSnapshot );
+    const QString lastSnapshot = snapshotSettings.value( "Flubber/lastSettingsPath" ).toString();
+    if( lastSnapshot == firstSnapshot || !QFileInfo::exists( firstSnapshot ) ) return 69;
+    const QJsonObject savedSnapshot = snapshotPanel.settingsJson();
+    snapshotPanel.setLayout( FlubberPanel::GridKind, { true, 20, 2, 4 } );
+    FlubberPanel autoRestored( &snapshotSettings );
+    if( autoRestored.settingsJson() != savedSnapshot ) return 70;
+    snapshotSettings.setValue( "Flubber/lastSettingsPath", temp.filePath( "missing.json" ) );
+    FlubberPanel missingSnapshot( &snapshotSettings );
+    if( missingSnapshot.settingsJson() != savedSnapshot || missingSnapshot.appearanceLoadError().isEmpty() ) return 71;
+    snapshotSettings.setValue( "Flubber/lastSettingsPath", invalidFile.fileName() );
+    FlubberPanel corruptSnapshot( &snapshotSettings );
+    if( corruptSnapshot.settingsJson() != savedSnapshot || corruptSnapshot.appearanceLoadError().isEmpty() ) return 72;
+    if( !corruptSnapshot.loadSettingsFile( fullSettings, error ) ||
+        corruptSnapshot.primary() != FlubberPanel::GridKind || corruptSnapshot.faceId() != QLatin1String( "photo-synthetic-01" ) ) return 73;
+    const QString blockedProfile = temp.filePath( "blocked" );
+    QDir().mkpath( blockedProfile );
+    QFile blockedDirectory( blockedProfile + "/flubber-presets" );
+    if( !blockedDirectory.open( QIODevice::WriteOnly ) ) return 74;
+    blockedDirectory.close();
+    QSettings blockedSettings( blockedProfile + "/settings.ini", QSettings::IniFormat );
+    blockedSettings.setValue( "Flubber/lastSettingsPath", lastSnapshot );
+    FlubberPanel blockedPanel( &blockedSettings );
+    bool saveErrorShown = false;
+    QTimer::singleShot( 0, [&]() {
+        auto *warning = qobject_cast<QMessageBox *>( QApplication::activeModalWidget() );
+        if( warning ) { saveErrorShown = true; warning->accept(); }
+    } );
+    blockedPanel.handleInputKey( &saveSnapshot );
+    if( !saveErrorShown || blockedSettings.value( "Flubber/lastSettingsPath" ).toString() != lastSnapshot ) return 75;
+    const QString bookmarkProfile = temp.filePath( "bookmark" );
+    QDir().mkpath( bookmarkProfile );
+    QSettings bookmarkSettings( bookmarkProfile + "/settings.ini", QSettings::IniFormat );
+    bookmarkSettings.setValue( "Flubber/lastSettingsPath", lastSnapshot );
+    bookmarkSettings.sync();
+    QFile::remove( bookmarkSettings.fileName() );
+    QDir().mkdir( bookmarkSettings.fileName() );
+    FlubberPanel bookmarkPanel( &bookmarkSettings );
+    if( bookmarkPanel.saveSettingsSnapshot( error ) ||
+        bookmarkSettings.value( "Flubber/lastSettingsPath" ).toString() != lastSnapshot ) return 79;
+    QDir().rmdir( bookmarkSettings.fileName() );
+    bookmarkSettings.sync();
+    if( !bookmarkPanel.saveSettingsSnapshot( error ) ||
+        bookmarkSettings.value( "Flubber/lastSettingsPath" ).toString() == lastSnapshot ) return 80;
     return 0;
 }

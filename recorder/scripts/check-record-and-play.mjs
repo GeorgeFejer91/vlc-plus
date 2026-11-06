@@ -93,7 +93,8 @@ try {
   await page.screenshot({ path: resolve(output, "recorder-large-text.png"), fullPage: true });
   await page.goto(`http://127.0.0.1:${server.address().port}/companion/vlc.html`);
   await page.locator("#vlc-hotkeys dt").first().waitFor();
-  assert.equal(await page.locator("#vlc-hotkeys dt").count(), 14);
+  assert.equal(await page.locator("#vlc-hotkeys dt").count(), 17);
+  assert.match(await page.locator("#vlc-hotkeys").textContent(), /Alt\+W.*Alt\+J.*snapshot/s);
   for (const width of [320, 390, 720, 1280, 1920]) {
     await page.setViewportSize({ width, height: 800 });
     await page.evaluate(() => document.fonts.ready);

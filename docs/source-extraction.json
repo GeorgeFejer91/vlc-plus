@@ -181,8 +181,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "0345168ebdd7530e2c4738c42a86efde5a67784c91bae98ca78383f80f991000",
-      "adaptation": "Three-mode feedback cycling, exclusive affect arrows and bounded quick settings; native regression coverage preserves acquisition and source lineage."
+      "standaloneSha256": "58fe6fe895b575db2b0fc609c3418f4babd6b04fb19edb54d41962aac9f663ec",
+      "adaptation": "Three-mode feedback, exclusive affect arrows, Alt layout aliases and atomic JSON snapshots restored on startup; native regressions preserve acquisition and source lineage."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -195,8 +195,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "939540f2d491f322ed24775b9e90d1d4253d2370a0e5570889c9592b10b50986",
-      "adaptation": "Three-mode feedback cycling, exclusive affect arrows and bounded quick settings; native regression coverage preserves acquisition and source lineage."
+      "standaloneSha256": "73b9f124cf5926beea90bd2ac4a199521e6d06dd13e6aec02493ee2deee5bb9b",
+      "adaptation": "Three-mode feedback, exclusive affect arrows, Alt layout aliases and atomic JSON snapshots restored on startup; native regressions preserve acquisition and source lineage."
     },
     {
       "path": "vlc-qt/test-panel.ps1",
