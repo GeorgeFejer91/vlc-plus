@@ -28,11 +28,14 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 - [x] Include self-contained Recorder source/UI/controller/locks/notices in
   `recorder/`, pinned to upstream `242ad90` with declared local adaptations.
-  Its 21 JavaScript tests, 19 release Rust tests, controller/tab UI checks and
+  Its 22 JavaScript tests, 20 release Rust tests, controller/tab UI checks and
   pinned LabRecorder preparation pass locally without a sibling checkout.
 - [ ] Pass the same-checkout component/standalone/joint build in
   `suite-source.yml`, then publish its exact tested three choices.
-- [ ] Publish VLC+'s own live page with its hotkey list and local controller.
+- [x] Publish VLC+'s own [live page](https://georgefejer91.github.io/vlc-plus/)
+  with its hotkey list and local controller. Pages run 42227046711 passes.
+  All 82 live assets match the audited build; actual rendered 320–1920 px,
+  200% text/spacing, all 14 entries and own controller navigation pass.
 - [x] Recover both saved branches and preserve the primary checkout's unfinished
   suite-shutdown changes; use the isolated `codex/complete-controls` worktree.
 - [x] Alt+F reserves all arrow variants from VLC while plain arrows change
@@ -63,12 +66,28 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   not qualification. The user has now handled the privacy dialog manually;
   resume the updated installed check. No consent was automated.
   The subsequent exact a44cbbe installed candidate verified all 701 immutable
-  files. Embedded Recorder launched it, auto-selected the session-specific
-  affect/marker streams, recorded and observed Start. The keyboard phase then
+  files. Embedded Recorder launched it and auto-selected the session-specific
+  affect/marker streams. The keyboard phase then
   timed out behind a new Windows Firewall prompt for LabRecorderCLI. This is
   still FAILED qualification; the user has been asked to handle the prompt.
+  The native script also had an independently reproduced Playwright 1.64.1
+  bug: an async false predicate resolves immediately, so its Start wait was
+  invalid and paused playback before the bridge's first positive media time.
+  Explicit awaited-snapshot polling fixes the test. A native button diagnostic
+  now saves Start/Pause/Resume/End/Stop, independently verified in XDF; it is
+  not the full foreground changing-input qualification. Volume must be queried
+  while playing: VLC RC refuses that command while paused.
 - [ ] Merge reviewed source, publish exact tested component and joint versions,
   verify public hashes, update live download links and install the joint suite.
+
+Reviewed source merged via PR9 at `0d84abc`; all source/UI CI checks passed.
+Same-checkout suite run 42227148826 is still building this source; no complete
+same-checkout installer qualification is claimed yet. A follow-up adds the
+native-script correction and requires positive, current-child LabRecorder
+subscription acknowledgements as well as exact XDF headers before playback.
+The pinned engine can write a header even after an open_stream timeout. Its
+failure regression covers missing, duplicate and stale acknowledgements;
+20 Rust tests and release clippy pass.
 
 New component candidate versions are VLC+0.3.3 and Recorder0.1.8; no new
 release is claimed. The [Recorder guide](https://georgefejer91.github.io/Remote-LSL-Recorder/vlc.html)

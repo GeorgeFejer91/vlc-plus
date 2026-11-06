@@ -257,3 +257,16 @@ removal preserving both apps, and separate app uninstallation. No recording
 or phone pairing starts. The Recorder project independently owns its XDF and
 no-kill installer evidence. These scopes do not replace physical-device,
 physical-input, end-to-end participant-session or scientific qualification.
+
+VLC+ playback readiness requires exact complete XDF stream headers and positive
+subscription acknowledgements from the current pinned LabRecorder child. The
+engine can write headers after an open_stream timeout; metadata alone is not
+subscription proof. Duplicate names require the corresponding acknowledgement
+count. Historical diagnostics never satisfy a new recording's readiness.
+Malformed/interleaved acknowledgement lines fail closed with video paused.
+
+Native marker waits explicitly poll awaited snapshots outside page.waitForFunction:
+Playwright1.64.1 resolves an async false predicate immediately. The corrected
+native button diagnostic independently saved all five Start/Pause/Resume/End/Stop
+markers. Full foreground emulated affect/transport/XDF qualification remains
+pending the user's Windows Firewall prompt choice and final tested installers.

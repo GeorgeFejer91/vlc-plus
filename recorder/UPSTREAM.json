@@ -164,8 +164,8 @@
   },
   "adaptations": {
     "README.md": "Embedded component build and local links; VLC+ companion URL.",
-    "src-tauri/src/state.rs": "Use VLC+ hosted companion for pairing.",
-    "scripts/check-native-vlc-recording.mjs": "Resolve bundled sample inside the owning VLC+ repository.",
+    "src-tauri/src/state.rs": "Use VLC+ hosted companion; require positive current-child subscription acknowledgements as well as exact XDF headers before playback.",
+    "scripts/check-native-vlc-recording.mjs": "Use bundled sample; explicitly poll awaited snapshots for markers; query volume while playing because paused RC refuses it.",
     "scripts/smoke-windows-installer.ps1": "Read current embedded version and verify the exact built executable before hosted installer qualification.",
     "web/vlc-hotkeys.js": "Clarify that modified VLC arrows are restored when affect arrows are off.",
     "companion/vlc-hotkeys.js": "Generated identical copy of the shared hotkey module.",
