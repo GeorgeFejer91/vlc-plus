@@ -28,20 +28,60 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ### Latest status (2026-11-06)
 
-The expanded feature change is merged as PR14 at `5bc3e7b`; all four source
-checks passed at `ac8fa38`. Pages 42275164404 passes. All 82 actual public
-assets match the audited 64-group build, with rendered 320–1920px and enlarged
-text/controller checks. The full source suite at `5bc3e7b` was dispatched as
-42275167451 with publication disabled.
+The final application/runner source is merged on main at `0edb694` (PR14 and
+PR15). All four exact-main source checks pass (42277960432), and full suite
+[42277964086](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42277964086)
+completed successfully with publication disabled. Both exact standalone
+installers and the joint shortcut/reuse/refusal/preservation/uninstall checks
+pass. The installed VLC probe verified 701 immutable files, decoded 204 frames,
+observed 265 affect samples at 30.0014 Hz, verified both CSV sessions and transport
+markers, and shut down in 152 ms. These are hosted/offscreen checks; Recorder's
+smoke explicitly records `recordingStarted=false`.
 
-Review of the native qualification runner then found an unconditional cleanup
-RC quit before player identity was known, plus a workspace backup overwritten
-by interrupted retries. The test runner now refuses existing apps, requires
-the exact current listener PID for commands/cleanup, and restores a pending
-original workspace before retry capture. This changes no shipped app code.
-Review/check this correction and build the final source candidate including it;
-do not promote the earlier build as the completed handoff. Local native tests
-still need disk headroom and a normal-user installation.
+The exact joint candidate is `01_VLCPlus_and_LSL_Recorder_Setup_0.3.3_x64.exe`,
+1,029,268,105 bytes, expected SHA-256
+`6a0d36b342ca898051f27fdc8c760843ff8726e9725e70979a2ed727cc8ab29a`.
+Authenticated run/artifact receipts and small evidence were downloaded; the
+installer bytes have NOT been downloaded or locally hash-verified. Metadata
+and proof are under ignored `build/qualified-suite-42277964086/` in the existing
+controls worktree. Older 5b94b16 proof is explicitly superseded and cannot
+qualify this candidate.
+
+The 64-group live guide is deployed. All 82 actual public assets matched the
+audited build, and real HTTPS rendering at 320–1920px, enlarged text and the
+bundled controller passed. PR15 changed only the runner and handoff, so those
+public asset bytes are unchanged.
+
+**BLOCKER: local disk space.** The system drive repeatedly has only about
+0.7 GB free. Download plus the install helper's 2 GB post-download preflight
+needs at least 3.18 GB free; the user was asked to free 5 GB or identify another
+writable drive. Verified task-generated duplicate assets, superseded installer
+and cached dependency-source downloads were removed with hash/remote-retention
+receipts. Remaining bridge caches total only about 142 MB; unrelated files and
+participant data are untouched.
+
+The required local gates remain NOT RUN for this candidate: ordinary-user
+installation and actual shortcut; native video-thread arrow ownership and
+unchanged paused time/volume; all nine faces/exclusive modes and dedicated
+controls; Alt+J JSON save, unsaved adjustment, restart and exact restoration;
+Recorder's actual Start VLC+ and record, injected positive/negative affect,
+and independent final XDF/CSV inspection. Existing source/unit/mocked-IPC and
+hosted standalone evidence do not replace these gates. The installed local
+baseline is older 5b94b16, with Recorder redirected into Codex LocalCache; the
+ordinary Explorer launcher cannot find that Recorder registration.
+
+Resume by checking free space and the still-retained successful artifact.
+Use the existing ignored download/normal-user installer wrappers and native
+qualification helpers listed in `build/ACTIVE-QUALIFICATION.json`. The Explorer
+broker probe already confirmed ordinary-user execution; do not repeat prior
+security/privacy choices. Stop only on a real new permission dialog. Verify
+actual task-owned native video focus, preserve workspace backups across retries,
+run the prepared busy-port refusal and positive recording tests, inspect XDF/
+CSV independently, then run native controls/save/restart and restore profiles.
+Only after all pass, dispatch promotion for 42277964086 at identical main
+`0edb694`; main must stay there until promotion. Update public downloads and
+final handoff afterward. This local handoff branch must not advance main before
+that promotion; it changes documentation only.
 
 The user expanded this milestone to dedicated shortcuts for all 60 detailed
 settings plus rating step, a complete shared hotkey library, and hotkey-saved
