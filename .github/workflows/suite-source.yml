@@ -72,6 +72,7 @@ jobs:
           name: self-contained-suite-diagnostics
           path: |
             build/component-evidence/
+            build/recorder-release/build-receipt.json
             build/windows-build.log
             recorder/.for-ai-local/record-and-play/
           if-no-files-found: ignore

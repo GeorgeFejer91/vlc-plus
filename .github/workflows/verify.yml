@@ -62,6 +62,8 @@ jobs:
         run: ./installer-suite/test-launcher.ps1
       - name: Source-built release boundary
         run: python installer-suite/test-source-release.py
+      - name: Recorder NSIS payload identity
+        run: python scripts/test-recorder-payload.py
       - name: Rust bridge
         run: cargo test --locked --manifest-path vlc-qt/bridge/Cargo.toml
       - name: For-AI context

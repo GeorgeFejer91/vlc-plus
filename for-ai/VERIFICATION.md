@@ -230,7 +230,12 @@ The self-contained source build is `.github/workflows/suite-source.yml`.
 `build-recorder.ps1` installs the frozen frontend lock, prepares the pinned
 recording engine, runs source/UI checks and creates the embedded app installer
 plus exact source/build receipt. Its hosted smoke reads the current source
-version and compares the installed executable with that receipt. Both standalone
+version and compares the installed executable against the exact packaged-byte
+hash: `scripts/recorder_payload.py` applies only Tauri CLI2.11.4's documented
+single UNK-to-NSS marker change in memory. The restored compiled binary hash is
+recorded separately. A real isolated NSIS payload was extracted and compared
+byte-for-byte with the prediction; no other change is accepted.
+Both standalone
 smokes must pass at the same root commit before `build.ps1 -BuiltFromSource`.
 The joint check consumes the resulting component lock; publication validates
 both standalone receipts, complete source archives and the joint receipt.

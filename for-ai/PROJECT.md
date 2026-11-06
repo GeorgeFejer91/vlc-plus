@@ -81,7 +81,7 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   verify public hashes, update live download links and install the joint suite.
 
 Reviewed source merged via PR9 at `0d84abc`; all source/UI CI checks passed.
-Same-checkout suite run 42227148826 is still building this source; no complete
+Same-checkout suite run 42227148826 built this source; no complete
 same-checkout installer qualification is claimed yet. A follow-up adds the
 native-script correction and requires positive, current-child LabRecorder
 subscription acknowledgements as well as exact XDF headers before playback.
@@ -89,6 +89,17 @@ The pinned engine can write a header even after an open_stream timeout. Its
 failure regression covers missing, duplicate and stale acknowledgements;
 23 Rust tests and release clippy pass. The explicit native backend check also
 passes; independent XDF inspection finds Start/End/Stop and continuous affect.
+
+Run 42227148826 subsequently FAILED the Recorder installed SHA assertion after
+both builds and the exact VLC standalone test passed. Tauri patches its bundle
+marker for NSIS and then restores the raw compiled binary; those two variants
+have different hashes. `scripts/recorder_payload.py` predicts only the pinned
+CLI's single exact UNK-to-NSS change, records raw and packaged hashes, and keeps
+the installed SHA assertion strict. A local isolated NSIS bundle was extracted:
+all 10,241,536 payload bytes exactly match that prediction (receipt under
+`build/recorder-hash-test/`). It is packaging evidence, not a release candidate.
+PR10 contains the readiness/harness and receipt corrections; rerun the full
+same-checkout suite after its reviewed merge. No joint/new release is qualified.
 
 New component candidate versions are VLC+0.3.3 and Recorder0.1.8; no new
 release is claimed. The [Recorder guide](https://georgefejer91.github.io/Remote-LSL-Recorder/vlc.html)
