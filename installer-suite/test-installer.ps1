@@ -1,11 +1,11 @@
 #Requires -Version 7.0
 # Destructive only to the installations created in this fresh hosted CI account.
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$InstallerPath)
+param([Parameter(Mandatory)][string]$InstallerPath, [string]$ComponentLockPath = "$PSScriptRoot/components.lock.json")
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'Run this fresh-install test only on a disposable GitHub-hosted runner.' }
 $root = Split-Path -Parent $PSScriptRoot
-$lock = Get-Content -Raw "$PSScriptRoot/components.lock.json" | ConvertFrom-Json
+$lock = Get-Content -Raw -LiteralPath $ComponentLockPath | ConvertFrom-Json
 $source = (& git -C $root rev-parse HEAD).Trim()
 $keys = @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{965E973A-6173-4BBC-9DE4-6FA8A320DB93}_is1','HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{F836C1D9-43B0-4A71-95D7-2854030B68AE}_is1','HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Remote LSL Recorder')
 foreach ($key in $keys) { if (Test-Path -LiteralPath $key) { throw 'Pre-existing app registration; refusing to modify it.' } }

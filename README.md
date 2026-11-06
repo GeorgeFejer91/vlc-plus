@@ -5,6 +5,12 @@ valence/arousal ratings. It keeps VLC's menus, playlist and transport controls
 and adds a native feedback panel with Classic Flubber, an affect grid and
 synthetic photo-face feedback. The three layers can be shown together.
 
+The complete [Remote LSL Recorder](recorder/README.md) is included in this
+repository: Rust/Tauri desktop source, live viewer, browser controller, locked
+dependencies and pinned recording-engine setup. It needs no sibling checkout.
+The [VLC+ live page](https://georgefejer91.github.io/vlc-plus/) contains the
+hotkey list and [remote LSL controller](https://georgefejer91.github.io/vlc-plus/remote/).
+
 The player was extracted from Affect Research commit
 `16106a70b57136c7243e85a5a05d83b0789bdd2c`. The standalone Windows
 installer is version 0.3.2 (experimental). This repository has its own source, build inputs and agent guidance.
@@ -78,6 +84,17 @@ or silently converted. See [JSON formats](docs/experiment-formats.md) and
 using the original Planner exporter at the pinned extraction commit.
 
 ## Build and checks
+
+Build/check the included Recorder from this checkout with
+`./build-recorder.ps1` (or `-CheckOnly`); it installs the frozen pnpm dependencies,
+prepares the hash-pinned official LabRecorder engine, runs source and rendered
+checks, and builds the Windows NSIS installer. Node 24, pnpm and the MSVC Rust
+toolchain are required. The runtime bundles its engine and needs no separate
+source repository or Node installation.
+
+Build the website and controller with `node scripts/build-site.mjs`; output is
+`build/site/`. Its Pretext runtime and fonts come from the included Recorder's
+locked, vendored assets. GitHub Pages publishes only that public output.
 
 - Windows x64; MSVC Rust toolchain for the bridge.
 - The pinned official VLC 3.0.20 source and Windows runtime.

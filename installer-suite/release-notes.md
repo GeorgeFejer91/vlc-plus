@@ -1,11 +1,12 @@
-Three Windows x64 installer choices, with the joint installer listed first:
+Three Windows x64 installer choices, built and tested from this repository:
 
-1. **01 — VLC+ and Remote LSL Recorder**: installs both separate apps and adds a desktop shortcut that opens both.
-2. **02 — VLC+ only**: the tested VLC+ 0.3.2 installer, including Alt+F affect arrows and the authorized Great Dictator study clip.
-3. **03 — Remote LSL Recorder only**: the separately maintained Recorder 0.1.7 installer.
+1. **01 — VLC+ and Remote LSL Recorder together**: installs VLC+0.3.3 and the embedded Recorder0.1.8, with one desktop shortcut that opens both.
+2. **02 — VLC+0.3.3 only**: Alt+F affect arrows, Alt+G three-mode feedback cycling, quick controls and the authorized Great Dictator study clip.
+3. **03 — Remote LSL Recorder0.1.8 only**: Start VLC+ and record opens a local video paused, records the selected streams before playback and retains partial XDF on failure.
 
-Stop/save recordings and close VLC+ and Recorder before installing or updating. The joint shortcut opens the two apps; select streams and press Record in Recorder when ready. It does not start recording or enable phone control.
+The Recorder source, UI, browser controller, locks and notices are included in this repository. Its per-launch session ID identifies the intended VLC LSL streams even when different computers have matching PIDs. Sampling and XDF recording remain in the native applications, independently of browser rendering.
 
-The joint launcher's uninstaller removes its own shortcut and launcher. Each program remains separately uninstallable. All installers are unsigned experimental Windows builds. Synthetic LSL/XDF and hosted Windows install tests do not establish physical-device or scientific timing qualification.
+[VLC+ live page, controller and hotkeys](https://georgefejer91.github.io/vlc-plus/).
+Stop/save recordings and close both apps before updating. The joint shortcut starts neither recording nor phone access. Removing the joint launcher leaves both independently uninstallable apps and their data in place.
 
-Matching wrapper source, component identities, SHA-256 checksums and exact-run install/shortcut evidence are attached. VLC+ source and dependency bundles are available in [its 0.3.2 release](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.2-experimental.1); Recorder source and provenance are in [its independent release](https://github.com/GeorgeFejer91/Remote-LSL-Recorder/releases/tag/v0.1.7-experimental.1). Component licenses and media permission remain separate.
+Matching source archives, native dependency sources, component build receipts, SHA-256 checksums and exact-run install/shortcut evidence accompany these unsigned experimental installers. Physical-phone/device and scientific timing qualification remain separate from synthetic LSL, injected keys and hosted Windows installer checks.

@@ -30,6 +30,7 @@ the easiest interpretation.
 | Session loop, updates, Git publication, handoff | [`WORKFLOW.md`](./WORKFLOW.md) |
 | Planner/Runner JSON, schema ownership and compatibility work | [`PLANNER-INTEGRATION.md`](./PLANNER-INTEGRATION.md) |
 | Native build, patch or installer work | [`../docs/stock-vlc-integration.md`](../docs/stock-vlc-integration.md), [`../vlc-qt/README.md`](../vlc-qt/README.md) |
+| Embedded Recorder, browser controller or joint source build | [`../recorder/README.md`](../recorder/README.md), `PROJECT.md`, `VERIFICATION.md`; Rust/Tauri and Pretext skill routes apply |
 | Why a durable choice was made or superseded | [`DECISIONS.md`](./DECISIONS.md) |
 
 Do not read every file by default. Read this router, then only what the current

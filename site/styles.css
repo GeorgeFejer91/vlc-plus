@@ -1,0 +1,26 @@
+@font-face { font-family: "Noto Sans"; src: url("remote/vendor/fonts/noto-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Noto Sans"; src: url("remote/vendor/fonts/noto-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+:root { color: #20231f; background: #f4f2ed; font-family: "Noto Sans", sans-serif; font-size: 16px; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 62rem; margin: 0 auto; padding: 1.2rem; min-width: 0; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.15rem; margin-top: 1.8rem; }
+p, li, dd { line-height: 1.6; }
+p { margin: .8rem 0; }
+a { color: #204f74; overflow-wrap: anywhere; }
+a:focus-visible { outline: 3px solid #875a18; outline-offset: 3px; }
+nav { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; }
+nav a { min-width: 0; padding: .5rem 0; }
+dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr); gap: .7rem 1.2rem; }
+dt { font-weight: 600; overflow-wrap: anywhere; }
+dd { margin: 0; min-width: 0; }
+code, pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre { padding: .8rem; border: 1px solid #cbc7bd; background: #fff; line-height: 1.6; }
+[data-fit-text] { min-width: 0; font-size: var(--fit-text-size, var(--fit-preferred-size, 1rem)); }
+h1[data-fit-text] { --fit-preferred-size: 1.5rem; --fit-min-size: 1.3rem; }
+h2[data-fit-text] { --fit-preferred-size: 1.15rem; --fit-min-size: 1.05rem; }
+[data-fit-text="action"] { --fit-preferred-size: 1rem; --fit-min-size: 1rem; }
+h1, h2, [data-fit-text] { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 520px) { main { padding: 1rem; } dl { grid-template-columns: minmax(0, 1fr); gap: .25rem; } dd { margin-bottom: .7rem; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }

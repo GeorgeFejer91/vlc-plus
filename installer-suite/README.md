@@ -1,7 +1,13 @@
 # Joint installer
 
-This packaging layer composes two independently versioned, tested installers.
-It does not merge the applications or add recording/control authority. The
+The current `suite-source.yml` workflow builds VLC+ and the included Recorder
+from one clean checkout, tests each exact standalone installer, then packages
+and tests the joint installer. Use `./build-recorder.ps1` for the embedded app.
+`build.ps1 -BuiltFromSource` requires matching source/build/smoke receipts and
+generates a hash-bound component lock; it never downloads a component installer.
+
+The legacy mode below composes two independently versioned, tested installers.
+Neither mode merges application state or adds recording/control authority. The
 three downloads are numbered joint, VLC+, Recorder so the joint choice appears
 first. The standalone downloads are byte-identical copies of their upstream
 release installers, pinned in `components.lock.json`.

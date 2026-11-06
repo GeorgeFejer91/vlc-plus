@@ -8,11 +8,13 @@ presentation/input/settings; the Rust bridge owns its independent 30 Hz LSL
 worker and CSV writer. Sampling is not owned by a rendering callback.
 
 Planner authors studies; Runner executes full protocols; VLC+ is an independent
-playback target. Flubbercorder and Remote LSL Recorder are separate recorders.
-No recorder implementation, Planner editor, browser frontend or replacement
-media engine is included here. `installer-suite/` composes the independently
-maintained Remote LSL Recorder installer with VLC+ and owns only the joint
-launcher/shortcuts. Recorder retains recording, XDF and remote-control authority.
+playback target. Under the user's 2026-11-06 instruction, this repository now
+includes the self-contained Remote LSL Recorder source, UI, browser controller,
+locks and notices in `recorder/`. Its Rust core retains recording, XDF and
+remote-control authority; VLC remains a separate Qt process. No Planner editor
+or replacement media engine is added. `installer-suite/` owns joint packaging
+and shortcuts. `site/` is the VLC+ live page; its build includes the local
+Recorder controller and the shared hotkey list, with no sibling checkout.
 
 ## Overall product goal
 
@@ -24,6 +26,13 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ## Active milestone: keyboard, joint handoff and recording qualification
 
+- [x] Include self-contained Recorder source/UI/controller/locks/notices in
+  `recorder/`, pinned to upstream `242ad90` with declared local adaptations.
+  Its 21 JavaScript tests, 19 release Rust tests, controller/tab UI checks and
+  pinned LabRecorder preparation pass locally without a sibling checkout.
+- [ ] Pass the same-checkout component/standalone/joint build in
+  `suite-source.yml`, then publish its exact tested three choices.
+- [ ] Publish VLC+'s own live page with its hotkey list and local controller.
 - [x] Recover both saved branches and preserve the primary checkout's unfinished
   suite-shutdown changes; use the isolated `codex/complete-controls` worktree.
 - [x] Alt+F reserves all arrow variants from VLC while plain arrows change
@@ -49,19 +58,26 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   button, emulated valence/arousal changes, unchanged paused VLC time/volume,
   terminal markers, CSV and independently read XDF. Native launch/record/play
   reached recording but the privacy dialog blocked keyboard input: FAILED,
-  not qualification. User must handle the privacy dialog; do not bypass it.
+  not qualification. The user has now handled the privacy dialog manually;
+  resume the updated installed check. No consent was automated.
 - [ ] Merge reviewed source, publish exact tested component and joint versions,
   verify public hashes, update live download links and install the joint suite.
 
 New component candidate versions are VLC+0.3.3 and Recorder0.1.8; no new
 release is claimed. The [Recorder guide](https://georgefejer91.github.io/Remote-LSL-Recorder/vlc.html)
-is live with exact-file and rendered-width checks. The first new VLC installer
+is live with exact-file and rendered-width checks. VLC+ now owns `site/` and
+the included controller; deploy that page rather than relying on the separate
+Recorder website. The first new VLC installer
 run built the native player and installer but failed its receipt because one
 source-companion filename retained 0.3.2; that filename is now corrected.
 Existing installer/source artifacts under the primary checkout's build folder
 remain historical 0.3.2 candidates and must not substitute for newly tested
 bytes. The current source CI and hosted installer checks must be recorded below
-when observed. Full Planner-master execution and scientific/physical-device
+when observed. Native VLC installer run
+[42220389099](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42220389099)
+passes at `a44cbbe`, including source/immutable payload, decode, LSL/CSV and
+uninstall. The combined source build includes newer embedded-source changes
+and must pass separately. Full Planner-master execution and scientific/physical-device
 qualification remain open.
 
 ## Completed milestone: Alt+F affect arrows and bundled study clip
@@ -134,6 +150,8 @@ with scientific timing, physical input or research qualification.
 | `assets/face/` | Synthetic atlases, manifests and retained notices |
 | `package-stock-vlc.ps1`, `installer-stock-vlc.iss` | Windows staging and installer |
 | `installer-suite/` | Pinned separate component installers, joint installer and launcher; no acquisition authority |
+| `recorder/` | Embedded Rust/Tauri Recorder, viewer, browser controller and pinned recording engine setup; owns XDF and remote grants |
+| `site/`, `scripts/build-site.mjs` | VLC+ live page and copied self-contained browser controller |
 | `examples/` | Planner-generated interchange example |
 | `docs/` | Build, formats, provenance and third-party documentation |
 | `scripts/` | Standalone source validation |
