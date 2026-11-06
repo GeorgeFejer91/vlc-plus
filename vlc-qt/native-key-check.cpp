@@ -22,7 +22,39 @@ int main( int argc, char **argv )
             if( !flubberReservedKey( key, Qt::AltModifier, arrows ) ) return 10;
         if( !flubberReservedKey( Qt::Key_Plus, Qt::AltModifier | Qt::ShiftModifier, arrows ) ) return 11;
     }
+    const Qt::KeyboardModifiers dedicated = Qt::ControlModifier | Qt::AltModifier;
+    for( int key : { Qt::Key_T, Qt::Key_O, Qt::Key_B, Qt::Key_H, Qt::Key_W, Qt::Key_G, Qt::Key_E, Qt::Key_A,
+        Qt::Key_X, Qt::Key_Y, Qt::Key_J, Qt::Key_V, Qt::Key_P, Qt::Key_Z, Qt::Key_U, Qt::Key_D, Qt::Key_L,
+        Qt::Key_R, Qt::Key_I, Qt::Key_K, Qt::Key_Q, Qt::Key_C } )
+        if( !flubberReservedKey( key, dedicated, false ) || flubberReservedKey( key, Qt::NoModifier, false ) ) return 12;
+    for( int key : { Qt::Key_T, Qt::Key_B, Qt::Key_W, Qt::Key_E, Qt::Key_X, Qt::Key_Y, Qt::Key_J, Qt::Key_P, Qt::Key_Z,
+        Qt::Key_4, Qt::Key_5, Qt::Key_6, Qt::Key_7, Qt::Key_8, Qt::Key_9 } )
+        if( !flubberReservedKey( key, dedicated | Qt::ShiftModifier, false ) ) return 13;
+    if( flubberSettingKey( Qt::Key_BracketLeft, dedicated, '8' ).action != FlubberMappingDriver ||
+        flubberSettingKey( Qt::Key_BracketRight, dedicated, '9' ).index != 5 ||
+        flubberSettingKey( 0x20ac, dedicated, 'E' ).action != FlubberHaloSteepness ||
+        flubberSettingKey( Qt::Key_At, dedicated, 'Q' ).action != FlubberColor ||
+        flubberSettingKey( Qt::Key_BracketLeft, dedicated ).action != NoFlubberSetting ||
+        flubberSettingKey( Qt::Key_At, Qt::AltModifier, 'Q' ).action != NoFlubberSetting ) return 18;
+    for( int key = Qt::Key_F1; key <= Qt::Key_F12; ++key )
+        if( !flubberReservedKey( key, dedicated, false ) || !flubberReservedKey( key, dedicated | Qt::ShiftModifier, false ) ||
+            flubberReservedKey( key, Qt::AltModifier, false ) ) return 14;
+    for( int key = Qt::Key_F1; key <= Qt::Key_F6; ++key )
+        if( !flubberReservedKey( key, Qt::ControlModifier | Qt::ShiftModifier, false ) ) return 15;
+    for( int key : { Qt::Key_O, Qt::Key_H, Qt::Key_G, Qt::Key_A, Qt::Key_V, Qt::Key_U, Qt::Key_C } )
+        if( flubberReservedKey( key, dedicated | Qt::ShiftModifier, false ) ) return 16;
 #ifdef Q_OS_WIN
+    for( WPARAM key = VK_F1; key <= VK_F12; ++key )
+        if( flubberQtKey( key ) != Qt::Key_F1 + int( key - VK_F1 ) ) return 17;
+    for( WPARAM key = VK_NUMPAD0; key <= VK_NUMPAD9; ++key )
+    {
+        const int digit = int( key - VK_NUMPAD0 );
+        const int qt = flubberQtKey( key );
+        if( qt != Qt::Key_0 + digit ) return 19;
+        if( digit >= 4 && ( !flubberReservedKey( qt, dedicated, false ) ||
+            flubberSettingKey( qt, dedicated | Qt::KeypadModifier ).index != digit - 4 ||
+            flubberSettingKey( qt, dedicated ).action != FlubberMappingDriver ) ) return 20;
+    }
     // Hidden, owned HWNDs: exercise the same separate GetMessage loop as VLC
     // without taking foreground focus or synthesizing input into another app.
     struct Windows { HWND surface, child, other; DWORD thread; };

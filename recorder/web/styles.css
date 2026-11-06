@@ -47,7 +47,7 @@ body {
   overflow: hidden;
 }
 
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 
 button {
   min-height: 38px;
@@ -76,7 +76,7 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 [data-fit-state="fit"] { white-space: nowrap; }
 [data-fit-state="no-fit"] { white-space: normal; }
 
-button:focus-visible, input:focus-visible, a:focus-visible {
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--focus) 35%, transparent);
   outline-offset: 2px;
 }
@@ -234,6 +234,34 @@ dialog {
   background: var(--surface);
 }
 dialog::backdrop { background: rgba(22, 24, 21, 0.42); }
+#vlc-dialog {
+  width: min(56rem, calc(100vw - 24px));
+  height: min(850px, calc(100dvh - 24px));
+  overflow: visible;
+  padding: clamp(10px, min(2vw, 2vh), 22px);
+}
+#vlc-dialog[open] { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: clamp(8px, min(2vw, 2vh), 18px); }
+#vlc-dialog .dialog-title { margin: 0; gap: 8px; }
+.vlc-views, .vlc-page-actions { display: flex; gap: clamp(8px, min(2vw, 2vh), 18px); }
+.vlc-views button, .vlc-page-actions button { flex: 1; min-width: 0; }
+.vlc-views [aria-pressed="true"] { border-color: var(--green); background: var(--surface-muted); }
+.vlc-settings { display: grid; align-content: space-between; gap: 12px; min-width: 0; min-height: 0; }
+.vlc-settings > div { display: grid; gap: 6px; min-width: 0; }
+.vlc-settings label, .vlc-settings p { line-height: 1.5; overflow-wrap: break-word; }
+.vlc-library { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; gap: clamp(8px, min(2vw, 2vh), 18px); font-size: clamp(1rem, min(calc(.9rem + .25vw), calc(.9rem + .25vh)), 1.1rem); }
+.vlc-settings[hidden], .vlc-library[hidden] { display: none; }
+.vlc-library-heading { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; align-items: center; min-width: 0; line-height: 1.5; }
+.vlc-library-heading p { grid-column: 1 / -1; line-height: 1.5; }
+.vlc-library-heading select { width: 100%; min-width: 0; min-height: 38px; padding: 5px; border: 1px solid var(--border); background: var(--surface); color: inherit; line-height: 1.5; }
+.vlc-library .vlc-hotkeys { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; min-height: 0; margin: 0; line-height: 1.5; }
+.vlc-hotkey-entry { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: .3rem 1rem; flex: none; min-width: 0; }
+.vlc-library .vlc-hotkeys dt, .vlc-library .vlc-hotkeys dd { min-width: 0; overflow-wrap: break-word; }
+.vlc-library-footer { display: grid; gap: 8px; min-width: 0; }
+.vlc-library-footer p { line-height: 1.5; }
+@media (max-width: 480px) {
+  .vlc-hotkey-entry { grid-template-columns: minmax(0, 1fr); }
+  .vlc-library .vlc-hotkeys dd { margin-bottom: 0; }
+}
 .dialog-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .icon-button { min-width: 36px; padding: 4px; background: transparent; border-color: transparent; font-size: 22px; }
 #remote-idle, #remote-active { display: grid; gap: 13px; }

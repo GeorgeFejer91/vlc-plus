@@ -26,9 +26,67 @@ struct FlubberNativeKeyEvent : QEvent
     quint64 guiRevision;
 };
 
+inline int flubberWindowsAlphanumericKey( quint32 key )
+{
+    if( key >= 'A' && key <= 'Z' ) return Qt::Key_A + int( key - 'A' );
+    if( key >= '0' && key <= '9' ) return Qt::Key_0 + int( key - '0' );
+    return 0;
+}
+
+enum FlubberSettingAction
+{
+    NoFlubberSetting, FlubberTransparency, FlubberOutline, FlubberOutlineWidth,
+    FlubberHalo, FlubberHaloWidth, FlubberHaloGradient, FlubberHaloSteepness, FlubberColorAnchors,
+    FlubberGridColumns, FlubberGridRows, FlubberGridLineWidth, FlubberGridOutline,
+    FlubberGridOutlineWidth, FlubberGridCursorSize, FlubberMappingMaximum, FlubberMappingMinimum,
+    FlubberMappingDriver, FlubberMappingReverse, FlubberColor
+};
+struct FlubberSettingKey { FlubberSettingAction action; int index; };
+
+inline FlubberSettingKey flubberSettingKey( int key, Qt::KeyboardModifiers mods, quint32 windowsVirtualKey = 0 )
+{
+    mods &= ~Qt::KeypadModifier;
+    if( mods == ( Qt::ControlModifier | Qt::ShiftModifier ) && key >= Qt::Key_F1 && key <= Qt::Key_F6 )
+        return { FlubberMappingReverse, key - Qt::Key_F1 };
+    const Qt::KeyboardModifiers chord = Qt::ControlModifier | Qt::AltModifier;
+    if( mods != chord && mods != ( chord | Qt::ShiftModifier ) ) return { NoFlubberSetting, 0 };
+    const int alphanumeric = flubberWindowsAlphanumericKey( windowsVirtualKey );
+    if( alphanumeric ) key = alphanumeric;
+    if( key >= Qt::Key_F1 && key <= Qt::Key_F12 )
+        return { key <= Qt::Key_F6 ? FlubberMappingMaximum : FlubberMappingMinimum, ( key - Qt::Key_F1 ) % 6 };
+    if( key >= Qt::Key_4 && key <= Qt::Key_9 ) return { FlubberMappingDriver, key - Qt::Key_4 };
+    switch( key )
+    {
+        case Qt::Key_T: return { FlubberTransparency, 0 };
+        case Qt::Key_B: return { FlubberOutlineWidth, 0 };
+        case Qt::Key_W: return { FlubberHaloWidth, 0 };
+        case Qt::Key_E: return { FlubberHaloSteepness, 0 };
+        case Qt::Key_X: return { FlubberGridColumns, 0 };
+        case Qt::Key_Y: return { FlubberGridRows, 0 };
+        case Qt::Key_J: return { FlubberGridLineWidth, 0 };
+        case Qt::Key_P: return { FlubberGridOutlineWidth, 0 };
+        case Qt::Key_Z: return { FlubberGridCursorSize, 0 };
+        default: break;
+    }
+    if( mods != chord ) return { NoFlubberSetting, 0 };
+    switch( key )
+    {
+        case Qt::Key_O: return { FlubberOutline, 0 };
+        case Qt::Key_H: return { FlubberHalo, 0 };
+        case Qt::Key_G: return { FlubberHaloGradient, 0 };
+        case Qt::Key_A: return { FlubberColorAnchors, 0 };
+        case Qt::Key_V: return { FlubberGridOutline, 0 };
+        default: break;
+    }
+    const int colors[] = { Qt::Key_U, Qt::Key_D, Qt::Key_L, Qt::Key_R, Qt::Key_I, Qt::Key_K, Qt::Key_Q, Qt::Key_C };
+    for( int i = 0; i < 8; ++i ) if( key == colors[i] ) return { FlubberColor, i };
+    return { NoFlubberSetting, 0 };
+}
+
 inline bool flubberReservedKey( int key, Qt::KeyboardModifiers mods, bool arrows )
 {
     mods &= ~Qt::KeypadModifier;
+    if( flubberSettingKey( key, mods ).action != NoFlubberSetting ) return true;
     if( key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down )
         return arrows;
     if( mods == Qt::AltModifier && key == Qt::Key_F ) return true;
@@ -54,6 +112,25 @@ inline bool flubberReservedKey( int key, Qt::KeyboardModifiers mods, bool arrows
 #endif
 #include <windows.h>
 
+inline int flubberQtKey( WPARAM key )
+{
+    if( key >= VK_F1 && key <= VK_F12 ) return Qt::Key_F1 + int( key - VK_F1 );
+    if( key >= VK_NUMPAD0 && key <= VK_NUMPAD9 ) return Qt::Key_0 + int( key - VK_NUMPAD0 );
+    const int alphanumeric = flubberWindowsAlphanumericKey( quint32( key ) );
+    if( alphanumeric ) return alphanumeric;
+    switch( key )
+    {
+        case VK_LEFT: return Qt::Key_Left; case VK_RIGHT: return Qt::Key_Right;
+        case VK_UP: return Qt::Key_Up; case VK_DOWN: return Qt::Key_Down;
+        case VK_PRIOR: return Qt::Key_PageUp; case VK_NEXT: return Qt::Key_PageDown;
+        case VK_OEM_PLUS: return Qt::Key_Equal; case VK_ADD: return Qt::Key_Plus;
+        case VK_OEM_MINUS: case VK_SUBTRACT: return Qt::Key_Minus;
+        case VK_OEM_4: return Qt::Key_BracketLeft; case VK_OEM_6: return Qt::Key_BracketRight;
+        case VK_OEM_COMMA: return Qt::Key_Comma; case VK_OEM_PERIOD: return Qt::Key_Period;
+        default: return 0;
+    }
+}
+
 class FlubberVideoKeys
 {
     struct Entry { FlubberVideoKeys *owner; QObject *target; HWND surface; bool arrows, altChord; };
@@ -78,22 +155,6 @@ class FlubberVideoKeys
             found.windows.insert( thread, window );
         return TRUE;
     }
-    static int qtKey( WPARAM key )
-    {
-        if( key >= 'A' && key <= 'Z' ) return Qt::Key_A + int( key - 'A' );
-        if( key >= '0' && key <= '9' ) return Qt::Key_0 + int( key - '0' );
-        switch( key )
-        {
-            case VK_LEFT: return Qt::Key_Left; case VK_RIGHT: return Qt::Key_Right;
-            case VK_UP: return Qt::Key_Up; case VK_DOWN: return Qt::Key_Down;
-            case VK_PRIOR: return Qt::Key_PageUp; case VK_NEXT: return Qt::Key_PageDown;
-            case VK_OEM_PLUS: return Qt::Key_Equal; case VK_ADD: return Qt::Key_Plus;
-            case VK_OEM_MINUS: case VK_SUBTRACT: return Qt::Key_Minus;
-            case VK_OEM_4: return Qt::Key_BracketLeft; case VK_OEM_6: return Qt::Key_BracketRight;
-            case VK_OEM_COMMA: return Qt::Key_Comma; case VK_OEM_PERIOD: return Qt::Key_Period;
-            default: return 0;
-        }
-    }
     static LRESULT CALLBACK receive( int code, WPARAM removed, LPARAM parameter )
     {
         if( code >= 0 && removed == PM_REMOVE )
@@ -112,7 +173,7 @@ class FlubberVideoKeys
                     GUITHREADINFO state = {}; state.cbSize = sizeof( state );
                     const bool menu = GetGUIThreadInfo( GetCurrentThreadId(), &state ) &&
                         ( state.flags & ( GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE ) );
-                    int key = qtKey( message.wParam );
+                    int key = flubberQtKey( message.wParam );
                     Qt::KeyboardModifiers mods = Qt::NoModifier;
                     if( GetKeyState( VK_CONTROL ) & 0x8000 ) mods |= Qt::ControlModifier;
                     if( GetKeyState( VK_SHIFT ) & 0x8000 ) mods |= Qt::ShiftModifier;

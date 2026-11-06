@@ -14,8 +14,262 @@
 #endif
 #include <cstdio>
 
+
+static QJsonValue settingAt( QJsonObject root, const QStringList &path )
+{
+    QJsonValue value( root );
+    for( const QString &key : path ) value = value.toObject().value( key );
+    return value;
+}
+
+static void replaceSetting( QJsonObject &root, QStringList path, const QJsonValue &value )
+{
+    const QString key = path.takeFirst();
+    if( path.isEmpty() ) root.insert( key, value );
+    else { QJsonObject child = root.value( key ).toObject(); replaceSetting( child, path, value ); root.insert( key, child ); }
+}
+
+
+#ifdef Q_OS_WIN
+static int checkTranslatedDedicatedKeys( const QString &directory )
+{
+    QSettings settings( directory + "/translated.ini", QSettings::IniFormat );
+    FlubberPanel panel( &settings );
+    QJsonObject baseline = panel.settingsJson(); baseline.insert( "stepPercent", 37 ); baseline.insert( "primary", "face" );
+    const QStringList names{ "oscillationFrequency", "edgeSmoothness", "projectionAmplitude", "pulseSynchrony", "waveSizeVariation", "saturation" };
+    for( const QString &name : names ) replaceSetting( baseline, { "appearance", "mappings", name, "drivenBy" }, "x-axis" );
+    replaceSetting( baseline, { "appearance", "presentation", "halo", "steepness" }, 1 );
+    QFile fixture( directory + "/translated.json" );
+    if( !fixture.open( QIODevice::WriteOnly ) ) return 125;
+    fixture.write( QJsonDocument( baseline ).toJson() ); fixture.close();
+    const auto reset = [&]() { QString error; return panel.loadSettingsFile( fixture.fileName(), error ); };
+    const Qt::KeyboardModifiers chord = Qt::ControlModifier | Qt::AltModifier;
+    struct Probe { int symbol, virtualKey, mapping; bool shift, keypad; };
+    const Probe probes[] = {
+        { '[', 0x38, 4, false, false }, { ']', 0x39, 5, false, false },
+        { '$', 0x34, 0, true, false }, { '%', 0x35, 1, true, false }, { '&', 0x36, 2, true, false },
+        { '/', 0x37, 3, true, false }, { '(', 0x38, 4, true, false }, { ')', 0x39, 5, true, false },
+        { Qt::Key_4, 0x64, 0, false, true }, { Qt::Key_5, 0x65, 1, false, true },
+        { Qt::Key_6, 0x66, 2, false, true }, { Qt::Key_7, 0x67, 3, false, true },
+        { Qt::Key_8, 0x68, 4, false, true }, { Qt::Key_9, 0x69, 5, false, true }
+    };
+    for( const Probe &probe : probes )
+    {
+        if( !reset() ) return 126;
+        Qt::KeyboardModifiers modifiers = probe.shift ? chord | Qt::ShiftModifier : chord;
+        if( probe.keypad ) modifiers |= Qt::KeypadModifier;
+        QKeyEvent claim( QEvent::ShortcutOverride, probe.symbol, modifiers, 0, probe.virtualKey, 0 );
+        const QJsonObject before = panel.settingsJson();
+        if( !panel.handleInputKey( &claim ) || !claim.isAccepted() || panel.settingsJson() != before ) return 127;
+        QKeyEvent press( QEvent::KeyPress, probe.symbol, modifiers, 0, probe.virtualKey, 0 );
+        if( !panel.handleInputKey( &press ) || panel.settingsJson().value( "stepPercent" ).toInt() != 37 ||
+            settingAt( panel.settingsJson(), { "appearance", "mappings", names[probe.mapping], "drivenBy" } ).toString() !=
+                QLatin1String( probe.shift ? "radius" : "y-axis" ) || panel.primary() != FlubberPanel::FlubberKind ) return 128;
+    }
+    if( !reset() ) return 129;
+    QKeyEvent euroClaim( QEvent::ShortcutOverride, 0x20ac, chord, 0, 0x45, 0 );
+    QKeyEvent euro( QEvent::KeyPress, 0x20ac, chord, 0, 0x45, 0 );
+    const QJsonObject beforeEuro = panel.settingsJson();
+    if( !panel.handleInputKey( &euroClaim ) || panel.settingsJson() != beforeEuro || !panel.handleInputKey( &euro ) ||
+        qAbs( settingAt( panel.settingsJson(), { "appearance", "presentation", "halo", "steepness" } ).toDouble() - 1.1 ) > 1e-8 ||
+        panel.settingsJson().value( "stepPercent" ).toInt() != 37 ) return 130;
+    if( !reset() ) return 131;
+    QKeyEvent atClaim( QEvent::ShortcutOverride, '@', chord, 0, 0x51, 0 );
+    QKeyEvent at( QEvent::KeyPress, '@', chord, 0, 0x51, 0 );
+    const QJsonObject beforeAt = panel.settingsJson();
+    if( !panel.handleInputKey( &atClaim ) || panel.settingsJson() != beforeAt ) return 132;
+    bool opened = false;
+    QTimer::singleShot( 0, [&]() {
+        QColorDialog *dialog = qobject_cast<QColorDialog *>( QApplication::activeModalWidget() );
+        if( dialog ) { opened = true; dialog->setCurrentColor( QColor( "#654321" ) ); dialog->accept(); }
+    } );
+    if( !panel.handleInputKey( &at ) || !opened ||
+        settingAt( panel.settingsJson(), { "appearance", "visual", "colors", "halo" } ).toString() != QLatin1String( "#654321" ) ||
+        panel.settingsJson().value( "stepPercent" ).toInt() != 37 || panel.primary() != FlubberPanel::FlubberKind ) return 133;
+    return 0;
+}
+#endif
+
+static int checkDedicatedSettings( const QString &directory )
+{
+    QSettings settings( directory + "/dedicated.ini", QSettings::IniFormat );
+    FlubberPanel panel( &settings );
+    if( panel.settingsJson().value( "schema" ).toString() != QLatin1String( "vlc-feedback-settings/v3" ) ||
+        panel.settingsJson().value( "stepPercent" ).toInt() != 10 ) return 101;
+    const Qt::KeyboardModifiers chord = Qt::ControlModifier | Qt::AltModifier;
+    {
+        const QJsonObject before = panel.settingsJson();
+        QDialog modal( &panel ); modal.setModal( true ); modal.show(); QApplication::processEvents();
+        FlubberNativeKeyEvent queued( Qt::Key_T, chord, false, -1 );
+        QCoreApplication::sendEvent( &panel, &queued ); modal.reject();
+        if( panel.settingsJson() != before ) return 121;
+    }
+    const auto press = [&]( int key, Qt::KeyboardModifiers modifiers ) {
+        QKeyEvent event( QEvent::KeyPress, key, modifiers ); return panel.handleInputKey( &event );
+    };
+    const auto load = [&]( const QJsonObject &root ) {
+        QFile file( directory + "/dedicated.json" );
+        if( !file.open( QIODevice::WriteOnly ) ) return false;
+        file.write( QJsonDocument( root ).toJson() ); file.close();
+        QString error; return panel.loadSettingsFile( file.fileName(), error );
+    };
+    const auto exclusive = [&]( FlubberPanel::FeedbackKind kind ) {
+        for( int i = 0; i < 3; ++i ) if( panel.visible( static_cast<FlubberPanel::FeedbackKind>( i ) ) != ( i == kind ) ) return false;
+        return panel.primary() == kind;
+    };
+    const auto unchangedProbes = [&]( int key, Qt::KeyboardModifiers modifiers ) {
+        const QJsonObject before = panel.settingsJson();
+        QKeyEvent claim( QEvent::ShortcutOverride, key, modifiers );
+        QKeyEvent repeat( QEvent::KeyPress, key, modifiers, QString(), true );
+        return panel.handleInputKey( &claim ) && claim.isAccepted() && panel.handleInputKey( &repeat ) && panel.settingsJson() == before;
+    };
+    panel.setAffect( .25, -.5 );
+    QJsonObject baseline = panel.settingsJson(); baseline.insert( "primary", "face" );
+    struct Numeric { int key; const char *path; double start, step, low, high; bool grid; };
+    const Numeric numbers[] = {
+        { Qt::Key_T, "appearance/visual/transparency", .5, .05, 0, 1, false },
+        { Qt::Key_B, "appearance/visual/flubber/outlineThickness", 2, .25, 0, 20, false },
+        { Qt::Key_W, "appearance/presentation/halo/widthPercent", 15, 5, 0, 10000, false },
+        { Qt::Key_E, "appearance/presentation/halo/steepness", 1, .1, .1, 10, false },
+        { Qt::Key_X, "grid/columns", 21, 2, 3, 2001, true },
+        { Qt::Key_Y, "grid/rows", 21, 2, 3, 2001, true },
+        { Qt::Key_J, "grid/lineThickness", 1, .25, 0, 20, true },
+        { Qt::Key_P, "grid/outlineThickness", 2, .25, 0, 20, true },
+        { Qt::Key_Z, "grid/cursorSize", 14, 1, 0, 100, true }
+    };
+    for( const Numeric &control : numbers )
+    {
+        const QStringList path = QString::fromLatin1( control.path ).split( '/' );
+        QJsonObject initial = baseline; replaceSetting( initial, path, control.start );
+        if( !load( initial ) || !unchangedProbes( control.key, chord ) || !press( control.key, chord ) ||
+            qAbs( settingAt( panel.settingsJson(), path ).toDouble() - control.start - control.step ) > 1e-8 ||
+            !exclusive( control.grid ? FlubberPanel::GridKind : FlubberPanel::FlubberKind ) ) return 102;
+        if( !press( control.key, chord | Qt::ShiftModifier ) ||
+            qAbs( settingAt( panel.settingsJson(), path ).toDouble() - control.start ) > 1e-8 ) return 103;
+        for( bool upper : { false, true } )
+        {
+            QJsonObject limit = baseline; replaceSetting( limit, path, upper ? control.high : control.low );
+            if( !load( limit ) || !press( control.key, upper ? chord : chord | Qt::ShiftModifier ) ||
+                settingAt( panel.settingsJson(), path ).toDouble() != ( upper ? control.high : control.low ) ) return 104;
+        }
+    }
+    struct Toggle { int key; const char *path; bool grid; };
+    const Toggle toggles[] = {
+        { Qt::Key_O, "appearance/visual/flubber/showOutline", false },
+        { Qt::Key_H, "appearance/visual/flubber/showHalo", false },
+        { Qt::Key_G, "appearance/presentation/halo/gradient", false },
+        { Qt::Key_V, "grid/showOutline", true }
+    };
+    for( const Toggle &control : toggles )
+    {
+        const QStringList path = QString::fromLatin1( control.path ).split( '/' );
+        QJsonObject initial = baseline; replaceSetting( initial, path, false );
+        if( !load( initial ) || !unchangedProbes( control.key, chord ) || !press( control.key, chord ) ||
+            !settingAt( panel.settingsJson(), path ).toBool() ||
+            !exclusive( control.grid ? FlubberPanel::GridKind : FlubberPanel::FlubberKind ) ||
+            !press( control.key, chord ) || settingAt( panel.settingsJson(), path ).toBool() ) return 105;
+    }
+    QJsonObject anchors = baseline;
+    replaceSetting( anchors, { "appearance", "presentation", "colorAnchors" }, "axes" );
+    if( !load( anchors ) || !press( Qt::Key_A, chord ) ||
+        settingAt( panel.settingsJson(), { "appearance", "presentation", "colorAnchors" } ).toString() != QLatin1String( "corners" ) ||
+        !press( Qt::Key_A, chord ) || !exclusive( FlubberPanel::FlubberKind ) ||
+        settingAt( panel.settingsJson(), { "appearance", "presentation", "colorAnchors" } ).toString() != QLatin1String( "axes" ) ) return 106;
+    const QStringList mappingNames{ "oscillationFrequency", "edgeSmoothness", "projectionAmplitude",
+        "pulseSynchrony", "waveSizeVariation", "saturation" };
+    for( int i = 0; i < 6; ++i )
+    {
+        const QStringList path{ "appearance", "mappings", mappingNames[i] };
+        QJsonObject initial = baseline;
+        replaceSetting( initial, path, QJsonObject{ { "min", i == 0 ? 1 : .2 }, { "max", i == 0 ? 3 : .8 },
+            { "drivenBy", "x-axis" }, { "reverse", false } } );
+        for( bool minimum : { false, true } )
+        {
+            const int key = Qt::Key_F1 + i + ( minimum ? 6 : 0 );
+            QStringList bound = path; bound << ( minimum ? "min" : "max" );
+            const double start = minimum ? ( i == 0 ? 1 : .2 ) : ( i == 0 ? 3 : .8 );
+            const double step = i == 0 ? .1 : .05;
+            if( !load( initial ) || !unchangedProbes( key, chord ) || !press( key, chord ) ||
+                qAbs( settingAt( panel.settingsJson(), bound ).toDouble() - start - step ) > 1e-8 ||
+                !press( key, chord | Qt::ShiftModifier ) ||
+                qAbs( settingAt( panel.settingsJson(), bound ).toDouble() - start ) > 1e-8 ||
+                !exclusive( FlubberPanel::FlubberKind ) ) return 107;
+            QJsonObject closed = initial;
+            QStringList lo = path; lo << "min"; QStringList hi = path; hi << "max";
+            replaceSetting( closed, lo, .5 ); replaceSetting( closed, hi, .5 );
+            if( !load( closed ) || !press( key, minimum ? chord : chord | Qt::ShiftModifier ) ||
+                settingAt( panel.settingsJson(), bound ).toDouble() != .5 ) return 108;
+            for( bool upper : { false, true } )
+            {
+                QJsonObject limit = initial;
+                replaceSetting( limit, lo, upper ? ( i == 0 ? 10 : 1 ) : 0 );
+                replaceSetting( limit, hi, upper ? ( i == 0 ? 10 : 1 ) : 0 );
+                if( !load( limit ) || !press( key, upper ? chord : chord | Qt::ShiftModifier ) ||
+                    settingAt( panel.settingsJson(), bound ).toDouble() != ( upper ? ( i == 0 ? 10 : 1 ) : 0 ) ) return 109;
+            }
+        }
+        QStringList driver = path; driver << "drivenBy"; QStringList reverse = path; reverse << "reverse";
+        if( !load( initial ) || !press( Qt::Key_4 + i, chord ) || settingAt( panel.settingsJson(), driver ).toString() != QLatin1String( "y-axis" ) ||
+            !press( Qt::Key_4 + i, chord | Qt::ShiftModifier ) || settingAt( panel.settingsJson(), driver ).toString() != QLatin1String( "x-axis" ) ||
+            !press( Qt::Key_4 + i, chord | Qt::ShiftModifier ) || settingAt( panel.settingsJson(), driver ).toString() != QLatin1String( "radius" ) ||
+            !press( Qt::Key_4 + i, chord ) || settingAt( panel.settingsJson(), driver ).toString() != QLatin1String( "x-axis" ) ||
+            !unchangedProbes( Qt::Key_F1 + i, Qt::ControlModifier | Qt::ShiftModifier ) ||
+            !press( Qt::Key_F1 + i, Qt::ControlModifier | Qt::ShiftModifier ) || !settingAt( panel.settingsJson(), reverse ).toBool() ||
+            !press( Qt::Key_F1 + i, Qt::ControlModifier | Qt::ShiftModifier ) || settingAt( panel.settingsJson(), reverse ).toBool() ||
+            !exclusive( FlubberPanel::FlubberKind ) ) return 110;
+    }
+    const int colorKeys[] = { Qt::Key_U, Qt::Key_D, Qt::Key_L, Qt::Key_R, Qt::Key_I, Qt::Key_K, Qt::Key_Q, Qt::Key_C };
+    const QStringList colorNames{ "up", "down", "left", "right", "idle", "outline", "halo", "cursor" };
+    for( int i = 0; i < 8; ++i )
+    {
+        if( !load( baseline ) || !unchangedProbes( colorKeys[i], chord ) ) return 111;
+        const QJsonObject before = panel.settingsJson(); bool opened = false;
+        QTimer::singleShot( 0, [&]() {
+            QColorDialog *dialog = qobject_cast<QColorDialog *>( QApplication::activeModalWidget() );
+            if( dialog ) { opened = true; dialog->reject(); }
+        } );
+        if( !press( colorKeys[i], chord ) || !opened || panel.settingsJson() != before ) return 112;
+        opened = false;
+        QTimer::singleShot( 0, [&]() {
+            QColorDialog *dialog = qobject_cast<QColorDialog *>( QApplication::activeModalWidget() );
+            if( dialog ) { opened = true; dialog->setCurrentColor( QColor( "#123456" ) ); dialog->accept(); }
+        } );
+        if( !press( colorKeys[i], chord ) || !opened || !exclusive( FlubberPanel::FlubberKind ) ||
+            settingAt( panel.settingsJson(), { "appearance", "visual", "colors", colorNames[i] } ).toString() != QLatin1String( "#123456" ) ) return 113;
+    }
+    if( panel.valence() != .25f || panel.arousal() != -.5f ) return 114;
+    const QJsonObject beforeInvalid = panel.settingsJson();
+    for( const QJsonValue &step : { QJsonValue( 0 ), QJsonValue( 101 ), QJsonValue( 10.5 ), QJsonValue( "20" ), QJsonValue() } )
+    {
+        QJsonObject invalid = beforeInvalid; invalid.insert( "stepPercent", step );
+        if( load( invalid ) || panel.settingsJson() != beforeInvalid ) return 115;
+    }
+    QJsonObject missingStep = beforeInvalid; missingStep.remove( "stepPercent" );
+    if( load( missingStep ) || panel.settingsJson() != beforeInvalid ) return 122;
+    for( int step : { 1, 100 } )
+    {
+        QJsonObject endpoint = beforeInvalid; endpoint.insert( "stepPercent", step );
+        if( !load( endpoint ) || !press( step == 1 ? Qt::Key_BracketLeft : Qt::Key_BracketRight, chord ) ||
+            panel.settingsJson().value( "stepPercent" ).toInt() != step ) return 123;
+    }
+    QJsonObject desired = panel.settingsJson(); desired.insert( "stepPercent", 37 );
+    if( !load( desired ) || settings.value( "Flubber/stepPercent" ).toInt() != 37 ) return 116;
+    QString error;
+    if( !panel.saveSettingsSnapshot( error ) ) return 117;
+    press( Qt::Key_BracketRight, chord );
+    FlubberPanel restored( &settings );
+    if( restored.settingsJson() != desired ) return 118;
+    QJsonObject legacy = desired; legacy.insert( "schema", "vlc-feedback-settings/v2" ); legacy.remove( "stepPercent" );
+    if( !load( legacy ) || panel.settingsJson().value( "stepPercent" ).toInt() != 38 ) return 119;
+    legacy.insert( "stepPercent", 37 );
+    const QJsonObject beforeExtra = panel.settingsJson();
+    if( load( legacy ) || panel.settingsJson() != beforeExtra ) return 120;
+    return 0;
+}
+
 int main( int argc, char **argv )
 {
+    QApplication::setAttribute( Qt::AA_DontUseNativeDialogs );
     QApplication app( argc, argv );
     {
         QTemporaryDir inputRaceRoot;
@@ -45,6 +299,10 @@ int main( int argc, char **argv )
         return 3;
     }
     QTemporaryDir temp;
+#ifdef Q_OS_WIN
+    const int translatedKeys = checkTranslatedDedicatedKeys( temp.path() );
+    if( translatedKeys ) return translatedKeys;
+#endif
     QSettings settings( temp.filePath( "flubber.ini" ), QSettings::IniFormat );
     settings.setValue( "Flubber/appearancePath", QString::fromLocal8Bit( argv[1] ) );
     FlubberPanel panel( &settings );
@@ -343,6 +601,11 @@ int main( int argc, char **argv )
     const auto primaryBeforeTyping = shortcutPanel.primary();
     QTest::keyClick( &textEntry, Qt::Key_G, Qt::AltModifier );
     if( shortcutPanel.primary() != primaryBeforeTyping ) return 55;
+    const QJsonObject beforeTextShortcuts = shortcutPanel.settingsJson();
+    QTest::keyClick( &textEntry, Qt::Key_T, Qt::ControlModifier | Qt::AltModifier );
+    QTest::keyClick( &textEntry, Qt::Key_F1, Qt::ControlModifier | Qt::AltModifier );
+    QTest::keyClick( &textEntry, Qt::Key_F1, Qt::ControlModifier | Qt::ShiftModifier );
+    if( shortcutPanel.settingsJson() != beforeTextShortcuts ) return 124;
     QTest::keyClick( &textEntry, Qt::Key_J, Qt::AltModifier );
     if( keySettings.value( "Flubber/lastSettingsPath" ).toString() != videoSnapshot ) return 78;
 #endif
@@ -499,5 +762,5 @@ int main( int argc, char **argv )
     bookmarkSettings.sync();
     if( !bookmarkPanel.saveSettingsSnapshot( error ) ||
         bookmarkSettings.value( "Flubber/lastSettingsPath" ).toString() == lastSnapshot ) return 80;
-    return 0;
+    return checkDedicatedSettings( temp.path() );
 }

@@ -28,74 +28,69 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ### Latest status (2026-11-06)
 
-PR11 and PR12 are combined on main at `5e7c017`; all four source/UI CI jobs
-pass (42249796964). Pages 42250902744 passes; all 82 actual public assets
-byte-match the audited build, including the rendered 18-entry hotkey list at
-320–1920 px and enlarged text. All nine face atlases also load through the
-real native CLI; a native screenshot confirms only Face is visible.
+The user expanded this milestone to dedicated shortcuts for all 60 detailed
+settings plus rating step, a complete shared hotkey library, and hotkey-saved
+JSON restored at startup. The current worktree is
+`codex/dedicated-flubber-hotkeys`, based on main `5b94b16`. Native source now
+uses a shared Qt/Windows matcher for appearance, grid, mapping and color keys;
+Alt+F4, dialog/text entry, repeat guards and exclusive representations remain.
+Snapshots use strict `vlc-feedback-settings/v3` with integer `stepPercent`;
+v2/appearance-v1 imports and explicit session overrides remain supported.
 
-Source-suite run 42250905725 built the combined source, verified 701 immutable
-installed files, decoded 204 frames, sampled 30.0002 Hz LSL, and verified CSV
-and terminal/transport markers. It then FAILED an obsolete installer assertion
-requiring grid and face visible simultaneously. The test now requires all
-three explicit visibility flags and the selected Face; its independent Rust
-probe polls exclusive state after each grid/Flubber/grid/face command. The
-new regression rejects legacy multiple, missing and duplicate flags. No
-production behavior was relaxed; rerun the full exact-source suite.
+Focused Windows matcher/hook and offscreen panel checks pass, including all
+new action groups, numeric boundaries, mapping min/max constraints, color
+Cancel/accept, v3 restore, v2 retention, invalid step and queued modal events.
+The shared guide has 64 groups; Recorder help uses measured category pages
+without an internal scrollbar. Independent review found and resolved German translated-symbol/VK and numpad
+parity gaps, with targeted regressions. Exact source CI and installed native/XDF
+qualification remain open for this expansion.
 
-PR13's source CI 42253576653 then passed native/Qt/source/Rust checks but
-failed the companion browser fixture with no connection phases. A deterministic
-reproduction dispatches the real host resize between Connect pointer-down/up:
-ancestor scrolling moves release off the button. Enabled-button keyboard
-activation reaches Ready and acknowledged revision 1. Both fixture setup sites
-now use Enter on `#connect:enabled`, retaining hydration/authentication checks;
-browser errors print immediately. Both surfaces, BRSP approval/catalog/revocation,
-panel sharing and all 22 JS tests pass locally. This reproduces the CI symptom;
-the exact hosted event ordering was not captured. Fresh CI remains required.
+PR13 merged at `5b94b16`. Its four source/UI jobs pass (42255769856), and full
+same-checkout suite run
+[42256759568](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42256759568)
+passes both exact standalone installs and the joint shortcut/reuse/refusal/
+uninstall gates. Publication was disabled. Its downloaded joint candidate
+SHA-256 is `9a047013008d71a086e8d45478385892d1e186f5987e8cfac69056568d6d04c8`.
+Local silent installation verified 701 VLC immutable files, Recorder/engine
+hashes and shortcut metadata; it does not contain the new dedicated shortcuts.
 
-This chat cancelled parallel run 42248574349 before publication because it
-used older source without the native arrow fix. It was an agent cancellation,
-not a user request to stop. Its local handoff note is preserved at local-only
-branch `codex/preserved-alt-layout-handoff-20261106` (`87af57a`); the primary
-checkout is now clean main. Earlier preservation branch `bc50de8` also remains.
+Launching that shortcut through ordinary Explorer exposed a local installation
+namespace issue: Recorder was installed into Codex's private LocalCache, so the
+ordinary launcher reports Recorder missing. No qualified normal-user joint
+installation or full changing-input XDF/CSV result is claimed. Install the final
+candidate through an ordinary-user Explorer-launched wrapper, then repeat the
+actual shortcut and native recording qualification. C: is low on space; verified task-generated duplicate assets and a superseded downloaded candidate
+have been removed, with hash/remote-retention receipts preserved. The user was asked to
+free space while source review continues.
 
-PR9 (`0d84abc`) and PR10 (`fe35248`) are merged. PR10's full source/UI
-checks pass. The source-built suite still needs a complete passing run and
-publication; its previous failure was the now-corrected NSIS payload hash.
-The publisher now accepts `promote_run_id` so the exact installer files used
-for local native qualification can be published without rebuilding. It only
-accepts a successful main dispatch of the same workflow/repository/commit and
-rechecks the closed artifact inventory, hashes and source receipts. Boundary
-tests reject stale source, foreign branch/workflow/repository and failed runs.
+The earlier Windows keyboard defect was real: native video-thread GetMessage
+consumed modified arrows before Qt. The scoped own-process hook and regression
+were merged in PR11 with exclusive modes/all nine faces; PR12 added Alt layout
+and snapshots. The installed native video-thread input path remains a required
+qualification gate. Direct owned-window Win32 input is now explicitly
+authorized by the user because Computer Use activation failed. Earlier privacy,
+firewall and Windows Security dialogs were handled manually by the user; no
+consent was automated and no new prompt is currently reported.
 
-The user also requested exactly one visible representation and all character
-faces. Current source normalizes legacy visibility flags, makes every selector
-exclusive, and adds Alt+H / Alt+Shift+H for all nine characters. Alt+G retains
-the chosen character. Qt rendering/input/migration checks pass.
+Pages 42250902744 passed: all 82 public assets byte-matched the then-audited
+build, with the 18-group guide at 320–1920px and enlarged text. Re-deploy and
+verify the expanded 64-group library after review. The publisher can promote
+exact qualified artifacts using `promote_run_id`, but only from a successful
+same-repository main dispatch at the identical source commit. Do not publish
+the older candidate as the completed expansion.
 
-The real keyboard qualification exposed a separate Windows path: VLC's native
-video thread consumes GetMessage keyboard messages before Qt's event filter.
-Modified arrows sought the paused video from five seconds to zero. This was
-a product failure, not qualification. A scoped, own-process video-thread hook
-now intercepts those messages and queues the reserved controls to Qt. Its
-Windows regression covers other-window isolation, arrow restoration, teardown
-and invalid routing; panel checks cover stale queued native commands. The full
-Qt plugin builds against pinned VLC 3.0.20. Independent focused review found
-no remaining actionable issue. Foreground input and full XDF/CSV qualification
-remain open. A temporary local plugin replacement has a backup/hash receipt
-under ignored `build/native-preview/`; it is not a qualified installer.
+The parallel chat has agreed to leave main/builds/installations/desktop input
+untouched while this chat owns the combined qualification. Historical local
+handoffs remain on preservation branches `bc50de8` and `87af57a`.
 
-The user manually handled both earlier privacy/firewall dialogs. No security
-choice was automated. The latest native attempt reached recording, but Windows
-Computer Use returned `failed to activate captured window` for both apps.
-It timed out and stopped recording safely. The user has been asked to bring
-VLC to the foreground; do not treat this as a passing keyboard test.
-
-PR12 (`554a423`, main merge `1f1e71f`) independently added Alt layout controls
-and JSON startup restore. Both feature sets are now integrated: all 18 shared
-help entries render, and the native video router reserves the added Alt keys
-in both input modes, including shifted/numpad plus. Repeat the combined native
-and exact-source installer qualification before promotion.
+- [ ] Finish independent review and exact-source checks for 64 hotkey groups,
+  all detailed fields, saved rating step and automatic v3 restore.
+- [ ] Install the final exact suite in the ordinary user context; verify actual
+  joint shortcut, native-video arrows, exclusive modes/all faces, appearance/
+  mapping/grid/color shortcuts and saved/unsaved/restart behavior.
+- [ ] Run Start VLC+ and record with injected positive/negative valence/arousal,
+  independently inspect XDF and CSV, then promote exact tested bytes and verify
+  public downloads and expanded live guide.
 
 The checklist below retains earlier evidence and remains subordinate to this
 latest status until the final installed qualification and publication pass.

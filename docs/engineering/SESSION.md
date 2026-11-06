@@ -1,5 +1,25 @@
 # Session scope — 2026-11-06
 
+The active follow-up expands dedicated hotkeys to the native dialog's 60
+settings plus rating step. Reuse the Qt/native video-thread matcher, preserve
+Alt+F4, modal/text input and existing shortcuts, and clamp every adjustment to
+its dialog bounds. Settings snapshots become `vlc-feedback-settings/v3` to
+include `stepPercent`, while retaining v2 and appearance-v1 imports. Alt+J
+must save atomically and restore the last successful snapshot on launch.
+The shared website/Recorder library documents all 64 shortcut groups; the
+bounded Recorder help uses category pagination with actual text measurements.
+
+This follow-up starts from clean main `5b94b16` in the existing controls
+worktree on `codex/dedicated-flubber-hotkeys`. Allowed changes are the panel,
+native matcher and their focused tests, shared hotkey library/help geometry,
+documentation, provenance and task evidence. No acquisition/recording engine
+or experiment-contract change is intended. Run source/native/browser checks,
+independent review and exact-source CI before the final installed UI and XDF/
+CSV qualification. The earlier suite at `5b94b16` passed hosted install gates;
+it does not contain this expansion and is not the final candidate.
+
+## Earlier layout and snapshot scope
+
 Current task: Alt+W/A/S/D moves the selected feedback by two percentage points;
 Alt+plus/minus resizes it in either input mode. Alt+J writes an atomic settings
 JSON snapshot beside the portable profile, remembers only successful saves,

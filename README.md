@@ -49,6 +49,16 @@ it, and **Alt+J** to save a JSON snapshot. The last successful snapshot loads
 automatically on the next launch. These layout shortcuts work with mouse or
 arrow input and leave the affect rating unchanged.
 
+The current source adds dedicated shortcuts for all 60 detailed settings and
+the affect step. Use Ctrl+Alt controls for appearance, grid and colors; add
+Shift to decrease numeric values. Animation bounds, drivers and direction
+have dedicated function/number keys. The [64-group hotkey library](https://georgefejer91.github.io/vlc-plus/remote/vlc.html)
+and Recorder's **VLC+ setup → Hotkeys** list every key. Alt+J saves
+`vlc-feedback-settings/v3`, including rating step, appearance, colors, mappings,
+all three layouts, grid and selected face; v2 imports remain supported. An
+explicit session environment or command-line override keeps its documented
+precedence. This expansion still requires final installer qualification.
+
 In 0.3.2, press **Alt+F** to toggle affect arrows: Left/Right changes valence and Up/Down
 changes arousal. Press Alt+F again to restore normal VLC arrow controls. Affect can still be adjusted while paused, as in the existing player;
 CSV recording remains playback-gated. The existing step size and saved input
