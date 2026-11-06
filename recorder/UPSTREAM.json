@@ -176,6 +176,7 @@
     "scripts/check-external-tabs.mjs": "Log protocol phases/errors for an intermittent hosted browser fixture authentication failure.",
     "companion/panels/respyra/remote-profile.js": "Adapt the bundled observer canonical route to the VLC+ self-contained controller, including regeneration.",
     "companion/panels/respyra/panel.json": "Adapt the bundled observer canonical route to the VLC+ self-contained controller, including regeneration.",
-    "scripts/prepare-respyra-panel.mjs": "Adapt the bundled observer canonical route to the VLC+ self-contained controller, including regeneration."
+    "scripts/prepare-respyra-panel.mjs": "Adapt the bundled observer canonical route to the VLC+ self-contained controller, including regeneration.",
+    "tests/external-tabs.test.js": "Exercise malformed links against the owning controller host."
   }
 }

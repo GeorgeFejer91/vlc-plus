@@ -3,10 +3,10 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { parsePanelDescriptor, restoreTabs, savedPageUrl, validatePageUrl } from "../web/external-tabs.js";
 import { createEmbeddedVdoSdk } from "../web/external-page-connector.js";
-import { createPanelLink, readPanelLink } from "../web/panel-link.js";
+import { PANEL_HOST, createPanelLink, readPanelLink } from "../web/panel-link.js";
 
 const desktop = "http://tauri.localhost/";
-const phone = "https://georgefejer91.github.io/Remote-LSL-Recorder/";
+const phone = PANEL_HOST;
 
 test("panel links preserve Unicode metadata and reject malformed or foreign links", () => {
   const page = { id: "experiment", name: "Überprüfung 中文", url: "https://example.com/operator/" };
