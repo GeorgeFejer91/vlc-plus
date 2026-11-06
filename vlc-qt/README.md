@@ -118,6 +118,23 @@ unchanged. Dialogs and popups retain normal keyboard behavior.
 | Ctrl+Alt+PageUp/PageDown | Increase/decrease grid rows and columns by two, keeping an odd grid (3–2001). |
 | Ctrl+Shift+S | Open detailed settings. **Visible representation** selects one mode. Use Tab/Shift+Tab, arrows and Space to adjust colors, appearance, and individual layer/grid/face controls. |
 
+The [full hotkey library](https://georgefejer91.github.io/vlc-plus/remote/vlc.html)
+also lists dedicated Ctrl+Alt controls for every appearance, mapping, color and
+grid field. Ctrl+Alt+T/O/B/H/W/G/E/A adjusts transparency, outline, outline width,
+halo, halo width, halo gradient, halo steepness and color anchors. Ctrl+Alt+X/Y/J/V/P/Z
+adjusts grid columns, rows, line width, outline, outline width and cursor size.
+Add Shift to decrease numeric values. Appearance and mapping actions select
+Flubber exclusively; grid actions select Grid exclusively.
+
+Mappings use the order oscillation frequency, edge smoothness, projection
+amplitude, pulse synchrony, wave-size variation and saturation. Ctrl+Alt+F1–F6
+increases each maximum; F7–F12 increases each minimum. Shift decreases those
+bounds. Ctrl+Alt+4–9 cycles each driver through x-axis, y-axis, angle and radius;
+Shift cycles backward. Ctrl+Shift+F1–F6 toggles each reverse flag. Bounds retain
+their existing ranges and cannot cross. Ctrl+Alt+U/D/L/R/I/K/Q/C opens the color
+picker for up/down/left/right/idle/outline/halo/cursor. Cancel preserves all
+settings; accepting a color selects Flubber. Held keys do not repeat adjustments.
+
 Alt+F reserves all arrow shortcuts from VLC while affect control is active.
 Plain arrows change affect; modified arrows are reserved, with Ctrl+Alt+arrows
 assigned to feedback layout. Alt+F again restores VLC's arrow shortcuts.
@@ -126,8 +143,12 @@ Quick changes persist in the VLC-owned profile; the environment's rating-step
 override still takes precedence on the next launch. A missing face atlas leaves
 the active feedback intact and reports the load error in the panel tooltip.
 
-Alt+J writes a timestamped `vlc-feedback-settings/v2` JSON into
+Alt+J writes a timestamped `vlc-feedback-settings/v3` JSON into
 `flubber-presets/` beside VLC+'s portable Qt profile, then shows its full path.
+The snapshot includes appearance, all layer geometry, grid/face controls,
+input mode, the exclusive representation and the integer rating `stepPercent`
+(1–100). Legacy v2 files remain accepted and preserve the current rating step;
+appearance-v1 imports retain their existing contract.
 Earlier snapshots remain available. Startup reloads the remembered file, so
 unsaved adjustments after the last Alt+J are replaced by that snapshot on the
 next launch. A missing or invalid file retains the current profile and reports

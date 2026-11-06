@@ -14,6 +14,38 @@ Evidence must match its claim. Use `VERIFIED`, `PARTIAL`, `BLOCKED`, or
 
 ## Focused checks
 
+### Dedicated hotkeys and v3 snapshots — 2026-11-06
+
+VERIFIED locally: shared native matcher/hook tests and the offscreen Qt panel
+cover dedicated controls for all 60 dialog fields plus rating step, numeric
+bounds, mapping min/max order, four drivers, reverse flags, all eight color
+Cancel/accept paths and exclusive representation selection. v3 snapshots
+include integer step 1–100; invalid/missing/fractional steps retain the previous
+state. Legacy v2 retains the current step; startup environment overrides and
+explicit later settings loads retain their precedence. Queued native events
+cannot change an open modal. Existing save/restart/error checks remain active.
+
+Independent review found a Windows layout mismatch: German Ctrl+Alt+8/9 could
+reach the legacy bracket step actions instead of drivers, and E/Q became
+Euro/@. The focused regression failed at exit 128 before Windows VK
+normalization. Translated symbols, shifted 4–9, ShortcutOverride and native
+numpad parity now pass; no other actionable review finding remains.
+
+PR14 CI exposed ignored editor function keys bubbling to the parent (Linux
+exit 124). A portable forced-bubbling regression also failed at exit 135 before
+the fix. The shared editor/focus guard includes rich/plain editor viewports,
+spinboxes and editable combos, preserves noneditable combo controls, and
+rejects queued native commands with arrow intent resynchronized. Original
+Linux assertions remain; repeat CI for the corrected source.
+
+VERIFIED locally: all 23 JavaScript tests, generated-copy check, rendered
+record/play fixture, full 64-group category/page traversal, visible keyboard
+focus, 320×600 through 1920×1080, and 1280×900 with 200% text and spacing.
+Site/controller checks render all 64 entries at 320–1920px and 320px enlarged
+text. These browser fixtures use mock native IPC and do not establish the
+installed recording path. Exact-source CI, ordinary-user installation and
+full injected-input XDF/CSV qualification remain in the active milestone.
+
 ### Alt layout and JSON snapshot update — 2026-11-06
 
 VERIFIED locally: Windows Qt panel regression failed first at exit 61 for the

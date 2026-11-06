@@ -183,8 +183,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "62e778a34e90fccd4b2688b83f5615f4e5448635b274b18b0d93a44aa8493781",
-      "adaptation": "Exclusive representation and all nine character cycling; native Windows video-thread keyboard routing and GUI precedence; Alt layout aliases and atomic JSON snapshots restored on startup; regression coverage preserves acquisition and source lineage."
+      "standaloneSha256": "5b367885afb02ee14d1243517d3178c1c82df130b614e0780b7c02c7ac5e0a2f",
+      "adaptation": "Exclusive representation/all nine characters; scoped native Windows video-thread routing; dedicated shortcuts for all detailed settings; atomic v3 JSON snapshots with rating step and legacy v2 import/startup precedence; focused regression coverage preserves acquisition and source lineage."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -197,8 +197,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "6c83a500ad83b0827408fc7326aeba523935bf8e9bb64cf37bb61f1f8cc5efab",
-      "adaptation": "Exclusive representation and all nine character cycling; native Windows video-thread keyboard routing and GUI precedence; Alt layout aliases and atomic JSON snapshots restored on startup; regression coverage preserves acquisition and source lineage."
+      "standaloneSha256": "43eb3ccd9a28419cb5c0bfc783a2abf8958f76b0cb0d139ea194d8877e3ece0a",
+      "adaptation": "Exclusive representation/all nine characters; scoped native Windows video-thread routing; dedicated shortcuts for all detailed settings; atomic v3 JSON snapshots with rating step and legacy v2 import/startup precedence; focused regression coverage preserves acquisition and source lineage."
     },
     {
       "path": "vlc-qt/test-panel.ps1",

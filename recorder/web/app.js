@@ -6,12 +6,25 @@ import {
 import { timeToX } from "./chart-time.js";
 import { channelRanges, displayChannels } from "./chart-scale.js";
 import { mountTextFitting } from "./text-fit.js";
-import { showVlcHotkeys } from "./vlc-hotkeys.js";
+import { mountVlcHotkeyLibrary } from "./vlc-hotkeys.js";
 import { mountExternalTabs, readLocalTabs } from "./external-tabs.js?v=0.1.8";
 
 const invoke = (command, args = {}) => window.__TAURI__.core.invoke(command, args);
 const byId = (id) => document.getElementById(id);
-showVlcHotkeys(byId("vlc-hotkeys"));
+mountVlcHotkeyLibrary(byId("vlc-hotkeys"), {
+  category: byId("vlc-hotkey-category"), previous: byId("vlc-hotkey-previous"),
+  next: byId("vlc-hotkey-next"), status: byId("vlc-hotkey-page"),
+});
+function selectVlcView(name) {
+  const settings = name === "settings";
+  byId("vlc-settings").hidden = !settings;
+  byId("vlc-library").hidden = settings;
+  byId("vlc-settings-view").setAttribute("aria-pressed", String(settings));
+  byId("vlc-hotkeys-view").setAttribute("aria-pressed", String(!settings));
+}
+for (const name of ["settings", "hotkeys"]) {
+  byId(`vlc-${name}-view`).addEventListener("click", () => selectVlcView(name));
+}
 const elements = {
   status: byId("system-status"),
   sessionForm: byId("session-form"),
@@ -504,7 +517,7 @@ elements.recordStop.addEventListener("click", () => {
 
 elements.recordPlay.addEventListener("click", () => {
   if (!elements.vlcPort.checkValidity()) {
-    byId("vlc-dialog").showModal();
+    showVlcSetup();
     elements.vlcPort.reportValidity();
     return;
   }
@@ -517,11 +530,15 @@ elements.recordPlay.addEventListener("click", () => {
   }).catch(() => {});
 });
 
-byId("vlc-setup").addEventListener("click", () => byId("vlc-dialog").showModal());
+function showVlcSetup() {
+  selectVlcView("settings");
+  byId("vlc-dialog").showModal();
+}
+byId("vlc-setup").addEventListener("click", showVlcSetup);
 
 elements.vlcLaunchRecord.addEventListener("click", () => {
   if (!elements.vlcPort.checkValidity() || !elements.vlcVideo.value.trim()) {
-    byId("vlc-dialog").showModal();
+    showVlcSetup();
     if (!elements.vlcPort.checkValidity()) elements.vlcPort.reportValidity();
     else elements.vlcVideo.focus();
     return;

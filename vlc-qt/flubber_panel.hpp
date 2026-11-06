@@ -142,6 +142,7 @@ public:
             if( !loadSettingsFile( lastSettings, error ) )
                 appearanceLoadError_ = tr( "Could not restore saved settings from %1: %2" ).arg( lastSettings, error );
         }
+        if( parsed && requestedStep >= 1 && requestedStep <= 100 ) stepPercent_ = requestedStep;
         clock_.start();
         qApp->installEventFilter( this );
         nativeKeys_.reset( new FlubberVideoKeys( this, arrowMode_ ) );
@@ -270,7 +271,8 @@ public:
         QJsonObject grid = grid_;
         grid.insert( "columns", gridColumns_ );
         grid.insert( "rows", gridRows_ );
-        return QJsonObject{ { "schema", "vlc-feedback-settings/v2" }, { "appearance", preset_ },
+        return QJsonObject{ { "schema", "vlc-feedback-settings/v3" }, { "appearance", preset_ },
+            { "stepPercent", stepPercent_ },
             { "panelHeight", panelHeight_ }, { "primary", kindName( primary_ ) },
             { "inputMode", arrowMode_ ? "arrows" : "mouse" }, { "layers", layers },
             { "grid", grid }, { "face", QJsonObject{ { "id", faceId_ }, { "transitionRate", faceRate_ } } } };
@@ -328,8 +330,13 @@ public:
             update();
             return true;
         }
-        if( root.value( "schema" ).toString() != QLatin1String( "vlc-feedback-settings/v2" ) ||
-            !keys( root, { "schema", "appearance", "panelHeight", "primary", "inputMode", "layers", "grid", "face" } ) ||
+        const bool version3 = root.value( "schema" ).toString() == QLatin1String( "vlc-feedback-settings/v3" );
+        const bool version2 = root.value( "schema" ).toString() == QLatin1String( "vlc-feedback-settings/v2" );
+        if( ( !version3 && !version2 ) ||
+            ( version3 ? !keys( root, { "schema", "appearance", "panelHeight", "primary", "inputMode", "layers", "grid", "face", "stepPercent" } ) :
+                !keys( root, { "schema", "appearance", "panelHeight", "primary", "inputMode", "layers", "grid", "face" } ) ) ||
+            ( version3 && ( !number( root.value( "stepPercent" ), 1, 100 ) ||
+                root.value( "stepPercent" ).toDouble() != root.value( "stepPercent" ).toInt() ) ) ||
             !root.value( "appearance" ).isObject() || !number( root.value( "panelHeight" ), 48, 2160 ) ||
             !root.value( "layers" ).isObject() || !root.value( "grid" ).isObject() || !root.value( "face" ).isObject() )
         { error = tr( "Unexpected settings schema or fields." ); return false; }
@@ -370,6 +377,7 @@ public:
         if( atlas.size() != QSize( 3360, 3360 ) )
         { error = tr( "The chosen face atlas is missing or invalid: %1" ).arg( atlasReader.errorString() ); return false; }
         preset_ = appearance;
+        if( version3 ) { stepPercent_ = root.value( "stepPercent" ).toInt(); settings_->setValue( "Flubber/stepPercent", stepPercent_ ); }
         primary_ = kindFromName( primaryName );
         for( int i = 0; i < 3; ++i ) layers_[i] = parsedLayers[i];
         normalizeVisibility();
@@ -412,6 +420,7 @@ public:
     bool handleInputKey( QKeyEvent *event )
     {
         if( event->type() != QEvent::KeyPress && event->type() != QEvent::ShortcutOverride ) return false;
+        if( textEditorOwnsShortcut() ) return false;
         Qt::KeyboardModifiers modifiers = event->modifiers() & ~Qt::KeypadModifier;
         if( ( event->key() == Qt::Key_Plus || event->key() == Qt::Key_Equal ) &&
             modifiers == ( Qt::ControlModifier | Qt::AltModifier | Qt::ShiftModifier ) ) modifiers &= ~Qt::ShiftModifier;
@@ -445,6 +454,18 @@ public:
     bool handleSettingsKey( QKeyEvent *event, Qt::KeyboardModifiers modifiers )
     {
         const int key = event->key();
+        quint32 windowsVirtualKey = 0;
+#ifdef Q_OS_WIN
+        windowsVirtualKey = event->nativeVirtualKey();
+#endif
+        const FlubberSettingKey dedicated = flubberSettingKey( key, modifiers, windowsVirtualKey );
+        if( dedicated.action != NoFlubberSetting )
+        {
+            event->accept();
+            if( event->type() == QEvent::KeyPress && !event->isAutoRepeat() )
+                applyDedicatedSetting( dedicated, modifiers.testFlag( Qt::ShiftModifier ) ? -1 : 1 );
+            return true;
+        }
         const bool arrow = key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down;
         const bool cycle = key == Qt::Key_G && ( modifiers == Qt::AltModifier ||
             modifiers == ( Qt::AltModifier | Qt::ShiftModifier ) );
@@ -597,15 +618,10 @@ public:
             line->addWidget( new QLabel( tr( "Y" ), row ) ); line->addWidget( y[i] );
             display->addRow( name, row );
         }
-        QLabel *shortcuts = new QLabel( tr( "Alt+F: affect arrows. Alt+G: next representation; Shift reverses.\n"
-            "Alt+H: next face character; Shift reverses. Selects face morph.\n"
-            "Alt+W/A/S/D: move feedback. Alt+plus/minus: resize.\n"
-            "Alt+J: save a JSON snapshot and restore it next launch.\n"
-            "Ctrl+Shift+1/2/3 or Ctrl+Alt+1/2/3: select representation.\n"
-            "Ctrl+Alt+arrows (affect arrows on): move main feedback; = / -: resize it.\n"
-            "Ctrl+Shift+PageUp/PageDown: panel height. Ctrl+Shift+S: settings.\n"
-            "Ctrl+Alt+[ / ]: rating step; comma / period: face speed.\n"
-            "Ctrl+Alt+PageUp/PageDown: grid density. Tab navigates all settings." ), &dialog );
+        QLabel *shortcuts = new QLabel( tr( "Alt+F: affect arrows. Alt+G: representation. Alt+H: face character.\n"
+            "Alt+W/A/S/D: move; Alt+plus/minus: resize; Alt+J: save JSON for next launch.\n"
+            "Ctrl+Alt keys adjust appearance; Shift reverses numeric changes.\n"
+            "Full hotkey library: georgefejer91.github.io/vlc-plus/remote/vlc.html" ), &dialog );
         shortcuts->setWordWrap( true );
         display->addRow( shortcuts );
         QFormLayout *flubberForm = page( tr( "Flubber" ) );
@@ -887,6 +903,8 @@ protected:
         if( event->type() == FlubberNativeKeyEvent::eventType() )
         {
             if( !nativeKeys_ ) { event->accept(); return; }
+            if( QApplication::activeModalWidget() || QApplication::activePopupWidget() || textEditorOwnsShortcut() )
+            { nativeKeys_->setArrowMode( arrowMode_ ); event->accept(); return; }
             const FlubberNativeKeyEvent *native = static_cast<FlubberNativeKeyEvent *>( event );
             if( native->guiRevision != nativeKeys_->guiRevision() ) { event->accept(); return; }
             if( native->arrowModeAfter >= 0 ) setArrowMode( native->arrowModeAfter != 0, false );
@@ -912,9 +930,7 @@ protected:
             ratingWindowIsForeground() )
         {
             QWidget *target = qobject_cast<QWidget *>( watched );
-            if( target && target->window() == window() &&
-                !target->inherits( "QLineEdit" ) && !target->inherits( "QTextEdit" ) &&
-                !target->inherits( "QPlainTextEdit" ) )
+            if( target && target->window() == window() && !textEditorOwnsShortcut( target ) )
             {
                 QKeyEvent *key = static_cast<QKeyEvent *>( event );
                 if( handleInputKey( key ) ) return true;
@@ -1013,6 +1029,106 @@ protected:
     }
 
 private:
+    bool textEditorOwnsShortcut( const QWidget *target = NULL ) const
+    {
+        const QWidget *candidates[] = { target, QApplication::focusWidget() };
+        for( const QWidget *candidate : candidates )
+        {
+            if( !candidate || candidate->window() != window() ) continue;
+            for( const QWidget *widget = candidate; widget; widget = widget->parentWidget() )
+            {
+                if( widget->inherits( "QLineEdit" ) || widget->inherits( "QTextEdit" ) ||
+                    widget->inherits( "QPlainTextEdit" ) || widget->inherits( "QAbstractSpinBox" ) ) return true;
+                const QComboBox *combo = qobject_cast<const QComboBox *>( widget );
+                if( combo && combo->isEditable() ) return true;
+                if( widget == window() ) break;
+            }
+        }
+        return false;
+    }
+    void applyDedicatedSetting( const FlubberSettingKey &key, int direction )
+    {
+        const bool gridSetting = key.action >= FlubberGridColumns && key.action <= FlubberGridCursorSize;
+        QJsonObject visual = preset_.value( "visual" ).toObject();
+        QJsonObject shape = visual.value( "flubber" ).toObject();
+        QJsonObject presentation = preset_.value( "presentation" ).toObject();
+        QJsonObject halo = presentation.value( "halo" ).toObject();
+        const auto adjust = [direction]( QJsonObject &object, const char *field, double step, double low, double high ) {
+            object.insert( QLatin1String( field ), qBound( low, object.value( QLatin1String( field ) ).toDouble() + direction * step, high ) );
+        };
+        const auto toggle = []( QJsonObject &object, const char *field ) {
+            object.insert( QLatin1String( field ), !object.value( QLatin1String( field ) ).toBool() );
+        };
+        switch( key.action )
+        {
+            case FlubberTransparency: adjust( visual, "transparency", .05, 0, 1 ); break;
+            case FlubberOutline: toggle( shape, "showOutline" ); break;
+            case FlubberOutlineWidth: adjust( shape, "outlineThickness", .25, 0, 20 ); break;
+            case FlubberHalo: toggle( shape, "showHalo" ); break;
+            case FlubberHaloWidth: adjust( halo, "widthPercent", 5, 0, 10000 ); break;
+            case FlubberHaloGradient: toggle( halo, "gradient" ); break;
+            case FlubberHaloSteepness: adjust( halo, "steepness", .1, .1, 10 ); break;
+            case FlubberColorAnchors:
+                presentation.insert( "colorAnchors", presentation.value( "colorAnchors" ).toString() == QLatin1String( "axes" ) ? "corners" : "axes" ); break;
+            case FlubberGridColumns: gridColumns_ = qBound( 3, gridColumns_ + direction * 2, 2001 ); break;
+            case FlubberGridRows: gridRows_ = qBound( 3, gridRows_ + direction * 2, 2001 ); break;
+            case FlubberGridLineWidth: adjust( grid_, "lineThickness", .25, 0, 20 ); break;
+            case FlubberGridOutline: toggle( grid_, "showOutline" ); break;
+            case FlubberGridOutlineWidth: adjust( grid_, "outlineThickness", .25, 0, 20 ); break;
+            case FlubberGridCursorSize: adjust( grid_, "cursorSize", 1, 0, 100 ); break;
+            case FlubberMappingMaximum:
+            case FlubberMappingMinimum:
+            case FlubberMappingDriver:
+            case FlubberMappingReverse:
+            {
+                const char *names[] = { "oscillationFrequency", "edgeSmoothness", "projectionAmplitude",
+                    "pulseSynchrony", "waveSizeVariation", "saturation" };
+                const QString name = QLatin1String( names[key.index] );
+                QJsonObject mappings = preset_.value( "mappings" ).toObject();
+                QJsonObject mapping = mappings.value( name ).toObject();
+                if( key.action == FlubberMappingReverse ) toggle( mapping, "reverse" );
+                else if( key.action == FlubberMappingDriver )
+                {
+                    const QStringList drivers{ "x-axis", "y-axis", "angle", "radius" };
+                    mapping.insert( "drivenBy", drivers[( drivers.indexOf( mapping.value( "drivenBy" ).toString() ) + direction + 4 ) % 4] );
+                }
+                else if( key.action == FlubberMappingMinimum )
+                    adjust( mapping, "min", key.index == 0 ? .1 : .05, 0, mapping.value( "max" ).toDouble() );
+                else adjust( mapping, "max", key.index == 0 ? .1 : .05, mapping.value( "min" ).toDouble(), key.index == 0 ? 10 : 1 );
+                mappings.insert( name, mapping ); preset_.insert( "mappings", mappings );
+                break;
+            }
+            case FlubberColor:
+            {
+                const char *names[] = { "up", "down", "left", "right", "idle", "outline", "halo", "cursor" };
+                const QString name = QLatin1String( names[key.index] );
+                QJsonObject colors = visual.value( "colors" ).toObject();
+                releaseRating();
+                const QColor chosen = QColorDialog::getColor( QColor( colors.value( name ).toString() ), this,
+                    tr( "Flubber color: %1" ).arg( name ) );
+                if( !chosen.isValid() ) return;
+                colors.insert( name, chosen.name() ); visual.insert( "colors", colors );
+                break;
+            }
+            default: return;
+        }
+        if( gridSetting )
+        {
+            settings_->setValue( "Flubber/gridColumns", gridColumns_ ); settings_->setValue( "Flubber/gridRows", gridRows_ );
+            settings_->setValue( "Flubber/gridLineThickness", grid_.value( "lineThickness" ).toDouble() );
+            settings_->setValue( "Flubber/gridShowOutline", grid_.value( "showOutline" ).toBool() );
+            settings_->setValue( "Flubber/gridOutlineThickness", grid_.value( "outlineThickness" ).toDouble() );
+            settings_->setValue( "Flubber/gridCursorSize", grid_.value( "cursorSize" ).toDouble() );
+        }
+        else
+        {
+            visual.insert( "flubber", shape ); presentation.insert( "halo", halo );
+            preset_.insert( "visual", visual ); preset_.insert( "presentation", presentation );
+            settings_->setValue( "Flubber/appearancePath", QString() );
+            settings_->setValue( "Flubber/appearanceJson", QJsonDocument( preset_ ).toJson( QJsonDocument::Compact ) );
+        }
+        setPrimary( gridSetting ? GridKind : FlubberKind );
+    }
     void normalizeVisibility()
     {
         for( int i = 0; i < 3; ++i )

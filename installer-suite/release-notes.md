@@ -10,3 +10,12 @@ The Recorder source, UI, browser controller, locks and notices are included in t
 Stop/save recordings and close both apps before updating. The joint shortcut starts neither recording nor phone access. Removing the joint launcher leaves both independently uninstallable apps and their data in place.
 
 Matching source archives, native dependency sources, component build receipts, SHA-256 checksums and exact-run install/shortcut evidence accompany these unsigned experimental installers. Physical-phone/device and scientific timing qualification remain separate from synthetic LSL, injected keys and hosted Windows installer checks.
+
+The current candidate expands the shared hotkey library to 64 groups covering
+all 60 detailed settings plus affect step. Dedicated shortcuts adjust appearance,
+grid, mapping bounds/drivers/direction and exact colors; Shift reverses numeric
+changes. Alt+J saves a complete v3 JSON snapshot with rating step and restores
+the last successful snapshot on launch. Legacy v2 settings still load. Recorder
+help provides category pages that fit its bounded dialog; the live guide retains
+the complete list. Final exact-source installation and native recording
+qualification remain required before publication.
