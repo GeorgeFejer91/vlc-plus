@@ -6,7 +6,7 @@ export function showVlcHotkeys(list) {
     ["Alt+G / Alt+Shift+G", "Next / previous: Flubber, 2D grid, affective face morph map."],
     ["Ctrl+Shift+1 / 2 / 3", "Select Flubber / grid / face directly."],
     ["Ctrl+Alt+1 / 2 / 3", "Show or hide each feedback layer."],
-    ["Ctrl+Alt+arrows", "Move the main feedback."],
+    ["Ctrl+Alt+arrows", "With affect arrows on, move the main feedback. With them off, VLC keeps these keys."],
     ["Ctrl+Alt+= / -", "Increase / decrease feedback size."],
     ["Ctrl+Alt+[ / ]", "Decrease / increase affect step."],
     ["Ctrl+Alt+, / .", "Slower / faster face transitions."],

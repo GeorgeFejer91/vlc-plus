@@ -32,6 +32,10 @@ document.querySelector('#connect').onclick=async()=>{
   controller=new BRSPConnection({...options,role:'controller',transport:b,peerId:'controller_fixture',requestedScopes:['experiment.control']});
   controller.addEventListener('ready',()=>{document.querySelector('#start').disabled=false;document.querySelector('#state').textContent='Ready';});
   controller.addEventListener('commandapplied',e=>{document.querySelector('#state').textContent=e.detail.ok?'Confirmed running revision '+e.detail.revision:'Rejected';});
+  for (const connection of [target,controller]) {
+    connection.addEventListener('protocolerror',e=>console.error('Fixture protocol error',JSON.stringify(e.detail)));
+    connection.addEventListener('phasechange',e=>console.log('Fixture phase',JSON.stringify(e.detail)));
+  }
   a.dispatchEvent(new CustomEvent('peeropen',{detail:{peerKey:'fixture'}}));b.dispatchEvent(new CustomEvent('peeropen',{detail:{peerKey:'fixture'}}));
 };
 document.querySelector('#start').onclick=()=>controller.sendCommand('experiment.control','start',{}, {expectedRevision:0});
@@ -68,6 +72,7 @@ try {
     const active = page.locator(".external-page:not([hidden])");
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", message => { if (message.text().startsWith("Fixture ")) console.log(surface, message.text()); });
     let desktopPages = [];
     let durablePages = [];
     let catalogRevision = 0;

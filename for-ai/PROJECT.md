@@ -37,7 +37,9 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   suite-shutdown changes; use the isolated `codex/complete-controls` worktree.
 - [x] Alt+F reserves all arrow variants from VLC while plain arrows change
   affect; Alt+G/Alt+Shift+G cycle exactly Flubber/grid/face. Detailed settings
-  release mouse capture before opening. Existing quick controls remain.
+  release mouse capture before opening. Turning affect arrows off also restores
+  Ctrl+Alt+arrows to VLC. Windows panel regression passes; Linux shortcut-map
+  regression covers plain and modified restoration.
 - [x] Pass Windows Qt offscreen controls/rendering, all nine face atlases,
   Rust bridge tests, source/context and launcher checks; independent review
   found and corrected capture handling. Recorder verifies RC PID ownership and
@@ -60,6 +62,11 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   reached recording but the privacy dialog blocked keyboard input: FAILED,
   not qualification. The user has now handled the privacy dialog manually;
   resume the updated installed check. No consent was automated.
+  The subsequent exact a44cbbe installed candidate verified all 701 immutable
+  files. Embedded Recorder launched it, auto-selected the session-specific
+  affect/marker streams, recorded and observed Start. The keyboard phase then
+  timed out behind a new Windows Firewall prompt for LabRecorderCLI. This is
+  still FAILED qualification; the user has been asked to handle the prompt.
 - [ ] Merge reviewed source, publish exact tested component and joint versions,
   verify public hashes, update live download links and install the joint suite.
 
@@ -79,6 +86,15 @@ passes at `a44cbbe`, including source/immutable payload, decode, LSL/CSV and
 uninstall. The combined source build includes newer embedded-source changes
 and must pass separately. Full Planner-master execution and scientific/physical-device
 qualification remain open.
+
+The first embedded source CI checks passed all 21 JS and 19 Rust tests and
+clippy, but UI CI failed: a 2.5-second cold navigation deadline and an
+intermittent BRSP fixture authentication wait. Navigation now has its own
+30-second bound; fixture protocol phases/errors are logged for diagnosis.
+Local rendered checks pass for both surfaces, recording controls, panel sharing,
+the own-site routes, all 14 hotkeys and text enlargement. Legacy standalone
+and pinned-component workflows now build/check only; `suite-source.yml` is
+the sole publisher for the 0.3.3 tag.
 
 ## Completed milestone: Alt+F affect arrows and bundled study clip
 

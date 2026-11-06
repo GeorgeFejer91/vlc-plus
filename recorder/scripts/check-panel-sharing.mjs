@@ -19,7 +19,9 @@ await context.route("https://georgefejer91.github.io/**", async (route) => {
   const url = new URL(route.request().url());
   const parts = decodeURIComponent(url.pathname).split("/").filter(Boolean);
   const repo = parts.shift();
-  const directory = repo === "Remote-LSL-Recorder" ? resolve(root, "companion") : apps.find(([name]) => name === repo)?.[1];
+  const ownController = repo === "vlc-plus" && parts[0] === "remote";
+  if (ownController) parts.shift();
+  const directory = ownController ? resolve(root, "companion") : apps.find(([name]) => name === repo)?.[1];
   if (!directory) return route.abort();
   const file = resolve(directory, parts.join("/") || "index.html");
   if (!file.startsWith(`${resolve(directory)}\\`) && !file.startsWith(`${resolve(directory)}/`)) return route.abort();

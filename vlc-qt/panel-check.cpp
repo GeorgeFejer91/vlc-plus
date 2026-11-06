@@ -161,6 +161,8 @@ int main( int argc, char **argv )
     keysPanel.setArrowMode( false );
     const auto beforeMove = keysPanel.layoutFor( FlubberPanel::FaceKind );
     QKeyEvent moveRight( QEvent::KeyPress, Qt::Key_Right, Qt::ControlModifier | Qt::AltModifier );
+    if( keysPanel.handleInputKey( &moveRight ) ) return 57;
+    keysPanel.setArrowMode( true );
     if( !keysPanel.handleInputKey( &moveRight ) ||
         keysPanel.layoutFor( FlubberPanel::FaceKind ).x != qMin( 100, beforeMove.x + 2 ) ) return 41;
     QKeyEvent bigger( QEvent::KeyPress, Qt::Key_Equal, Qt::ControlModifier | Qt::AltModifier );
@@ -215,6 +217,7 @@ int main( int argc, char **argv )
             if( !manualPanel.setFaceId( id, &loadError ) || !renderedChange() ) return 54;
         }
     }
+    keysPanel.setArrowMode( false );
 #ifndef Q_OS_WIN
     // Exercise Qt's real shortcut map from a video-like sibling widget. The
     // Windows offscreen platform has no native foreground HWND; its dispatch
@@ -228,6 +231,14 @@ int main( int argc, char **argv )
     shortcutLayout.addWidget( &videoFocus );
     shortcutLayout.addWidget( &shortcutPanel );
     int vlcCommands = 0;
+    int modifiedVlcCommands = 0;
+    const Qt::KeyboardModifiers arrowModifiers[] = { Qt::ShiftModifier, Qt::ControlModifier,
+        Qt::AltModifier, Qt::ControlModifier | Qt::AltModifier };
+    for( auto modifiers : arrowModifiers )
+    {
+        QShortcut *shortcut = new QShortcut( QKeySequence( int( modifiers ) | Qt::Key_Left ), &shortcutHost );
+        QObject::connect( shortcut, &QShortcut::activated, [&]() { ++modifiedVlcCommands; } );
+    }
     for( int key : { Qt::Key_Left, Qt::Key_Right, Qt::Key_Up, Qt::Key_Down } )
     {
         QShortcut *shortcut = new QShortcut( QKeySequence( key ), &shortcutHost );
@@ -238,8 +249,12 @@ int main( int argc, char **argv )
     videoFocus.setFocus(); app.processEvents();
     QTest::keyClick( &videoFocus, Qt::Key_Up );
     if( vlcCommands != 1 ) return 29;
+    for( auto modifiers : arrowModifiers ) QTest::keyClick( &videoFocus, Qt::Key_Left, modifiers );
+    if( modifiedVlcCommands != 4 ) return 58;
     QTest::keyClick( &videoFocus, Qt::Key_F, Qt::AltModifier );
     if( !shortcutPanel.arrowMode() ) return 30;
+    for( auto modifiers : arrowModifiers ) QTest::keyClick( &videoFocus, Qt::Key_Left, modifiers );
+    if( modifiedVlcCommands != 4 ) return 59;
     QTest::keyClick( &videoFocus, Qt::Key_G, Qt::AltModifier );
     if( shortcutPanel.primary() != FlubberPanel::FlubberKind ) return 51;
     inputAllowed = true;
@@ -256,6 +271,8 @@ int main( int argc, char **argv )
     QTest::keyClick( &videoFocus, Qt::Key_F, Qt::AltModifier );
     QTest::keyClick( &videoFocus, Qt::Key_Up );
     if( shortcutPanel.arrowMode() || vlcCommands != 2 ) return 33;
+    for( auto modifiers : arrowModifiers ) QTest::keyClick( &videoFocus, Qt::Key_Left, modifiers );
+    if( modifiedVlcCommands != 8 ) return 60;
     QLineEdit textEntry( &shortcutHost );
     shortcutLayout.addWidget( &textEntry ); textEntry.show(); textEntry.setFocus(); app.processEvents();
     const auto primaryBeforeTyping = shortcutPanel.primary();

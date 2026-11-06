@@ -1,5 +1,5 @@
 // Remote Panel/1 links carry navigation metadata, never authority or app commands.
-export const PANEL_HOST = "https://georgefejer91.github.io/Remote-LSL-Recorder/";
+export const PANEL_HOST = "https://georgefejer91.github.io/vlc-plus/remote/";
 
 export function createPanelLink(page) {
   const bytes = new TextEncoder().encode(JSON.stringify(page));

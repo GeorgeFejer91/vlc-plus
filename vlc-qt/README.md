@@ -105,7 +105,7 @@ unchanged. Dialogs and popups retain normal keyboard behavior.
 | Keys | Action |
 | --- | --- |
 | Alt+G / Alt+Shift+G | Next/previous: Flubber → 2D grid → affective face morph map → Flubber. Retains the selected face preset. Held keys do not repeatedly cycle. |
-| Ctrl+Alt+Left/Right/Up/Down | Move the main feedback by two percentage points. |
+| Ctrl+Alt+Left/Right/Up/Down | With affect arrows on, move the main feedback by two percentage points. With them off, VLC keeps these keys. |
 | Ctrl+Alt+= / Ctrl+Alt+- | Increase/decrease main feedback size by two percentage points. |
 | Ctrl+Shift+PageUp/PageDown | Increase/decrease panel height by 16 px; an explicit session panel-ratio override stays authoritative. |
 | Ctrl+Alt+[ / Ctrl+Alt+] | Decrease/increase the affect arrow step by one percentage point (1–100). |

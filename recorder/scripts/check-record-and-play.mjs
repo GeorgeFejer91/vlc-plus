@@ -24,6 +24,7 @@ try {
   const page = await browser.newPage();
   page.on("pageerror", error => console.error(error.message));
   page.setDefaultTimeout(2500);
+  page.setDefaultNavigationTimeout(30000);
   const calls = [];
   let fail = false;
   let phase = "idle";

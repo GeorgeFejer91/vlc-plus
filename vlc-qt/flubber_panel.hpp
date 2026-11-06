@@ -396,10 +396,11 @@ public:
     bool handleSettingsKey( QKeyEvent *event, Qt::KeyboardModifiers modifiers )
     {
         const int key = event->key();
+        const bool arrow = key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down;
         const bool cycle = key == Qt::Key_G && ( modifiers == Qt::AltModifier ||
             modifiers == ( Qt::AltModifier | Qt::ShiftModifier ) );
         const bool layout = modifiers == ( Qt::ControlModifier | Qt::AltModifier ) &&
-            ( key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down ||
+            ( ( arrowMode_ && arrow ) ||
               key == Qt::Key_Equal || key == Qt::Key_Minus || key == Qt::Key_BracketLeft ||
               key == Qt::Key_BracketRight || key == Qt::Key_Comma || key == Qt::Key_Period ||
               key == Qt::Key_PageUp || key == Qt::Key_PageDown );
@@ -521,7 +522,7 @@ public:
         }
         QLabel *shortcuts = new QLabel( tr( "Alt+F: affect arrows. Alt+G: next feedback/face; Shift reverses.\n"
             "Ctrl+Shift+1/2/3: main feedback. Ctrl+Alt+1/2/3: visibility.\n"
-            "Ctrl+Alt+arrows: move main feedback; = / -: resize it.\n"
+            "Ctrl+Alt+arrows (affect arrows on): move main feedback; = / -: resize it.\n"
             "Ctrl+Shift+PageUp/PageDown: panel height. Ctrl+Shift+S: settings.\n"
             "Ctrl+Alt+[ / ]: rating step; comma / period: face speed.\n"
             "Ctrl+Alt+PageUp/PageDown: grid density. Tab navigates all settings." ), &dialog );

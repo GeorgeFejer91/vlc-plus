@@ -1,12 +1,7 @@
-name: Windows installer
+name: Standalone Windows installer check
 
 on:
   workflow_dispatch:
-    inputs:
-      publish_release:
-        description: Publish the tested 0.3.3 experimental installer from main
-        type: boolean
-        default: false
   push:
     branches: ['codex/windows-installer']
     tags: ['v*']
@@ -65,26 +60,3 @@ jobs:
             build/stock-vlc-package/stage/manifest.json
             build/stock-vlc-package/stage/source/vlc-plus-source.zip
             build/toolchain-packages.txt
-  publish:
-    needs: installer
-    if: github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      actions: read
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Verify exact tested release inputs
-        run: |
-          gh run download "$GITHUB_RUN_ID" --name vlc-plus-windows-x64 --dir candidate
-          gh run download "$GITHUB_RUN_ID" --name native-build-diagnostics --dir diagnostics
-          python scripts/prepare-release.py --candidate candidate --diagnostics diagnostics --source-commit "$GITHUB_SHA" --output release
-      - name: Publish experimental installer and sources
-        run: |
-          existing_tag=$(git ls-remote --tags origin refs/tags/v0.3.3-experimental.1)
-          test -z "$existing_tag"
-          gh release create v0.3.3-experimental.1 release/* --target "$GITHUB_SHA" --prerelease --title "VLC+ 0.3.3 - Alt+F affect arrows" --notes-file docs/release-notes.md
