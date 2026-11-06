@@ -98,6 +98,9 @@ try {
   markerSource = affectSource.replace(/-affect$/, "-markers");
   assert.ok(before.streams.some(stream => stream.selected && stream.sourceId === markerSource));
   await waitForMarker(page, markerSource, "_Start");
+  // Start away from time zero so unintended backward seeks cannot be hidden
+  // by VLC's lower bound, and let the audio output become active.
+  await delay(5000);
   const volumeBefore = await rc("volume");
   await rc("pause");
   const transportBefore = await rc("get_time\nstatus", "status");
@@ -124,8 +127,9 @@ try {
   // side of the paused key phase, while audio is active, instead.
   const volumeAfter = await rc("volume");
   await writeFile(join(output, "transport.json"), JSON.stringify({ transportBefore, transportAfter, volumeBefore, volumeAfter }, null, 2));
-  assert.ok(number(volumeBefore) !== undefined, "Volume assertion requires an actual VLC volume value");
-  assert.equal(number(volumeAfter), number(volumeBefore), "Affect arrows must preserve VLC volume");
+  const volume = text => text.match(/audio volume: (\d+)/)?.[1];
+  assert.ok(volume(volumeBefore) !== undefined, "Volume assertion requires an actual VLC volume value");
+  assert.equal(volume(volumeAfter), volume(volumeBefore), "Affect arrows must preserve VLC volume");
   await rc("stop");
   await waitForMarker(page, markerSource, "_Stop");
   await page.screenshot({ path: join(output, "native-recording.png") });

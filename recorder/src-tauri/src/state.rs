@@ -33,7 +33,54 @@ struct RecordingProcess {
     child: Child,
     stdin: Option<ChildStdin>,
     output_file: PathBuf,
-    opened_streams: Arc<Mutex<Vec<String>>>,
+    subscriptions: Arc<Mutex<SubscriptionProgress>>,
+}
+
+#[derive(Default)]
+struct SubscriptionProgress {
+    resolved: usize,
+    opened: usize,
+    started: bool,
+    malformed: bool,
+}
+
+impl SubscriptionProgress {
+    fn observe(&mut self, line: &str) {
+        if self.started {
+            // Each successful open emits this single literal insertion. Names,
+            // suffixes and newlines can interleave between worker threads.
+            self.opened += line.matches("Opened the stream ").count();
+        } else if line == "Starting the recording, press Enter to quit" {
+            self.started = true;
+        } else if !line.is_empty() {
+            // The pinned CLI resolves a frozen batch on its main thread before
+            // starting workers. Every resolved stream must acknowledge opening.
+            if line.starts_with("Found ")
+                && line.contains(" matching '")
+                && !line.contains("Opened the stream ")
+            {
+                self.resolved += 1;
+            } else {
+                self.malformed = true;
+            }
+        }
+    }
+
+    fn ready(&self, minimum: usize) -> bool {
+        self.started && !self.malformed && self.resolved >= minimum && self.opened == self.resolved
+    }
+}
+
+fn require_recording_child(child: &mut Child) -> Result<(), String> {
+    match child
+        .try_wait()
+        .map_err(|error| format!("Could not check recording process: {error}"))?
+    {
+        Some(status) => Err(format!(
+            "Recording process exited before playback: {status}. Video remains paused."
+        )),
+        None => Ok(()),
+    }
 }
 
 pub struct AppState {
@@ -437,12 +484,12 @@ impl AppState {
             .spawn()
             .map_err(|error| format!("Could not start LabRecorder: {error}"))?;
         let stdin = child.stdin.take();
-        let opened_streams = Arc::new(Mutex::new(Vec::new()));
+        let subscriptions = Arc::new(Mutex::new(SubscriptionProgress::default()));
         pipe_log(
             child.stdout.take(),
             self.authority.clone(),
             "LabRecorder",
-            Some(opened_streams.clone()),
+            Some(subscriptions.clone()),
         );
         pipe_log(
             child.stderr.take(),
@@ -455,7 +502,7 @@ impl AppState {
             child,
             stdin,
             output_file: output_file.clone(),
-            opened_streams,
+            subscriptions,
         });
         let mut state = self
             .authority
@@ -624,17 +671,17 @@ impl AppState {
                     .read_to_end(&mut bytes)
                     .map_err(|e| e.to_string())?;
             }
-            let subscribed = self
-                .recorder
-                .lock()
-                .map_err(|_| "Recorder lock failed.")?
-                .as_ref()
-                .is_some_and(|process| {
-                    process
-                        .opened_streams
-                        .lock()
-                        .is_ok_and(|opened| subscriptions_ready(&opened, &names))
-                });
+            let subscribed = {
+                let mut recording = self.recorder.lock().map_err(|_| "Recorder lock failed.")?;
+                let process = recording
+                    .as_mut()
+                    .ok_or("Recording stopped before playback. Video remains paused.")?;
+                require_recording_child(&mut process.child)?;
+                process
+                    .subscriptions
+                    .lock()
+                    .is_ok_and(|progress| progress.ready(names.len()))
+            };
             if subscribed && crate::xdf_headers::ready(&bytes, &expected) {
                 return Ok(());
             }
@@ -1148,21 +1195,11 @@ fn ensure_empty_object(value: &serde_json::Value) -> Result<(), String> {
     }
 }
 
-fn subscriptions_ready(opened: &[String], required: &[&str]) -> bool {
-    required.iter().all(|name| {
-        opened
-            .iter()
-            .filter(|entry| entry.as_str() == *name)
-            .count()
-            >= required.iter().filter(|entry| *entry == name).count()
-    })
-}
-
 fn pipe_log<R>(
     reader: Option<R>,
     authority: Arc<Mutex<Authority>>,
     label: &'static str,
-    opened_streams: Option<Arc<Mutex<Vec<String>>>>,
+    subscriptions: Option<Arc<Mutex<SubscriptionProgress>>>,
 ) where
     R: std::io::Read + Send + 'static,
 {
@@ -1170,16 +1207,10 @@ fn pipe_log<R>(
     thread::spawn(move || {
         for line in BufReader::new(reader).lines().map_while(Result::ok) {
             let line = line.trim();
-            // The pinned engine also writes headers after an open_stream timeout.
-            // Only its positive open acknowledgement proves subscription. A
-            // malformed/interleaved log line fails closed, leaving video paused.
-            if let Some(name) = line
-                .strip_prefix("Opened the stream ")
-                .and_then(|line| line.strip_suffix('.'))
-                && let Some(opened) = &opened_streams
-                && let Ok(mut names) = opened.lock()
+            if let Some(progress) = &subscriptions
+                && let Ok(mut progress) = progress.lock()
             {
-                names.push(name.to_owned());
+                progress.observe(line);
             }
             if !line.is_empty()
                 && let Ok(mut state) = authority.lock()
@@ -1200,48 +1231,57 @@ mod tests {
 
     #[test]
     fn headers_or_old_log_entries_cannot_confirm_new_subscriptions() {
-        let app = AppState::new(std::env::temp_dir(), PathBuf::new());
-        let opened = Arc::new(Mutex::new(Vec::new()));
-        let text = b"Subscribing to the stream Marker is taking relatively long; collection from this stream will be delayed.\nReceived header for stream Marker.\nOpened the stream Affect.\n";
-        pipe_log(
-            Some(std::io::Cursor::new(text)),
-            app.authority.clone(),
-            "LabRecorder",
-            Some(opened.clone()),
-        );
-        let deadline = Instant::now() + Duration::from_secs(2);
-        while opened.lock().unwrap().is_empty() && Instant::now() < deadline {
-            thread::sleep(Duration::from_millis(10));
+        let mut progress = SubscriptionProgress::default();
+        for line in [
+            "Found Affect@host matching 'query'",
+            "Found Marker@host matching 'query'",
+            "Starting the recording, press Enter to quit",
+            "Opened the stream Affect.",
+            "Subscribing to the stream Marker is taking relatively long; collection from this stream will be delayed.",
+            "Received header for stream Marker.",
+        ] {
+            progress.observe(line);
         }
-        assert!(!subscriptions_ready(
-            &opened.lock().unwrap(),
-            &["Affect", "Marker"]
-        ));
-        assert!(!subscriptions_ready(
-            &["Marker".into()],
-            &["Marker", "Marker"]
-        ));
-        assert!(subscriptions_ready(
-            &["Marker".into(), "Marker".into()],
-            &["Marker", "Marker"]
-        ));
-        // Every RecordingProcess gets a fresh collection, not historical diagnostics.
-        assert!(!subscriptions_ready(&[], &["Marker"]));
-        pipe_log(
-            Some(std::io::Cursor::new(b"Opened the stream Marker.\n")),
-            app.authority.clone(),
-            "LabRecorder",
-            Some(opened.clone()),
-        );
-        while !subscriptions_ready(&opened.lock().unwrap(), &["Affect", "Marker"])
-            && Instant::now() < deadline
-        {
-            thread::sleep(Duration::from_millis(10));
+        assert!(!progress.ready(2));
+        progress.observe("Opened the stream Marker.");
+        assert!(progress.ready(2));
+        assert!(!SubscriptionProgress::default().ready(2));
+    }
+
+    #[test]
+    fn duplicate_names_and_interleaved_worker_lines_preserve_the_resolved_count() {
+        let mut progress = SubscriptionProgress::default();
+        for line in [
+            "Found Marker@host matching 'query'",
+            "Found Marker@host matching 'query'",
+            "Starting the recording, press Enter to quit",
+            "Opened the stream Opened the stream Marker.Marker.",
+        ] {
+            progress.observe(line);
         }
-        assert!(subscriptions_ready(
-            &opened.lock().unwrap(),
-            &["Affect", "Marker"]
-        ));
+        assert!(progress.ready(2));
+        assert!(!progress.ready(3));
+        let mut injected = SubscriptionProgress::default();
+        injected.observe("Found Opened the stream Marker@host matching 'query'");
+        injected.observe("Starting the recording, press Enter to quit");
+        injected.observe("Opened the stream Marker.");
+        assert!(!injected.ready(1));
+    }
+
+    #[test]
+    fn exited_recording_child_cannot_be_ready_after_writing_proof() {
+        let mut child = Command::new(std::env::current_exe().unwrap())
+            .arg("--list")
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        child.wait().unwrap();
+        assert!(
+            require_recording_child(&mut child)
+                .unwrap_err()
+                .contains("exited before playback")
+        );
     }
 
     #[test]
@@ -1696,7 +1736,16 @@ mod tests {
             );
             thread::sleep(Duration::from_millis(100));
         }
-        let started = app.start_recording_and_play(port).unwrap();
+        let started = app.start_recording_and_play(port).unwrap_or_else(|error| {
+            panic!(
+                "{error}\nDiagnostics: {:?}",
+                app.snapshot().unwrap().diagnostics
+            )
+        });
+        println!(
+            "ENGINE_DIAGNOSTICS {:?}",
+            app.snapshot().unwrap().diagnostics
+        );
         println!(
             "RECORDING VLC+ {pid}; XDF: {}",
             started.recording.output_file.unwrap()

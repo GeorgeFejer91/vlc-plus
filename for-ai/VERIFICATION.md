@@ -261,9 +261,11 @@ physical-input, end-to-end participant-session or scientific qualification.
 VLC+ playback readiness requires exact complete XDF stream headers and positive
 subscription acknowledgements from the current pinned LabRecorder child. The
 engine can write headers after an open_stream timeout; metadata alone is not
-subscription proof. Duplicate names require the corresponding acknowledgement
-count. Historical diagnostics never satisfy a new recording's readiness.
-Malformed/interleaved acknowledgement lines fail closed with video paused.
+subscription proof. The pinned CLI resolves a frozen batch before starting its stream workers;
+all resolved streams must acknowledge opening. Prefix counting tolerates
+interleaved names and newlines, including duplicate names. Historical logs
+never satisfy a new recording. The current child must still be running.
+Malformed prelude evidence fails closed with video paused.
 
 Native marker waits explicitly poll awaited snapshots outside page.waitForFunction:
 Playwright1.64.1 resolves an async false predicate immediately. The corrected
