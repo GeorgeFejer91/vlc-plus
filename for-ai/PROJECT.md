@@ -26,6 +26,38 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ## Active milestone: keyboard, joint handoff and recording qualification
 
+### Latest status (2026-11-06, PR11 preparation)
+
+PR9 (`0d84abc`) and PR10 (`fe35248`) are merged. PR10's full source/UI
+checks pass. The source-built suite still needs a complete passing run and
+publication; its previous failure was the now-corrected NSIS payload hash.
+
+The user also requested exactly one visible representation and all character
+faces. Current source normalizes legacy visibility flags, makes every selector
+exclusive, and adds Alt+H / Alt+Shift+H for all nine characters. Alt+G retains
+the chosen character. Qt rendering/input/migration checks pass.
+
+The real keyboard qualification exposed a separate Windows path: VLC's native
+video thread consumes GetMessage keyboard messages before Qt's event filter.
+Modified arrows sought the paused video from five seconds to zero. This was
+a product failure, not qualification. A scoped, own-process video-thread hook
+now intercepts those messages and queues the reserved controls to Qt. Its
+Windows regression covers other-window isolation, arrow restoration, teardown
+and invalid routing; panel checks cover stale queued native commands. The full
+Qt plugin builds against pinned VLC 3.0.20. Independent focused review found
+no remaining actionable issue. Foreground input and full XDF/CSV qualification
+remain open. A temporary local plugin replacement has a backup/hash receipt
+under ignored `build/native-preview/`; it is not a qualified installer.
+
+The user manually handled both earlier privacy/firewall dialogs. No security
+choice was automated. The latest native attempt reached recording, but Windows
+Computer Use returned `failed to activate captured window` for both apps.
+It timed out and stopped recording safely. The user has been asked to bring
+VLC to the foreground; do not treat this as a passing keyboard test.
+
+The checklist below retains earlier evidence and remains subordinate to this
+latest status until the final installed qualification and publication pass.
+
 - [x] Include self-contained Recorder source/UI/controller/locks/notices in
   `recorder/`, pinned to upstream `242ad90` with declared local adaptations.
   Its 22 JavaScript tests, 23 release Rust tests, controller/tab UI checks and
@@ -221,7 +253,11 @@ with scientific timing, physical input or research qualification.
 - The GitHub repository is public by explicit user authorization on 2026-11-04.
   Review source, history and assets before any further publication.
 
-## Session handoff
+## Archived handoff (before the 2026-11-06 continuation)
+
+The following checkpoint is historical. The current user has explicitly
+resumed implementation and qualification; its stop instruction no longer
+applies. Use the active milestone above for current status.
 
 The user requested **push code first, then push this handoff** on 2026-11-05.
 Stop installation/release work at this checkpoint and leave the incomplete

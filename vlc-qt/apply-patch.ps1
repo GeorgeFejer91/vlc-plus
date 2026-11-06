@@ -17,4 +17,5 @@ if ($LASTEXITCODE -ne 0) { throw 'VLC Qt patch does not apply cleanly.' }
 if ($LASTEXITCODE -ne 0) { throw 'VLC Qt patch failed.' }
 Copy-Item -LiteralPath $header -Destination $target
 Copy-Item -LiteralPath $bridgeHeader -Destination $bridgeTarget
+Copy-Item -LiteralPath (Join-Path $here 'flubber_video_keys.hpp') -Destination (Join-Path $root 'modules/gui/qt/flubber_video_keys.hpp')
 Write-Output "Applied VLC Flubber Qt patch to $root"

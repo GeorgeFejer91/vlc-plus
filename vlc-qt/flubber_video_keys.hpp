@@ -1,0 +1,224 @@
+/* Own-video-thread keyboard routing. GPL-2.0-or-later. */
+#ifndef VLC_FLUBBER_VIDEO_KEYS_HPP
+#define VLC_FLUBBER_VIDEO_KEYS_HPP
+
+#include <QCoreApplication>
+#include <QEvent>
+#include <QWidget>
+#include <QMap>
+#include <QMutex>
+#include <QMutexLocker>
+#include <cstdio>
+
+struct FlubberNativeKeyEvent : QEvent
+{
+    static QEvent::Type eventType()
+    {
+        static const int type = QEvent::registerEventType();
+        return static_cast<QEvent::Type>( type );
+    }
+    FlubberNativeKeyEvent( int value, Qt::KeyboardModifiers mods, bool repeated, int mode, quint64 revision = 0 )
+        : QEvent( eventType() ), key( value ), modifiers( mods ), repeat( repeated ), arrowModeAfter( mode ), guiRevision( revision ) {}
+    int key;
+    Qt::KeyboardModifiers modifiers;
+    bool repeat;
+    int arrowModeAfter;
+    quint64 guiRevision;
+};
+
+inline bool flubberReservedKey( int key, Qt::KeyboardModifiers mods, bool arrows )
+{
+    mods &= ~Qt::KeypadModifier;
+    if( key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down )
+        return arrows;
+    if( mods == Qt::AltModifier && key == Qt::Key_F ) return true;
+    if( ( mods == Qt::AltModifier || mods == ( Qt::AltModifier | Qt::ShiftModifier ) ) &&
+        ( key == Qt::Key_G || key == Qt::Key_H ) ) return true;
+    if( mods == ( Qt::ControlModifier | Qt::ShiftModifier ) )
+        return ( key >= Qt::Key_1 && key <= Qt::Key_3 ) || key == Qt::Key_A || key == Qt::Key_M ||
+            key == Qt::Key_S || key == Qt::Key_PageUp || key == Qt::Key_PageDown;
+    if( ( key == Qt::Key_Equal || key == Qt::Key_Plus ) &&
+        mods == ( Qt::ControlModifier | Qt::AltModifier | Qt::ShiftModifier ) ) return true;
+    if( mods != ( Qt::ControlModifier | Qt::AltModifier ) ) return false;
+    return ( key >= Qt::Key_1 && key <= Qt::Key_3 ) || key == Qt::Key_Equal || key == Qt::Key_Plus ||
+        key == Qt::Key_Minus || key == Qt::Key_BracketLeft || key == Qt::Key_BracketRight ||
+        key == Qt::Key_Comma || key == Qt::Key_Period || key == Qt::Key_PageUp || key == Qt::Key_PageDown;
+}
+
+#ifdef Q_OS_WIN
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
+class FlubberVideoKeys
+{
+    struct Entry { FlubberVideoKeys *owner; QObject *target; HWND surface; bool arrows, altChord; };
+    struct Hook { HHOOK handle; HWND window; };
+    struct Discovery { DWORD gui; QMap<DWORD, HWND> windows; };
+    static QMutex &mutex() { static QMutex value; return value; }
+    static QMap<DWORD, Entry> &entries() { static QMap<DWORD, Entry> value; return value; }
+    static bool keepCallbackCodeAlive()
+    {
+        // Unhook can return with a callback still in flight. Keep this module's
+        // code mapped until process exit; targets and hooks still detach normally.
+        HMODULE module = NULL;
+        return GetModuleHandleExW( GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+            reinterpret_cast<LPCWSTR>( reinterpret_cast<quintptr>( &receive ) ), &module ) != 0;
+    }
+    static BOOL CALLBACK collect( HWND window, LPARAM parameter )
+    {
+        Discovery &found = *reinterpret_cast<Discovery *>( parameter );
+        DWORD process = 0;
+        const DWORD thread = GetWindowThreadProcessId( window, &process );
+        if( thread && thread != found.gui && process == GetCurrentProcessId() && !found.windows.contains( thread ) )
+            found.windows.insert( thread, window );
+        return TRUE;
+    }
+    static int qtKey( WPARAM key )
+    {
+        if( key >= 'A' && key <= 'Z' ) return Qt::Key_A + int( key - 'A' );
+        if( key >= '0' && key <= '9' ) return Qt::Key_0 + int( key - '0' );
+        switch( key )
+        {
+            case VK_LEFT: return Qt::Key_Left; case VK_RIGHT: return Qt::Key_Right;
+            case VK_UP: return Qt::Key_Up; case VK_DOWN: return Qt::Key_Down;
+            case VK_PRIOR: return Qt::Key_PageUp; case VK_NEXT: return Qt::Key_PageDown;
+            case VK_OEM_PLUS: case VK_ADD: return Qt::Key_Equal;
+            case VK_OEM_MINUS: case VK_SUBTRACT: return Qt::Key_Minus;
+            case VK_OEM_4: return Qt::Key_BracketLeft; case VK_OEM_6: return Qt::Key_BracketRight;
+            case VK_OEM_COMMA: return Qt::Key_Comma; case VK_OEM_PERIOD: return Qt::Key_Period;
+            default: return 0;
+        }
+    }
+    static LRESULT CALLBACK receive( int code, WPARAM removed, LPARAM parameter )
+    {
+        if( code >= 0 && removed == PM_REMOVE )
+        {
+            MSG &message = *reinterpret_cast<MSG *>( parameter );
+            const bool down = message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN;
+            const bool up = message.message == WM_KEYUP || message.message == WM_SYSKEYUP;
+            if( down || up )
+            {
+                QMutexLocker lock( &mutex() );
+                auto found = entries().find( GetCurrentThreadId() );
+                if( found != entries().end() && found->target && message.hwnd &&
+                    ( message.hwnd == found->surface || IsChild( found->surface, message.hwnd ) ) )
+                {
+                    Entry &entry = found.value();
+                    GUITHREADINFO state = {}; state.cbSize = sizeof( state );
+                    const bool menu = GetGUIThreadInfo( GetCurrentThreadId(), &state ) &&
+                        ( state.flags & ( GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE ) );
+                    const int key = qtKey( message.wParam );
+                    Qt::KeyboardModifiers mods = Qt::NoModifier;
+                    if( GetKeyState( VK_CONTROL ) & 0x8000 ) mods |= Qt::ControlModifier;
+                    if( GetKeyState( VK_SHIFT ) & 0x8000 ) mods |= Qt::ShiftModifier;
+                    if( ( GetKeyState( VK_MENU ) & 0x8000 ) || ( message.lParam & ( LPARAM( 1 ) << 29 ) ) ) mods |= Qt::AltModifier;
+                    const bool foreground = GetAncestor( GetForegroundWindow(), GA_ROOT ) == GetAncestor( message.hwnd, GA_ROOT );
+                    const bool arrow = key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down;
+                    bool consume = !menu && arrow && entry.arrows;
+                    if( down && message.wParam == VK_MENU && !( message.lParam & ( LPARAM( 1 ) << 30 ) ) ) entry.altChord = false;
+                    if( up && message.wParam == VK_MENU && entry.altChord ) { consume = true; entry.altChord = false; }
+                    if( !menu && foreground && flubberReservedKey( key, mods, entry.arrows ) )
+                    {
+                        consume = true;
+                        if( down )
+                        {
+                            const bool repeat = message.lParam & ( LPARAM( 1 ) << 30 );
+                            int mode = -1;
+                            if( key == Qt::Key_F && mods == Qt::AltModifier ) mode = repeat ? int( entry.arrows ) : int( !entry.arrows );
+                            if( mods == ( Qt::ControlModifier | Qt::ShiftModifier ) && ( key == Qt::Key_A || key == Qt::Key_M ) )
+                                mode = key == Qt::Key_A;
+                            if( mode >= 0 )
+                            {
+                                entry.owner->arrows_ = mode != 0;
+                                for( auto it = entries().begin(); it != entries().end(); ++it )
+                                    if( it->owner == entry.owner ) it->arrows = mode != 0;
+                            }
+                            if( mods & Qt::AltModifier ) entry.altChord = true;
+                            // Only queue to Qt; never block the video thread on GUI work.
+                            QCoreApplication::postEvent( entry.target, new FlubberNativeKeyEvent( key, mods, repeat, mode, entry.owner->guiRevision_ ) );
+                        }
+                    }
+                    if( down && entry.owner->trace_ && ( consume || key == Qt::Key_F || key == Qt::Key_G || key == Qt::Key_H || arrow ) )
+                        std::fprintf( stderr, "Flubber native key: thread=%lu hwnd=%p key=%d modifiers=%x arrows=%d foreground=%d claimed=%d\n",
+                            static_cast<unsigned long>( GetCurrentThreadId() ), static_cast<void *>( message.hwnd ), key,
+                            int( mods ), int( entry.arrows ), int( foreground ), int( consume ) );
+                    if( consume ) { message.message = WM_NULL; message.wParam = 0; message.lParam = 0; }
+                }
+            }
+        }
+        return CallNextHookEx( NULL, code, removed, parameter );
+    }
+    void detach( DWORD thread )
+    {
+        {
+            QMutexLocker lock( &mutex() );
+            auto found = entries().find( thread );
+            if( found != entries().end() && found->owner == this ) entries().erase( found );
+        }
+        const Hook hook = hooks_.take( thread );
+        if( hook.handle ) UnhookWindowsHookEx( hook.handle );
+    }
+public:
+    FlubberVideoKeys( QObject *target, bool arrows ) : target_( target ), gui_( GetCurrentThreadId() ), arrows_( arrows ),
+        codeAlive_( keepCallbackCodeAlive() ), trace_( qEnvironmentVariableIsSet( "VLC_FLUBBER_TRACE_KEYS" ) ), guiRevision_( 0 )
+    { FlubberNativeKeyEvent::eventType(); }
+    ~FlubberVideoKeys() { for( DWORD thread : hooks_.keys() ) detach( thread ); }
+    void setArrowMode( bool arrows )
+    {
+        QMutexLocker lock( &mutex() ); arrows_ = arrows; ++guiRevision_;
+        for( auto it = entries().begin(); it != entries().end(); ++it ) if( it->owner == this ) it->arrows = arrows;
+    }
+    quint64 guiRevision() const { QMutexLocker lock( &mutex() ); return guiRevision_; }
+    QString error() const { return error_; }
+    bool refresh( WId surfaceId )
+    {
+        error_.clear();
+        if( !codeAlive_ || !target_ ) { error_ = QStringLiteral( "Windows video keyboard routing is unavailable." ); return false; }
+        const HWND surface = reinterpret_cast<HWND>( surfaceId );
+        Discovery found = { gui_, {} };
+        if( surface && IsWindow( surface ) ) { collect( surface, reinterpret_cast<LPARAM>( &found ) ); EnumChildWindows( surface, collect, reinterpret_cast<LPARAM>( &found ) ); }
+        for( DWORD thread : hooks_.keys() )
+            if( !found.windows.contains( thread ) || GetWindowThreadProcessId( hooks_[thread].window, NULL ) != thread ) detach( thread );
+        for( auto it = found.windows.begin(); it != found.windows.end(); ++it )
+        {
+            if( !hooks_.contains( it.key() ) )
+            {
+                QMutexLocker lock( &mutex() );
+                if( entries().contains( it.key() ) ) { error_ = QStringLiteral( "The video keyboard thread is already in use." ); continue; }
+                // Thread belongs to this process; no global hook or DLL injection.
+                // Publish under the same lock as installation: an immediate
+                // callback cannot see a missing recipient and leak a shortcut.
+                HHOOK hook = SetWindowsHookExW( WH_GETMESSAGE, receive, NULL, it.key() );
+                if( !hook ) { error_ = QStringLiteral( "Windows video keyboard hook failed (%1)." ).arg( qulonglong( GetLastError() ) ); continue; }
+                hooks_.insert( it.key(), Hook{ hook, it.value() } );
+                entries().insert( it.key(), Entry{ this, target_, surface, arrows_, false } );
+            }
+            else { QMutexLocker lock( &mutex() ); entries()[it.key()].surface = surface; }
+        }
+        return error_.isEmpty();
+    }
+private:
+    QObject *target_;
+    DWORD gui_;
+    bool arrows_; // protected by mutex(), including eager native mode changes
+    const bool codeAlive_, trace_;
+    quint64 guiRevision_; // GUI intent supersedes older queued native commands
+    QString error_; // GUI thread only
+    QMap<DWORD, Hook> hooks_; // GUI thread only
+};
+#else
+class FlubberVideoKeys
+{
+public:
+    FlubberVideoKeys( QObject *, bool ) : revision_( 0 ) {}
+    void setArrowMode( bool ) { ++revision_; }
+    quint64 guiRevision() const { return revision_; }
+    QString error() const { return QString(); }
+    bool refresh( WId ) { return true; }
+private:
+    quint64 revision_;
+};
+#endif
+#endif

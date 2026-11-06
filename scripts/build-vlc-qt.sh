@@ -14,7 +14,7 @@ tar -xJf "$archive" -C "$source_parent"
 git -C "$source" init -q
 git -C "$source" apply --check "$root/vlc-qt/vlc-3.0.20-flubber.patch"
 git -C "$source" apply "$root/vlc-qt/vlc-3.0.20-flubber.patch"
-cp "$root/vlc-qt/flubber_panel.hpp" "$root/vlc-qt/flubber_bridge.hpp" "$source/modules/gui/qt/"
+cp "$root/vlc-qt/flubber_panel.hpp" "$root/vlc-qt/flubber_bridge.hpp" "$root/vlc-qt/flubber_video_keys.hpp" "$source/modules/gui/qt/"
 
 qt_version=$(qmake-qt5 -query QT_VERSION)
 cd "$build"

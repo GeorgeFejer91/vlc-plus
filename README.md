@@ -3,7 +3,7 @@
 VLC+ is a standalone experimental Windows VLC player for continuous
 valence/arousal ratings. It keeps VLC's menus, playlist and transport controls
 and adds a native feedback panel with Classic Flubber, an affect grid and
-synthetic photo-face feedback. The three layers can be shown together.
+synthetic photo-face feedback. Exactly one representation is visible at a time.
 
 The complete [Remote LSL Recorder](recorder/README.md) is included in this
 repository: Rust/Tauri desktop source, live viewer, browser controller, locked

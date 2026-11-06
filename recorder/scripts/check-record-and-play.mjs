@@ -49,7 +49,7 @@ try {
   assert.equal(await page.locator("#vlc-dialog").evaluate(el => el.open), true);
   assert.equal(calls.some(call => call.command === "start_vlc_and_record"), false);
   await page.getByLabel("Video path for Start VLC+ and record", { exact: true }).fill("C:\\Videos\\clip with spaces.mp4");
-  assert.match(await page.locator(".vlc-hotkeys").textContent(), /Alt\+F.*Alt\+G/s);
+  assert.match(await page.locator(".vlc-hotkeys").textContent(), /Alt\+F.*Alt\+G.*Alt\+H.*9 total/s);
   await page.getByRole("button", { name: "Close VLC+ setup" }).click();
   await launch.click();
   await page.waitForFunction(() => document.querySelector("#record-phase").textContent === "Recording");
@@ -93,7 +93,7 @@ try {
   await page.screenshot({ path: resolve(output, "recorder-large-text.png"), fullPage: true });
   await page.goto(`http://127.0.0.1:${server.address().port}/companion/vlc.html`);
   await page.locator("#vlc-hotkeys dt").first().waitFor();
-  assert.equal(await page.locator("#vlc-hotkeys dt").count(), 14);
+  assert.equal(await page.locator("#vlc-hotkeys dt").count(), 15);
   for (const width of [320, 390, 720, 1280, 1920]) {
     await page.setViewportSize({ width, height: 800 });
     await page.evaluate(() => document.fonts.ready);

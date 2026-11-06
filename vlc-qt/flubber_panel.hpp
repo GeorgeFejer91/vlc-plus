@@ -49,6 +49,9 @@
 #include <cstdint>
 #include <cmath>
 #include <functional>
+#include <memory>
+#include <QPointer>
+#include "flubber_video_keys.hpp"
 #ifdef Q_OS_WIN
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -94,6 +97,7 @@ public:
                     ? settings_->value( "Flubber/yPercent", 50 ) : QVariant( 50 ) ).toInt(), 100 ) };
         }
         primary_ = kindFromName( settings_->value( "Flubber/primary", "flubber" ).toString() );
+        normalizeVisibility();
         grid_ = defaultGrid();
         grid_.insert( "lineThickness", settings_->value( "Flubber/gridLineThickness", 1.0 ).toDouble() );
         grid_.insert( "showOutline", settings_->value( "Flubber/gridShowOutline", true ).toBool() );
@@ -129,9 +133,16 @@ public:
         if( !setFaceId( faceId_, &faceError ) ) appearanceLoadError_ = faceError;
         clock_.start();
         qApp->installEventFilter( this );
+        nativeKeys_.reset( new FlubberVideoKeys( this, arrowMode_ ) );
         QTimer *timer = new QTimer( this );
         timer->setTimerType( Qt::PreciseTimer );
         connect( timer, &QTimer::timeout, this, [this]() {
+            if( !nativeKeys_->refresh( referenceSurface_ ? referenceSurface_->winId() : WId( 0 ) ) && arrowMode_ )
+            {
+                setArrowMode( false );
+                QMessageBox::warning( window(), tr( "Affect arrow control unavailable" ),
+                    tr( "Exclusive arrow control could not be enabled for this video. Mouse control has been selected.\n%1" ).arg( nativeKeys_->error() ) );
+            }
             if( ratingActive_ && ( !ratingWindowIsForeground()
 #ifdef Q_OS_WIN
                 || GetCapture() != reinterpret_cast<HWND>( winId() )
@@ -158,6 +169,7 @@ public:
 
     ~FlubberPanel() Q_DECL_OVERRIDE
     {
+        nativeKeys_.reset();
         releaseRating();
         qApp->removeEventFilter( this );
     }
@@ -214,25 +226,23 @@ public:
             std::swap( layers_[kind].size, layers_[primary_].size );
             std::swap( layers_[kind].x, layers_[primary_].x );
             std::swap( layers_[kind].y, layers_[primary_].y );
-            persistLayout( primary_ );
             primary_ = kind;
             settings_->setValue( "Flubber/primary", kindName( kind ) );
         }
-        setVisible( kind, true );
-        persistLayout( kind );
+        normalizeVisibility();
         update();
     }
     void setVisible( FeedbackKind kind, bool enabled )
     {
-        layers_[kind].visible = enabled;
-        persistLayout( kind );
-        update();
+        if( enabled ) setPrimary( kind );
+        else if( kind == primary_ ) setPrimary( FlubberKind );
     }
     void setLayout( FeedbackKind kind, ElementLayout layout )
     {
         layout.size = qBound( 10, layout.size, 100 );
         layout.x = qBound( 0, layout.x, 100 );
         layout.y = qBound( 0, layout.y, 100 );
+        layout.visible = kind == primary_;
         layers_[kind] = layout;
         persistLayout( kind );
         update();
@@ -326,7 +336,8 @@ public:
         { error = tr( "The chosen face atlas is missing or invalid: %1" ).arg( atlasReader.errorString() ); return false; }
         preset_ = appearance;
         primary_ = kindFromName( primaryName );
-        for( int i = 0; i < 3; ++i ) { layers_[i] = parsedLayers[i]; persistLayout( static_cast<FeedbackKind>( i ) ); }
+        for( int i = 0; i < 3; ++i ) layers_[i] = parsedLayers[i];
+        normalizeVisibility();
         grid_ = grid; grid_.remove( "columns" ); grid_.remove( "rows" );
         gridColumns_ = grid.value( "columns" ).toInt(); gridRows_ = grid.value( "rows" ).toInt();
         faceId_ = face.value( "id" ).toString(); faceAtlas_ = atlas;
@@ -350,10 +361,11 @@ public:
     bool ratingActive() const { return ratingActive_; }
     void stopRating() { releaseRating(); }
     bool arrowMode() const { return arrowMode_; }
-    void setArrowMode( bool enabled )
+    void setArrowMode( bool enabled, bool syncNative = true )
     {
         releaseRating();
         arrowMode_ = enabled;
+        if( syncNative && nativeKeys_ ) nativeKeys_->setArrowMode( enabled );
         settings_->setValue( "Flubber/inputMode", enabled ? "arrows" : "mouse" );
         updateInputTooltip();
         if( enabled && ratingWindowIsForeground() ) setFocus( Qt::ShortcutFocusReason );
@@ -365,7 +377,9 @@ public:
     bool handleInputKey( QKeyEvent *event )
     {
         if( event->type() != QEvent::KeyPress && event->type() != QEvent::ShortcutOverride ) return false;
-        const Qt::KeyboardModifiers modifiers = event->modifiers() & ~Qt::KeypadModifier;
+        Qt::KeyboardModifiers modifiers = event->modifiers() & ~Qt::KeypadModifier;
+        if( ( event->key() == Qt::Key_Plus || event->key() == Qt::Key_Equal ) &&
+            modifiers == ( Qt::ControlModifier | Qt::AltModifier | Qt::ShiftModifier ) ) modifiers &= ~Qt::ShiftModifier;
         if( handleSettingsKey( event, modifiers ) ) return true;
         if( event->key() == Qt::Key_F && modifiers == Qt::AltModifier )
         {
@@ -399,20 +413,31 @@ public:
         const bool arrow = key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down;
         const bool cycle = key == Qt::Key_G && ( modifiers == Qt::AltModifier ||
             modifiers == ( Qt::AltModifier | Qt::ShiftModifier ) );
+        const bool faceCycle = key == Qt::Key_H && ( modifiers == Qt::AltModifier ||
+            modifiers == ( Qt::AltModifier | Qt::ShiftModifier ) );
         const bool layout = modifiers == ( Qt::ControlModifier | Qt::AltModifier ) &&
             ( ( arrowMode_ && arrow ) ||
-              key == Qt::Key_Equal || key == Qt::Key_Minus || key == Qt::Key_BracketLeft ||
+              key == Qt::Key_Equal || key == Qt::Key_Plus || key == Qt::Key_Minus || key == Qt::Key_BracketLeft ||
               key == Qt::Key_BracketRight || key == Qt::Key_Comma || key == Qt::Key_Period ||
               key == Qt::Key_PageUp || key == Qt::Key_PageDown );
         const bool panel = modifiers == ( Qt::ControlModifier | Qt::ShiftModifier ) &&
             ( key == Qt::Key_PageUp || key == Qt::Key_PageDown || key == Qt::Key_S );
-        if( !cycle && !layout && !panel ) return false;
+        if( !cycle && !faceCycle && !layout && !panel ) return false;
         event->accept();
         if( event->type() != QEvent::KeyPress || event->isAutoRepeat() ) return true;
         if( cycle )
         {
             const int direction = modifiers.testFlag( Qt::ShiftModifier ) ? -1 : 1;
             setPrimary( static_cast<FeedbackKind>( ( int( primary_ ) + direction + 3 ) % 3 ) );
+        }
+        else if( faceCycle )
+        {
+            const QStringList ids = faceIds();
+            const int direction = modifiers.testFlag( Qt::ShiftModifier ) ? -1 : 1;
+            const int index = qMax( 0, ids.indexOf( faceId_ ) );
+            QString error;
+            if( setFaceId( ids[( index + direction + ids.size() ) % ids.size()], &error ) ) setPrimary( FaceKind );
+            else setToolTip( error );
         }
         else if( panel && key == Qt::Key_S ) showControls( window() );
         else if( panel )
@@ -449,7 +474,7 @@ public:
             if( key == Qt::Key_Right ) changed.x += 2;
             if( key == Qt::Key_Up ) changed.y -= 2;
             if( key == Qt::Key_Down ) changed.y += 2;
-            if( key == Qt::Key_Equal ) changed.size += 2;
+            if( key == Qt::Key_Equal || key == Qt::Key_Plus ) changed.size += 2;
             if( key == Qt::Key_Minus ) changed.size -= 2;
             setLayout( primary_, changed );
         }
@@ -497,16 +522,16 @@ public:
         }
         display->addRow( tr( "Bottom panel height" ), height );
         QComboBox *primaryBox = new QComboBox( &dialog );
+        primaryBox->setObjectName( "flubber-representation" );
         primaryBox->addItems( { tr( "Flubber" ), tr( "2D grid" ), tr( "Face morph" ) } );
-        primaryBox->setCurrentIndex( primary_ ); display->addRow( tr( "Main feedback" ), primaryBox );
+        primaryBox->setCurrentIndex( primary_ ); display->addRow( tr( "Visible representation" ), primaryBox );
         QComboBox *inputBox = new QComboBox( &dialog );
         inputBox->addItems( { tr( "Mouse" ), tr( "Arrow keys" ) } );
         inputBox->setCurrentIndex( arrowMode_ ? 1 : 0 ); display->addRow( tr( "Input mode" ), inputBox );
-        QCheckBox *shown[3]; QSpinBox *size[3], *x[3], *y[3];
+        QSpinBox *size[3], *x[3], *y[3];
         for( int i = 0; i < 3; ++i )
         {
             const QString name = i == 0 ? tr( "Flubber" ) : i == 1 ? tr( "2D grid" ) : tr( "Face morph" );
-            shown[i] = new QCheckBox( tr( "Show" ), &dialog ); shown[i]->setChecked( layers_[i].visible );
             size[i] = spin( &dialog, 10, 100, layers_[i].size, tr( " %" ) );
             x[i] = spin( &dialog, 0, 100, layers_[i].x, tr( " %" ) );
             y[i] = spin( &dialog, 0, 100, layers_[i].y, tr( " %" ) );
@@ -515,13 +540,14 @@ public:
             y[i]->setObjectName( QStringLiteral( "flubber-layer-%1-y" ).arg( i ) );
             QWidget *row = new QWidget( &dialog ); QHBoxLayout *line = new QHBoxLayout( row );
             line->setContentsMargins( 0, 0, 0, 0 );
-            line->addWidget( shown[i] ); line->addWidget( new QLabel( tr( "Size" ), row ) ); line->addWidget( size[i] );
+            line->addWidget( new QLabel( tr( "Size" ), row ) ); line->addWidget( size[i] );
             line->addWidget( new QLabel( tr( "X" ), row ) ); line->addWidget( x[i] );
             line->addWidget( new QLabel( tr( "Y" ), row ) ); line->addWidget( y[i] );
             display->addRow( name, row );
         }
-        QLabel *shortcuts = new QLabel( tr( "Alt+F: affect arrows. Alt+G: next feedback/face; Shift reverses.\n"
-            "Ctrl+Shift+1/2/3: main feedback. Ctrl+Alt+1/2/3: visibility.\n"
+        QLabel *shortcuts = new QLabel( tr( "Alt+F: affect arrows. Alt+G: next representation; Shift reverses.\n"
+            "Alt+H: next face character; Shift reverses. Selects face morph.\n"
+            "Ctrl+Shift+1/2/3 or Ctrl+Alt+1/2/3: select representation.\n"
             "Ctrl+Alt+arrows (affect arrows on): move main feedback; = / -: resize it.\n"
             "Ctrl+Shift+PageUp/PageDown: panel height. Ctrl+Shift+S: settings.\n"
             "Ctrl+Alt+[ / ]: rating step; comma / period: face speed.\n"
@@ -699,10 +725,10 @@ public:
             settings_->setValue( "Flubber/appearanceJson", QJsonDocument( preset_ ).toJson( QJsonDocument::Compact ) );
             if( panelPercent_ < 0 ) { panelHeight_ = height->value(); setFixedHeight( panelHeight_ );
                 settings_->setValue( "Flubber/panelHeight", panelHeight_ ); }
-            for( int i = 0; i < 3; ++i ) setLayout( static_cast<FeedbackKind>( i ),
-                ElementLayout{ shown[i]->isChecked(), size[i]->value(), x[i]->value(), y[i]->value() } );
             primary_ = static_cast<FeedbackKind>( primaryBox->currentIndex() );
             settings_->setValue( "Flubber/primary", kindName( primary_ ) );
+            for( int i = 0; i < 3; ++i ) setLayout( static_cast<FeedbackKind>( i ),
+                ElementLayout{ i == primary_, size[i]->value(), x[i]->value(), y[i]->value() } );
             setArrowMode( inputBox->currentIndex() == 1 );
             gridColumns_ = columns->value(); gridRows_ = rows->value();
             grid_.insert( "lineThickness", gridLine->value() ); grid_.insert( "showOutline", gridOutline->isChecked() );
@@ -802,6 +828,29 @@ public:
     }
 
 protected:
+    void customEvent( QEvent *event ) Q_DECL_OVERRIDE
+    {
+        if( event->type() == FlubberNativeKeyEvent::eventType() )
+        {
+            if( !nativeKeys_ ) { event->accept(); return; }
+            const FlubberNativeKeyEvent *native = static_cast<FlubberNativeKeyEvent *>( event );
+            if( native->guiRevision != nativeKeys_->guiRevision() ) { event->accept(); return; }
+            if( native->arrowModeAfter >= 0 ) setArrowMode( native->arrowModeAfter != 0, false );
+            else if( native->key >= Qt::Key_1 && native->key <= Qt::Key_3 &&
+                ( native->modifiers == ( Qt::ControlModifier | Qt::ShiftModifier ) ||
+                  native->modifiers == ( Qt::ControlModifier | Qt::AltModifier ) ) )
+            {
+                if( !native->repeat ) setPrimary( static_cast<FeedbackKind>( native->key - Qt::Key_1 ) );
+            }
+            else
+            {
+                QKeyEvent key( QEvent::KeyPress, native->key, native->modifiers, QString(), native->repeat );
+                handleInputKey( &key );
+            }
+            event->accept(); return;
+        }
+        QWidget::customEvent( event );
+    }
     bool eventFilter( QObject *watched, QEvent *event ) Q_DECL_OVERRIDE
     {
         if( ( event->type() == QEvent::KeyPress || event->type() == QEvent::ShortcutOverride ) &&
@@ -831,8 +880,7 @@ protected:
                 {
                     if( event->type() == QEvent::ShortcutOverride ) { key->accept(); return true; }
                     if( key->isAutoRepeat() ) { key->accept(); return true; }
-                    const FeedbackKind kind = static_cast<FeedbackKind>( digit );
-                    setVisible( kind, !visible( kind ) );
+                    setPrimary( static_cast<FeedbackKind>( digit ) );
                     key->accept(); return true;
                 }
             }
@@ -907,16 +955,18 @@ protected:
         QPainter painter( this );
         painter.fillRect( rect(), Qt::black );
         painter.setRenderHint( QPainter::Antialiasing );
-        for( int i = 0; i < 3; ++i )
-        {
-            const FeedbackKind kind = static_cast<FeedbackKind>( i );
-            if( kind == primary_ || !layers_[i].visible ) continue;
-            drawElement( painter, kind );
-        }
-        if( layers_[primary_].visible ) drawElement( painter, primary_ );
+        drawElement( painter, primary_ );
     }
 
 private:
+    void normalizeVisibility()
+    {
+        for( int i = 0; i < 3; ++i )
+        {
+            layers_[i].visible = i == primary_;
+            persistLayout( static_cast<FeedbackKind>( i ) );
+        }
+    }
     void drawElement( QPainter &painter, FeedbackKind kind )
     {
         painter.save();
@@ -1324,7 +1374,8 @@ private:
     double faceRate_, faceX_, faceY_;
     int panelHeight_;
     int panelPercent_, stepPercent_;
-    QWidget *referenceSurface_; // VLC owns the sibling central surface
+    QPointer<QWidget> referenceSurface_; // VLC owns the sibling central surface
+    std::unique_ptr<FlubberVideoKeys> nativeKeys_;
     bool arrowMode_;
     bool ratingActive_;
     bool capturePending_;

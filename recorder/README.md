@@ -52,7 +52,8 @@ An occupied port fails without starting another player. Stop VLC+ before
 does not grant phone access to files or programs.
 
 The setup dialog and [online hotkey guide](https://georgefejer91.github.io/vlc-plus/remote/vlc.html)
-list Alt+F, Alt+G, direct feedback selection, layout and quick settings.
+list Alt+F for affect arrows, Alt+G for representation selection, Alt+H for
+cycling all nine face characters, direct selection, layout and quick settings.
 
 With VLC+ installed, open a local video paused with its loopback control enabled:
 

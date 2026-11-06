@@ -134,7 +134,9 @@
       "path": "vlc-qt/apply-patch.ps1",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/apply-patch.ps1",
       "upstreamSha256": "a8289be85a9a803dfefe941e06b7695cc67a9e020b076dcfa1a8db1d1d517653",
-      "adapted": false
+      "adapted": true,
+      "adaptation": "Copy the native video keyboard helper with the Qt patch; expose a single exclusive representation menu and preserve the integrated controls.",
+      "standaloneSha256": "991a0f0b4d7a19772d7f873598077387ca50f8f8b627160bee55f52c7d42da3f"
     },
     {
       "path": "vlc-qt/bridge/.cargo/config.toml",
@@ -181,8 +183,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "0345168ebdd7530e2c4738c42a86efde5a67784c91bae98ca78383f80f991000",
-      "adaptation": "Three-mode feedback cycling, exclusive affect arrows and bounded quick settings; native regression coverage preserves acquisition and source lineage."
+      "standaloneSha256": "d2a6393056cdcf83b0d72c38ff9844afa2a43fee14a44545acee772e18d56a57",
+      "adaptation": "Exclusive representation selection, legacy visibility normalization, all nine face character cycling, native Windows video-thread keyboard routing and GUI command precedence, existing appearance/input controls."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -195,8 +197,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "939540f2d491f322ed24775b9e90d1d4253d2370a0e5570889c9592b10b50986",
-      "adaptation": "Three-mode feedback cycling, exclusive affect arrows and bounded quick settings; native regression coverage preserves acquisition and source lineage."
+      "standaloneSha256": "d07a2fa90d7205411e8cebb3afb920d4defcf9bee08a18a34da813bd234b7645",
+      "adaptation": "Exclusive Flubber/grid/face selection, normalized legacy visibility, nine-character face cycling and affect-arrow/quick-setting regression coverage; acquisition and source lineage preserved."
     },
     {
       "path": "vlc-qt/test-panel.ps1",
@@ -210,7 +212,9 @@
       "path": "vlc-qt/vlc-3.0.20-flubber.patch",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/vlc-3.0.20-flubber.patch",
       "upstreamSha256": "c12c4e801db760e702dbd5170b2038d33e82a1e4017570a4bda642e5fc5a9c6e",
-      "adapted": false
+      "adapted": true,
+      "adaptation": "Copy the native video keyboard helper with the Qt patch; expose a single exclusive representation menu and preserve the integrated controls.",
+      "standaloneSha256": "8f43865c25e56895c5923dad680eb57d1b8f5092e4739485c88139398e94ffd0"
     },
     {
       "path": "licenses/AFFECT-RESEARCH-BSD-3-Clause.txt",

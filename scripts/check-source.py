@@ -23,6 +23,7 @@ adapted = {
     "docs/stock-vlc-integration.md", "docs/third-party.md", "assets/face/NOTICE.md",
     "vlc-qt/flubber_bridge.hpp", "vlc-qt/flubber_panel.hpp", "vlc-qt/panel-check.cpp",
     "vlc-qt/bridge/src/lib.rs", "vlc-qt/test-panel.ps1",
+    "vlc-qt/apply-patch.ps1", "vlc-qt/vlc-3.0.20-flubber.patch",
 }
 paths = set()
 for entry in manifest["files"]:
@@ -89,7 +90,8 @@ require("experiments/vlc-flubber" not in package and "..\\..\\LICENSE" not in pa
         "Packaging still references the parent monorepo")
 require("git -C $repository archive --format=zip" in package,
         "Package must include the complete committed standalone source")
-for name in ("LICENSE", "licenses/AFFECT-RESEARCH-BSD-3-Clause.txt", "vlc-qt/bridge/Cargo.lock"):
+for name in ("LICENSE", "licenses/AFFECT-RESEARCH-BSD-3-Clause.txt", "vlc-qt/bridge/Cargo.lock",
+             "vlc-qt/flubber_video_keys.hpp", "vlc-qt/native-key-check.cpp", "vlc-qt/test-native-keys.ps1"):
     require((ROOT / name).is_file(), f"Required source/license missing: {name}")
 installer = (ROOT / "installer-stock-vlc.iss").read_text(encoding="utf-8")
 require("LicenseFile=LICENSE" in installer, "Installer license escapes this repository")

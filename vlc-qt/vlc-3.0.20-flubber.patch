@@ -527,7 +527,7 @@ diff --git a/modules/gui/qt/menus.cpp b/modules/gui/qt/menus.cpp
 index b3ec20c..ff4293f 100644
 --- a/modules/gui/qt/menus.cpp
 +++ b/modules/gui/qt/menus.cpp
-@@ -341,6 +341,64 @@ void VLCMenuBar::createMenuBar( MainInterface *mi,
+@@ -341,6 +341,47 @@ void VLCMenuBar::createMenuBar( MainInterface *mi,
      /* View menu, a bit different */
      BAR_DADD( ViewMenu( p_intf, NULL, mi ), qtr( "V&iew" ), 4 );
  
@@ -535,7 +535,7 @@ index b3ec20c..ff4293f 100644
 +    flubberMenu->addAction( qtr( "&Settings…" ), mi,
 +                            SLOT( showFlubberControls() ) );
 +    flubberMenu->addSeparator();
-+    QAction *mainLabel = flubberMenu->addAction( qtr( "Main feedback" ) );
++    QAction *mainLabel = flubberMenu->addAction( qtr( "Visible representation" ) );
 +    mainLabel->setEnabled( false );
 +    QActionGroup *feedbackGroup = new QActionGroup( flubberMenu );
 +    QAction *feedbackActions[3];
@@ -550,26 +550,9 @@ index b3ec20c..ff4293f 100644
 +        QObject::connect( feedbackActions[i], &QAction::triggered, mi,
 +                          [mi, i]() { mi->setFlubberPrimary( i ); } );
 +    }
-+    QMenu *shown = flubberMenu->addMenu( qtr( "Show elements" ) );
-+    QAction *visibleActions[3];
-+    for( int i = 0; i < 3; ++i )
-+    {
-+        visibleActions[i] = shown->addAction( qtr( feedbackNames[i] ) );
-+        visibleActions[i]->setCheckable( true );
-+        visibleActions[i]->setShortcut( QKeySequence( QString( "Ctrl+Alt+%1" ).arg( i + 1 ) ) );
-+        visibleActions[i]->setShortcutContext( Qt::WidgetShortcut );
-+        QAction *action = visibleActions[i];
-+        QObject::connect( visibleActions[i], &QAction::triggered, mi,
-+                          [mi, i, action]() {
-+            mi->setFlubberVisible( i, !mi->flubberVisible( i ) );
-+            action->setChecked( mi->flubberVisible( i ) );
-+        } );
-+    }
 +    QObject::connect( flubberMenu, &QMenu::aboutToShow, mi,
-+                      [mi, feedbackActions, visibleActions]() {
++                      [mi, feedbackActions]() {
 +        feedbackActions[mi->flubberPrimary()]->setChecked( true );
-+        for( int i = 0; i < 3; ++i )
-+            visibleActions[i]->setChecked( mi->flubberVisible( i ) );
 +    } );
 +    flubberMenu->addSeparator();
 +    QActionGroup *flubberInput = new QActionGroup( flubberMenu );
