@@ -26,6 +26,15 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ## Active milestone: keyboard, joint handoff and recording qualification
 
+- [x] Add Alt+W/A/S/D movement and Alt+plus/minus resizing in both input modes;
+  preserve affect values and normal dialogs. Alt+J saves a settings snapshot;
+  startup restores the last successful snapshot, with safe invalid/missing-file
+  handling and explicit command-line settings retaining precedence. Windows
+  native regressions pass, including failed bookmark persistence and retry.
+- [ ] Pass native regressions, rendered and installed UI checks, independent
+  review, exact source CI and installer gates; publish and install the tested
+  update under the user's 2026-11-06 instruction.
+
 - [x] Include self-contained Recorder source/UI/controller/locks/notices in
   `recorder/`, pinned to upstream `242ad90` with declared local adaptations.
   Its 22 JavaScript tests, 23 release Rust tests, controller/tab UI checks and
