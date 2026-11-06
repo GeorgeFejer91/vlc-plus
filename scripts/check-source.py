@@ -22,7 +22,7 @@ adapted = {
     "package-stock-vlc.ps1", "installer-stock-vlc.iss", "vlc-qt/README.md",
     "docs/stock-vlc-integration.md", "docs/third-party.md", "assets/face/NOTICE.md",
     "vlc-qt/flubber_bridge.hpp", "vlc-qt/flubber_panel.hpp", "vlc-qt/panel-check.cpp",
-    "vlc-qt/bridge/src/lib.rs",
+    "vlc-qt/bridge/src/lib.rs", "vlc-qt/test-panel.ps1",
 }
 paths = set()
 for entry in manifest["files"]:
@@ -62,6 +62,21 @@ if sample.is_file():
             "b5327e7465ec92a4c93f3236a1ebab4556cdf508e24eafe6c593eac1e13afd49",
             "Bundled Great Dictator clip differs from its permission/provenance notice")
 require((ROOT / "examples/media/NOTICE.md").is_file(), "Bundled media notice is missing")
+recorder = ROOT / "recorder"
+recorder_import = json.loads((recorder / "UPSTREAM.json").read_text(encoding="utf-8"))
+require(recorder_import["schema"] == "vlc-plus-recorder-import/v1", "Unknown Recorder import")
+for name, expected in recorder_import["files"].items():
+    relative = PurePosixPath(name)
+    safe = not relative.is_absolute() and ".." not in relative.parts
+    require(safe, f"Unsafe Recorder source path: {name}")
+    if not safe:
+        continue
+    path = recorder / name
+    require(path.is_file() and not path.is_symlink(), f"Missing or linked Recorder source: {name}")
+    if path.is_file() and name not in recorder_import["adaptations"]:
+        require(hashlib.sha256(path.read_bytes()).hexdigest() == expected, f"Recorder import drift: {name}")
+require((recorder / "LICENSE").is_file(), "Recorder MIT license missing")
+require((recorder / "THIRD_PARTY_NOTICES.md").is_file(), "Recorder third-party notices missing")
 for name in paths | {fixture_info["path"]}:
     if name.endswith(".json"):
         try:
@@ -96,4 +111,4 @@ if errors:
     for error in errors:
         print(f"FAIL: {error}", file=sys.stderr)
     sys.exit(1)
-print(f"PASS: {len(paths)} imported files, verified import/adaptation and atlas bytes, Planner fixture, standalone paths and local links")
+print(f"PASS: {len(paths)} player imports and {len(recorder_import['files'])} Recorder imports, provenance/assets, Planner fixture, standalone paths and local links")

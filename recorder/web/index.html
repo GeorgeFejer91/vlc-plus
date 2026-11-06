@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>Remote LSL Recorder</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="external-tabs.css">
+  <script src="vendor/vdoninja-sdk.min.js" defer></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="appbar">
+    <div>
+      <h1 data-fit-text="heading">Remote LSL Recorder</h1>
+      <p id="system-status" role="status">Starting…</p>
+    </div>
+    <div class="toolbar">
+      <button id="vlc-setup" type="button" class="secondary" data-fit-text="action">VLC+ setup</button>
+      <button id="remote-open" type="button" class="secondary" data-fit-text="action">Phone remote</button>
+    </div>
+  </header>
+
+  <nav id="page-tabs" class="page-tabs" role="tablist" aria-label="Recorder and external pages">
+    <button id="recorder-tab" type="button" role="tab" aria-selected="true" aria-controls="recorder-panel" data-fit-text="action">Recorder</button>
+    <button id="add-page-tab" type="button" aria-label="Add external page tab" title="Add external page tab">+</button>
+  </nav>
+
+  <main id="recorder-panel" class="workspace" role="tabpanel" aria-labelledby="recorder-tab">
+    <aside class="setup-panel" aria-label="Recording setup">
+      <section>
+        <h2 data-fit-text="heading">Session</h2>
+        <div class="record-actions">
+          <button id="record-start" type="button" class="primary" data-fit-text="action">Start recording</button>
+          <button id="record-stop" type="button" class="danger" data-fit-text="action" disabled>Stop recording</button>
+          <button id="record-play" type="button" class="secondary" data-fit-text="action">Record and play VLC+</button>
+          <button id="vlc-launch-record" type="button" class="secondary" data-fit-text="action">Start VLC+ and record</button>
+        </div>
+        <div class="record-state" role="status">
+          <span id="record-indicator" aria-hidden="true"></span>
+          <div>
+            <strong id="record-phase">Idle</strong>
+            <span id="record-detail">Configure a participant and select at least one stream.</span>
+          </div>
+        </div>
+        <form id="session-form">
+          <label for="participant-id">Participant ID</label>
+          <input id="participant-id" name="participantId" maxlength="64" autocomplete="off" required>
+          <label for="output-directory">Recording folder</label>
+          <input id="output-directory" name="outputDirectory" autocomplete="off" required>
+          <button type="submit" class="secondary" data-fit-text="action">Apply session</button>
+        </form>
+      </section>
+
+    </aside>
+
+    <div id="workspace-resize" class="workspace-resize" role="separator" tabindex="0" aria-label="Resize setup and signal viewer" aria-orientation="vertical"></div>
+
+    <section class="viewer" aria-label="Live LSL viewer">
+      <div class="viewer-heading">
+        <h2 data-fit-text="heading">Signals</h2>
+        <span id="stream-count">0 streams found</span>
+      </div>
+      <label class="all-streams"><input id="select-all-streams" type="checkbox" checked> Record all available streams</label>
+      <div id="stream-list" class="stream-list" role="group" aria-label="LSL streams to record" aria-live="polite">
+        <p class="empty-state">Searching for LSL streams…</p>
+      </div>
+      <label class="fit-control"><input id="fit-preview" type="checkbox"> Fit all channels to window</label>
+      <details class="channel-map">
+        <summary id="channel-map-summary">Display channels</summary>
+        <div id="viewer-channels" class="viewer-channels" role="group" aria-label="Channels displayed in the signal preview"></div>
+      </details>
+      <div class="preview-frame">
+        <div id="charts" class="charts" role="region" aria-label="Signal preview" tabindex="0">
+          <p class="empty-state">Select a numeric LSL stream to preview its channels.</p>
+        </div>
+        <div id="preview-resize" class="preview-resize" role="separator" tabindex="0" aria-label="Resize signal preview height" aria-orientation="horizontal" aria-valuemin="160" aria-valuemax="1000" aria-valuenow="360"></div>
+      </div>
+
+      <section class="markers" aria-labelledby="marker-heading">
+        <div class="viewer-heading">
+          <h2 id="marker-heading" data-fit-text="heading">Markers</h2>
+          <span id="marker-count">No markers received</span>
+        </div>
+        <div class="input-marker-controls" role="group" aria-label="Recorder window input markers">
+          <label><input id="keyboard-markers" type="checkbox"> Keyboard press and release markers</label>
+          <label><input id="mouse-markers" type="checkbox"> Mouse click markers with coordinates</label>
+        </div>
+        <div class="marker-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Received</th><th>Stream</th><th>LSL time</th><th>Marker</th></tr>
+            </thead>
+            <tbody id="marker-list">
+              <tr><td colspan="4" class="empty-state">Irregular marker and event streams are monitored automatically.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+  <div id="external-panels" class="external-panels" hidden></div>
+
+  <dialog id="vlc-dialog" aria-labelledby="vlc-heading">
+    <form method="dialog" class="dialog-title">
+      <h2 id="vlc-heading" data-fit-text="heading">VLC+ setup</h2>
+      <button type="submit" class="icon-button" aria-label="Close VLC+ setup">×</button>
+    </form>
+    <label for="vlc-port">VLC+ control port</label>
+    <input id="vlc-port" type="number" min="1024" max="65535" value="42123" step="1" aria-describedby="vlc-help">
+    <label for="vlc-video">Video path for Start VLC+ and record</label>
+    <input id="vlc-video" type="text" placeholder="C:\Videos\clip.mp4" autocomplete="off" aria-describedby="vlc-help">
+    <p id="vlc-help">Start VLC+ and record opens the installed player with this local video paused, selects its affect and marker streams, and starts recording all selected streams before playback. Use an unused control port. Record and play resumes an already open, paused player with its streams selected. Stop recording finishes the XDF; VLC+ playback remains under its own controls.</p>
+    <h3>VLC+ hotkeys</h3>
+    <p>Use these while the VLC+ player or video has focus. Dialog fields keep their normal keys.</p>
+    <dl id="vlc-hotkeys" class="vlc-hotkeys"></dl>
+  </dialog>
+  <dialog id="remote-dialog">
+    <form method="dialog" class="dialog-title">
+      <h2 data-fit-text="heading">Phone remote</h2>
+      <button type="submit" class="icon-button" aria-label="Close phone remote">×</button>
+    </form>
+    <div id="remote-idle">
+      <p>Start a fresh, temporary pairing session. Nothing connects before you press Start.</p>
+      <button id="remote-start" type="button" class="primary" data-fit-text="action">Start phone access</button>
+    </div>
+    <div id="remote-active" hidden>
+      <div id="remote-qr" class="qr" aria-label="Phone pairing QR code"></div>
+      <p>Scan with the phone camera, enter a name, and tap Connect. Approve the request here before phone control starts.</p>
+      <a id="remote-link" href="#" target="_blank" rel="noreferrer">Open companion in this browser</a>
+      <div id="remote-request" hidden>
+        <p>Phone named <strong id="remote-request-name"></strong> requests access to this recorder.</p>
+        <button id="remote-approve" type="button" class="primary" data-fit-text="action">Allow</button>
+        <button id="remote-deny" type="button" class="secondary" data-fit-text="action">Deny</button>
+      </div>
+      <dl class="remote-status">
+        <div><dt>Status</dt><dd id="remote-phase">Waiting</dd></div>
+        <div><dt>Route</dt><dd id="remote-route">Unknown</dd></div>
+      </dl>
+      <button id="remote-stop" type="button" class="danger" data-fit-text="action">Stop phone access</button>
+    </div>
+  </dialog>
+</body>
+</html>

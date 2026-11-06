@@ -21,6 +21,23 @@ use windows_sys::Win32::System::Threading::{
 
 const RATE: Duration = Duration::from_nanos(33_333_333);
 
+fn stream_source(process_id: u32, session: Option<&str>) -> Result<String, String> {
+    let base = format!("vlc-flubber-{process_id}");
+    match session {
+        None => Ok(base),
+        Some(token)
+            if !token.is_empty()
+                && token.len() <= 64
+                && token
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_') =>
+        {
+            Ok(format!("{base}-{token}"))
+        }
+        Some(_) => Err("Invalid VLC_FLUBBER_SESSION_ID.".into()),
+    }
+}
+
 #[derive(Clone)]
 struct Snapshot {
     x: f32,
@@ -305,7 +322,12 @@ fn worker(
     stop: mpsc::Receiver<()>,
     status: Arc<AtomicU8>,
 ) -> Result<(), String> {
-    let source = format!("vlc-flubber-{}", std::process::id());
+    let session = match std::env::var("VLC_FLUBBER_SESSION_ID") {
+        Ok(value) => Some(value),
+        Err(std::env::VarError::NotPresent) => None,
+        Err(_) => return Err("Invalid VLC_FLUBBER_SESSION_ID.".into()),
+    };
+    let source = stream_source(std::process::id(), session.as_deref())?;
     let result: Result<(Outlet, Outlet, WorkerTimer, TimerPeriod), String> = (|| {
         let info = StreamInfo::builder("VLC_Flubber_Affect", "Affect", Format::Float32)
             .rate(30.)
@@ -593,6 +615,22 @@ pub unsafe extern "C" fn flubber_bridge_free(bridge: *mut c_void) {
 mod tests {
     use super::*;
     use std::ffi::CString;
+
+    #[test]
+    fn recorder_session_identity_is_unique_and_default_ids_stay_compatible() {
+        assert_eq!(stream_source(42, None).unwrap(), "vlc-flubber-42");
+        assert_eq!(
+            stream_source(42, Some("session_A-1")).unwrap(),
+            "vlc-flubber-42-session_A-1"
+        );
+        assert_ne!(
+            stream_source(42, Some("session_A")).unwrap(),
+            stream_source(42, Some("session_B")).unwrap()
+        );
+        for token in ["", "bad token", "bad'query", "bad\nquery", &"x".repeat(65)] {
+            assert!(stream_source(42, Some(token)).is_err());
+        }
+    }
 
     #[test]
     fn csv_name_is_unique_and_header_is_exact() {

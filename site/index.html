@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'">
+  <title>VLC+ — player, LSL recording and hotkeys</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1 data-fit-text="heading">VLC+</h1>
+      <p>Video playback with continuous valence and arousal input, Flubber, a 2D grid, or an affective face morph map.</p>
+      <p>This repository includes the complete Remote LSL Recorder desktop app and its browser controller. Build and run both apps from one checkout; no second repository is required.</p>
+      <nav aria-label="Project and controller">
+        <a href="remote/" data-fit-text="action">Open remote LSL controller</a>
+        <a href="https://github.com/GeorgeFejer91/vlc-plus" data-fit-text="action">Source and build instructions</a>
+      </nav>
+    </header>
+    <section aria-labelledby="downloads">
+      <h2 id="downloads" data-fit-text="heading">Windows downloads</h2>
+      <ol>
+        <li>VLC+ and LSL Recorder together — updated installer in verification.</li>
+        <li><a href="https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.2-experimental.1/VLC_Plus_Setup_0.3.2_x64.exe">VLC+ 0.3.2 experimental</a></li>
+        <li><a href="https://github.com/GeorgeFejer91/Remote-LSL-Recorder/releases/download/v0.1.7-experimental.1/Remote-LSL-Recorder_0.1.7_x64-setup.exe">Remote LSL Recorder 0.1.7 experimental</a></li>
+      </ol>
+      <p>Alt+F is available in VLC+0.3.2. The three-mode cycle and quick settings below require VLC+0.3.3. Start VLC+ and record requires Recorder0.1.8 and VLC+0.3.3. These updated versions are being qualified.</p>
+    </section>
+    <section aria-labelledby="recording">
+      <h2 id="recording" data-fit-text="heading">Start video and recording together</h2>
+      <p>In the desktop Recorder, open VLC+ setup and enter a local video path and an unused control port. Apply a participant ID and recording folder, select any additional streams, then choose Start VLC+ and record.</p>
+      <p>VLC+ opens paused. Recorder identifies that player's affect and marker streams, starts recording every selected stream, waits for their XDF headers, and then begins playback. Stop the video before Stop recording to retain its terminal marker. Recording errors retain the partial file and show its path.</p>
+      <p>The browser controller pairs with the desktop Recorder after you enable phone access and approve the connection. Files, acquisition and XDF recording remain on the computer.</p>
+    </section>
+    <section aria-labelledby="hotkeys">
+      <h2 id="hotkeys" data-fit-text="heading">VLC+ hotkeys</h2>
+      <p>Use these with the VLC+ player or video focused. Dialog fields retain normal editing keys. With affect arrows on, VLC's arrow seek and volume shortcuts are reserved; plain arrows change valence and arousal, including while paused. Alt+F restores normal VLC arrows.</p>
+      <dl id="vlc-hotkeys"></dl>
+    </section>
+    <section aria-labelledby="cli">
+      <h2 id="cli" data-fit-text="heading">CLI controls</h2>
+      <p>Launch a controllable player with <code>vlc.exe --extraintf=rc --rc-host=127.0.0.1:42123 --rc-quiet --flubber-input=arrows</code>. The source helper changes a running player:</p>
+      <pre>./vlc-qt/flubberctl.ps1 -Port 42123 -Command 'primary flubber'
+./vlc-qt/flubberctl.ps1 -Port 42123 -Command 'primary grid'
+./vlc-qt/flubberctl.ps1 -Port 42123 -Command 'primary face'
+./vlc-qt/flubberctl.ps1 -Port 42123 -Command 'input arrows'
+./vlc-qt/flubberctl.ps1 -Port 42123 -Command 'input mouse'</pre>
+      <p>Independent 30 Hz LSL sampling and the local CSV backup continue separately from drawing. This experimental software does not establish physical display onset or scientific timing qualification.</p>
+    </section>
+  </main>
+</body>
+</html>

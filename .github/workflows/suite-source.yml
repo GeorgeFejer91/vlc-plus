@@ -1,0 +1,100 @@
+name: Self-contained VLC+ and Recorder suite
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Publish the exact tested three installer choices from main
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  suite:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+        with:
+          version: '11.25.0'
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e
+        id: msys
+        with:
+          msystem: MINGW64
+          update: true
+          path-type: inherit
+          install: >-
+            make diffutils patch autoconf automake libtool gettext-devel pkgconf
+            mingw-w64-x86_64-gcc mingw-w64-x86_64-qt5-base
+            mingw-w64-x86_64-qt5-svg mingw-w64-x86_64-qt5-tools
+            mingw-w64-x86_64-qt5-winextras mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-libgcrypt mingw-w64-x86_64-gettext-tools
+      - name: Build VLC+ from this checkout
+        shell: pwsh
+        run: ./build-windows.ps1 -MsysRoot '${{ steps.msys.outputs.msys2-location }}' -Jobs 2
+      - name: Exact VLC+ standalone install, decode, LSL, CSV and uninstall
+        shell: pwsh
+        run: ./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.3_x64.exe -EvidenceDirectory build/component-evidence/vlc
+      - name: Build embedded Recorder and run source/UI checks
+        shell: pwsh
+        run: ./build-recorder.ps1
+      - name: Exact Recorder standalone installation and recording protection
+        shell: pwsh
+        run: |
+          $r = Get-Content -Raw build/recorder-release/build-receipt.json | ConvertFrom-Json
+          ./recorder/scripts/smoke-windows-installer.ps1 -Installer "build/recorder-release/$($r.file)" -Sha256 $r.installerSha256 -ExpectedApplicationSha256 $r.applicationSha256
+          $output = 'build/component-evidence/recorder'
+          New-Item -ItemType Directory -Force -Path $output | Out-Null
+          $receipt = [ordered]@{ schema='vlc-plus-recorder-installer-check/v1'; result='VERIFIED'; sourceCommit=$r.sourceCommit; installerSha256=$r.installerSha256; applicationSha256=$r.applicationSha256; safeRunningAppRefusal=$true; recordingStarted=$false; independentUninstall=$true }
+          [IO.File]::WriteAllText("$output/installer-check.json", ($receipt | ConvertTo-Json) + "`n", [Text.UTF8Encoding]::new($false))
+      - name: Joint package from both exact tested components
+        shell: pwsh
+        run: ./installer-suite/build.ps1 -BuiltFromSource
+      - name: Fresh joint install, actual shortcut, safe reuse and uninstall
+        shell: pwsh
+        run: |
+          ./installer-suite/test-installer.ps1 -InstallerPath build/suite-release/01_VLCPlus_and_LSL_Recorder_Setup_0.3.3_x64.exe -ComponentLockPath build/suite-release/components.lock.json
+          Copy-Item build/component-evidence/* build/suite-evidence -Recurse
+      - name: Verify exact release inputs before retaining candidates
+        run: python installer-suite/verify-release.py --release build/suite-release --evidence build/suite-evidence --source ${{ github.sha }} --check-only
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: self-contained-suite-evidence
+          path: build/suite-evidence/
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: self-contained-suite-diagnostics
+          path: |
+            build/component-evidence/
+            build/windows-build.log
+            recorder/.for-ai-local/record-and-play/
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: self-contained-suite-release
+          path: build/suite-release/
+          compression-level: 0
+  publish:
+    needs: suite
+    if: inputs.publish_release && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - run: |
+          gh run download "$GITHUB_RUN_ID" --name self-contained-suite-release --dir release
+          gh run download "$GITHUB_RUN_ID" --name self-contained-suite-evidence --dir evidence
+          python installer-suite/verify-release.py --release release --evidence evidence --source "$GITHUB_SHA"
+          test -z "$(git ls-remote --tags origin refs/tags/v0.3.3-experimental.1)"
+          gh release create v0.3.3-experimental.1 release/* --target "$GITHUB_SHA" --prerelease --title "VLC+ 0.3.3 and embedded Remote LSL Recorder 0.1.8" --notes-file installer-suite/release-notes.md

@@ -226,6 +226,25 @@ key/foreground Windows evidence, not a physical keyboard or display-onset test.
 
 ## Joint installer gates
 
+The self-contained source build is `.github/workflows/suite-source.yml`.
+`build-recorder.ps1` installs the frozen frontend lock, prepares the pinned
+recording engine, runs source/UI checks and creates the embedded app installer
+plus exact source/build receipt. Its hosted smoke reads the current source
+version and compares the installed executable with that receipt. Both standalone
+smokes must pass at the same root commit before `build.ps1 -BuiltFromSource`.
+The joint check consumes the resulting component lock; publication validates
+both standalone receipts, complete source archives and the joint receipt.
+`python installer-suite/test-source-release.py` proves rejection of stale proof,
+unexpected assets and corrupted components. Old standalone-release locks remain
+a separately scoped legacy mode.
+
+`node scripts/build-site.mjs`, `node scripts/test-site-safety.mjs` and
+`node scripts/check-site.mjs` build and verify the VLC+ page/controller, actual
+Pretext/font assets, 14 shortcuts, 320–1920 px, 200% text/spacing and controller
+privilege separation. The builder rejects linked output ancestors before
+removing its generated directory. Verify the actual Pages deployment and files
+before describing the website as live.
+
 Run `installer-suite/test-launcher.ps1` for fixed installed-path resolution,
 both-app launch, existing-instance reuse and missing-component preflight.
 `installer-suite/build.ps1` requires clean committed source and pinned SHA-256

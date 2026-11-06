@@ -159,8 +159,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/bridge/src/lib.rs",
       "upstreamSha256": "d1f34eb4902ea8245cffdfce9113fc9beaf7d2cca32273fbfc3e769acebd04cd",
       "adapted": true,
-      "adaptation": "Test-only LSL discovery now matches the test process source IDs so an already-running VLC+ cannot capture the test receiver; runtime unchanged.",
-      "standaloneSha256": "d8d79186d2fd2593dba3c9e4bb38cffc7aca7f83929abb06cb62b15600dd8e20"
+      "adaptation": "Preserve default PID source IDs; optionally append a validated Recorder session ID for collision-free launched-stream selection. Existing acquisition, CSV and marker formats unchanged; tests isolate source IDs.",
+      "standaloneSha256": "2f942f632a6c5bc330cfcd3f3e5746702a249e35e1faadeee846fe62b70bee6b"
     },
     {
       "path": "vlc-qt/build-bridge.ps1",
@@ -181,8 +181,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "adaptation": "Alt+F toggles affect arrows and claims ShortcutOverride before VLC; retain the original supported-input gate and test shortcut routing.",
-      "standaloneSha256": "a8cf9280914e475e338a2ddb2aeeae148d8c144704abe2ae902423c710e2fea0"
+      "standaloneSha256": "0345168ebdd7530e2c4738c42a86efde5a67784c91bae98ca78383f80f991000",
+      "adaptation": "Three-mode feedback cycling, exclusive affect arrows and bounded quick settings; native regression coverage preserves acquisition and source lineage."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -195,14 +195,16 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "adaptation": "Alt+F toggles affect arrows and claims ShortcutOverride before VLC; retain the original supported-input gate and test shortcut routing.",
-      "standaloneSha256": "5d34c22552f82e6c974c35cfd2ffc6c59b6239b8567873472bffd5e4a15c5ae2"
+      "standaloneSha256": "939540f2d491f322ed24775b9e90d1d4253d2370a0e5570889c9592b10b50986",
+      "adaptation": "Three-mode feedback cycling, exclusive affect arrows and bounded quick settings; native regression coverage preserves acquisition and source lineage."
     },
     {
       "path": "vlc-qt/test-panel.ps1",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/test-panel.ps1",
       "upstreamSha256": "3bd594a0aab58187ec71079c011c3f969ceb20f0fa6eae3a09264690daa1ff4b",
-      "adapted": false
+      "adapted": true,
+      "standaloneSha256": "6ba57ca19479e0dcd7cd4695e339875f1c12af876a715729e42ef0b0693af7b0",
+      "adaptation": "Native feedback/face cycling and bounded quick-setting hotkeys, full atlas/rendered regression coverage; acquisition and source lineage preserved."
     },
     {
       "path": "vlc-qt/vlc-3.0.20-flubber.patch",

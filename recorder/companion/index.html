@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f3f1eb">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https: wss:; img-src 'self' data:; media-src 'none'; object-src 'none'; frame-src https: http://localhost:* http://127.0.0.1:* http://[::1]:*; base-uri 'none'; form-action 'none'">
+  <title>Remote LSL Recorder</title>
+  <link rel="stylesheet" href="styles.css?v=0.1.8">
+  <link rel="stylesheet" href="external-tabs.css?v=0.1.8">
+  <script src="vendor/vdoninja-sdk.min.js" defer></script>
+  <script type="module" src="app.js?v=0.1.8"></script>
+</head>
+<body>
+  <header class="appbar">
+    <div>
+      <span class="eyebrow">Phone companion</span>
+      <h1 data-fit-text="heading">Remote LSL Recorder</h1>
+    </div>
+    <span id="connection-pill" class="pill">Not connected</span>
+  </header>
+
+  <main>
+    <nav id="page-tabs" class="page-tabs" role="tablist" aria-label="Recorder and external pages">
+      <button id="recorder-tab" type="button" role="tab" aria-selected="true" aria-controls="recorder-panel" data-fit-text="action">Recorder</button>
+      <button id="add-page-tab" type="button" aria-label="Add external page tab" title="Add external page tab">+</button>
+    </nav>
+    <div id="recorder-panel" role="tabpanel" aria-labelledby="recorder-tab">
+    <section id="pairing-panel" class="panel pairing">
+      <p><a href="vlc.html">VLC+ hotkeys and recording guide</a></p>
+      <h2 data-fit-text="heading">Join the recorder</h2>
+      <p id="pairing-copy">This invitation gives temporary access to one recorder session.</p>
+      <label for="controller-name">Your name</label>
+      <input id="controller-name" type="text" maxlength="48" autocomplete="name" required>
+      <button id="connect" type="button" data-fit-text="action">Connect</button>
+      <p id="connection-status" class="status" role="status">Waiting for you.</p>
+    </section>
+
+    <div id="remote-workspace" hidden>
+      <section class="panel recording-panel">
+        <div>
+          <span class="eyebrow">Recording</span>
+          <h2 id="recording-phase" data-fit-text="heading">Idle</h2>
+          <p id="recording-detail">No recording is active.</p>
+        </div>
+        <div class="record-actions">
+          <button id="start-recording" type="button" data-fit-text="action">Start</button>
+          <button id="stop-recording" type="button" class="danger" data-fit-text="action" disabled>Stop</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <h2 data-fit-text="heading">Live streams</h2>
+        </div>
+        <label class="all-streams"><input id="select-all-streams" type="checkbox" checked> Record all available streams</label>
+        <p class="stream-note">Small preview of the first channel. XDF records all selected channels.</p>
+        <div id="stream-list" class="stream-list"></div>
+      </section>
+
+      <section class="panel markers-panel">
+        <div class="section-heading">
+          <h2 data-fit-text="heading">Recent markers</h2>
+          <span id="marker-count">0 recent</span>
+        </div>
+        <ol id="marker-list" class="marker-list"></ol>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <h2 data-fit-text="heading">Session</h2>
+          <span id="revision">Revision 0</span>
+        </div>
+        <label for="participant-id">Participant ID</label>
+        <div class="inline-form">
+          <input id="participant-id" maxlength="64" autocomplete="off">
+          <button id="apply-participant" type="button" class="secondary" data-fit-text="action">Apply</button>
+        </div>
+      </section>
+
+      <section class="panel input-marker-controls">
+        <h2 data-fit-text="heading">Computer input markers</h2>
+        <label><input id="keyboard-markers" type="checkbox"> Keyboard press and release markers</label>
+        <label><input id="mouse-markers" type="checkbox"> Mouse click markers with coordinates</label>
+      </section>
+    </div>
+    </div>
+    <div id="external-panels" class="external-panels" hidden></div>
+  </main>
+
+  <footer>
+    Controls stay valid only while the desktop app keeps this pairing session open.
+  </footer>
+</body>
+</html>

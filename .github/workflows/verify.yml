@@ -1,11 +1,47 @@
 name: Standalone source checks
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
+  recorder:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+        with:
+          version: '11.25.0'
+      - name: Embedded Recorder source and UI
+        shell: pwsh
+        run: ./build-recorder.ps1 -CheckOnly
+      - name: VLC+ website and self-contained controller
+        run: |
+          node scripts/build-site.mjs
+          node scripts/test-site-safety.mjs
+          node scripts/check-site.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: embedded-recorder-ui
+          path: |
+            recorder/.for-ai-local/record-and-play/
+            recorder/.for-ai-local/external-tabs/
+            build/site-ui/
+          if-no-files-found: ignore
   windows:
     runs-on: windows-latest
     steps:
@@ -24,6 +60,8 @@ jobs:
       - name: Joint launcher
         shell: pwsh
         run: ./installer-suite/test-launcher.ps1
+      - name: Source-built release boundary
+        run: python installer-suite/test-source-release.py
       - name: Rust bridge
         run: cargo test --locked --manifest-path vlc-qt/bridge/Cargo.toml
       - name: For-AI context
@@ -41,6 +79,6 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: |
           mkdir -p build/panel-check/assets/face
-          cp assets/face/photo-reference-v3.png assets/face/photo-synthetic-01.png build/panel-check/assets/face/
+          cp assets/face/photo-*.png build/panel-check/assets/face/
           g++ -std=c++11 -fPIC -O1 -Ivlc-qt vlc-qt/panel-check.cpp $(pkg-config --cflags --libs Qt5Widgets Qt5Gui Qt5Core Qt5Test) -o build/panel-check/panel-check
           build/panel-check/panel-check examples/planner-appearance.v1.json build/panel-check/panel-check.png

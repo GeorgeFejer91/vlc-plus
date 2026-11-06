@@ -1,11 +1,11 @@
 #Requires -Version 7.0
 # Destructive only to the installations created in this fresh hosted CI account.
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$InstallerPath)
+param([Parameter(Mandatory)][string]$InstallerPath, [string]$ComponentLockPath = "$PSScriptRoot/components.lock.json")
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'Run this fresh-install test only on a disposable GitHub-hosted runner.' }
 $root = Split-Path -Parent $PSScriptRoot
-$lock = Get-Content -Raw "$PSScriptRoot/components.lock.json" | ConvertFrom-Json
+$lock = Get-Content -Raw -LiteralPath $ComponentLockPath | ConvertFrom-Json
 $source = (& git -C $root rev-parse HEAD).Trim()
 $keys = @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{965E973A-6173-4BBC-9DE4-6FA8A320DB93}_is1','HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{F836C1D9-43B0-4A71-95D7-2854030B68AE}_is1','HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Remote LSL Recorder')
 foreach ($key in $keys) { if (Test-Path -LiteralPath $key) { throw 'Pre-existing app registration; refusing to modify it.' } }
@@ -26,6 +26,13 @@ Run-Setup (Resolve-Path -LiteralPath $InstallerPath).Path @('/VERYSILENT','/SUPP
 if ($LASTEXITCODE -ne 0) { throw 'VLC immutable payload failed.' }
 $recorderExe = "$recorder\remote-lsl-recorder.exe"
 if ((Get-FileHash -LiteralPath $recorderExe).Hash.ToLowerInvariant() -ne $lock.recorder.applicationSha256) { throw 'Recorder executable differs from its tested package.' }
+$portProbe = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
+$portProbe.Start(); $ownedRcPort = $portProbe.LocalEndpoint.Port; $portProbe.Stop()
+$profile = Join-Path $vlc 'portable'
+New-Item -ItemType Directory -Force -Path $profile | Out-Null
+$rcFixture = Join-Path $profile 'vlcrc'
+if (Test-Path -LiteralPath $rcFixture) { throw 'Unexpected pre-existing VLC core profile in fresh install.' }
+[IO.File]::WriteAllText($rcFixture, "[core]`nextraintf=rc`n`n[oldrc]`nrc-host=127.0.0.1:$ownedRcPort`nrc-quiet=1`n", [Text.UTF8Encoding]::new($false))
 $helper = "$suite\VLCPlus-and-Recorder.exe"
 Run-Setup $helper @('--check')
 $shortcut = Join-Path ([Environment]::GetFolderPath('Desktop')) 'VLC+ and LSL Recorder.lnk'
@@ -62,12 +69,7 @@ foreach ($idToClose in @($playerId,$recorderId)) {
     $p = Get-Process -Id $idToClose -ErrorAction Stop
     Write-Output "Closing owned $($p.ProcessName) window: $($p.MainWindowTitle)"
     if ($idToClose -eq $playerId) {
-        # CloseMainWindow refuses a disabled parent with a first-run modal.
-        # Native LOCAL taskkill without /F requests closure of the owned GUI;
-        # never use /F, /T, /S, an image-name match, or a force fallback.
-        $close = Start-Process -FilePath "$env:WINDIR\System32\taskkill.exe" -ArgumentList @('/PID',"$playerId") -WindowStyle Hidden -PassThru
-        if (-not $close.WaitForExit(10000)) { throw 'The owned-player close request timed out.' }
-        if ($close.ExitCode -ne 0 -and -not $p.HasExited) { throw 'The owned player refused a nonforced close.' }
+        & "$PSScriptRoot/stop-owned-player.ps1" -ExpectedProcessId $playerId -ExpectedExecutable "$vlc/vlc.exe" -Port $ownedRcPort
     } else { [void]$p.CloseMainWindow() }
     if (-not $p.WaitForExit(30000)) { throw "Test-owned $($p.ProcessName) did not close gracefully; leaving its files intact." }
 }

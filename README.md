@@ -5,6 +5,12 @@ valence/arousal ratings. It keeps VLC's menus, playlist and transport controls
 and adds a native feedback panel with Classic Flubber, an affect grid and
 synthetic photo-face feedback. The three layers can be shown together.
 
+The complete [Remote LSL Recorder](recorder/README.md) is included in this
+repository: Rust/Tauri desktop source, live viewer, browser controller, locked
+dependencies and pinned recording-engine setup. It needs no sibling checkout.
+The [VLC+ live page](https://georgefejer91.github.io/vlc-plus/) contains the
+hotkey list and [remote LSL controller](https://georgefejer91.github.io/vlc-plus/remote/).
+
 The player was extracted from Affect Research commit
 `16106a70b57136c7243e85a5a05d83b0789bdd2c`. The standalone Windows
 installer is version 0.3.2 (experimental). This repository has its own source, build inputs and agent guidance.
@@ -14,12 +20,11 @@ research qualification or physical display-onset guarantee is claimed.
 
 ## Install
 
-Choose a Windows x64 installer from the
-[experimental suite release](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.3-experimental.1):
+Windows x64 installer choices:
 
-1. [**VLC+ and Remote LSL Recorder together**](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/01_VLCPlus_and_LSL_Recorder_Setup_0.3.3_x64.exe) — installs both separate apps and a desktop shortcut that opens both.
-2. [VLC+ only (0.3.2)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/02_VLCPlus_0.3.2_Setup_x64.exe).
-3. [Remote LSL Recorder only (0.1.7)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/03_Remote_LSL_Recorder_0.1.7_Setup_x64.exe).
+1. **VLC+ and Remote LSL Recorder together — in validation.** The joint installer and desktop shortcut are implemented; the joint release is not yet published. Current status and the remaining gate are in [the project handoff](for-ai/PROJECT.md#session-handoff).
+2. [VLC+ only (0.3.2)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.2-experimental.1/VLC_Plus_Setup_0.3.2_x64.exe).
+3. [Remote LSL Recorder only (0.1.7)](https://github.com/GeorgeFejer91/Remote-LSL-Recorder/releases/download/v0.1.7-experimental.1/Remote-LSL-Recorder_0.1.7_x64-setup.exe).
 
 Stop/save recordings and close both apps before installing or updating. Run
 the installer for your own account. The joint shortcut opens both apps;
@@ -79,6 +84,17 @@ or silently converted. See [JSON formats](docs/experiment-formats.md) and
 using the original Planner exporter at the pinned extraction commit.
 
 ## Build and checks
+
+Build/check the included Recorder from this checkout with
+`./build-recorder.ps1` (or `-CheckOnly`); it installs the frozen pnpm dependencies,
+prepares the hash-pinned official LabRecorder engine, runs source and rendered
+checks, and builds the Windows NSIS installer. Node 24, pnpm and the MSVC Rust
+toolchain are required. The runtime bundles its engine and needs no separate
+source repository or Node installation.
+
+Build the website and controller with `node scripts/build-site.mjs`; output is
+`build/site/`. Its Pretext runtime and fonts come from the included Recorder's
+locked, vendored assets. GitHub Pages publishes only that public output.
 
 - Windows x64; MSVC Rust toolchain for the bridge.
 - The pinned official VLC 3.0.20 source and Windows runtime.
