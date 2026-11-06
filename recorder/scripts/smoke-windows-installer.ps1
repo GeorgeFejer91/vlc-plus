@@ -44,7 +44,7 @@ try {
         throw 'Unexpected recording process before recording was requested.'
     }
     $installedHash = (Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash
-    if ($ExpectedApplicationSha256 -and $installedHash -ne $ExpectedApplicationSha256) { throw 'Installed Recorder differs from the built application.' }
+    if ($ExpectedApplicationSha256 -and $installedHash -ne $ExpectedApplicationSha256) { throw "Installed Recorder differs from the built application: expected $ExpectedApplicationSha256, actual $installedHash." }
     Write-Output 'Checking silent running-app refusal.'
     $blockedInstall = Start-Process -FilePath $installerPath -ArgumentList '/S', '/NS' -WindowStyle Hidden -PassThru
     if (-not $blockedInstall.WaitForExit(30000)) { throw 'Silent refusal did not exit within thirty seconds.' }

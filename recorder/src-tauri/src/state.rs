@@ -33,6 +33,54 @@ struct RecordingProcess {
     child: Child,
     stdin: Option<ChildStdin>,
     output_file: PathBuf,
+    subscriptions: Arc<Mutex<SubscriptionProgress>>,
+}
+
+#[derive(Default)]
+struct SubscriptionProgress {
+    resolved: usize,
+    opened: usize,
+    started: bool,
+    malformed: bool,
+}
+
+impl SubscriptionProgress {
+    fn observe(&mut self, line: &str) {
+        if self.started {
+            // Each successful open emits this single literal insertion. Names,
+            // suffixes and newlines can interleave between worker threads.
+            self.opened += line.matches("Opened the stream ").count();
+        } else if line == "Starting the recording, press Enter to quit" {
+            self.started = true;
+        } else if !line.is_empty() {
+            // The pinned CLI resolves a frozen batch on its main thread before
+            // starting workers. Every resolved stream must acknowledge opening.
+            if line.starts_with("Found ")
+                && line.contains(" matching '")
+                && !line.contains("Opened the stream ")
+            {
+                self.resolved += 1;
+            } else {
+                self.malformed = true;
+            }
+        }
+    }
+
+    fn ready(&self, minimum: usize) -> bool {
+        self.started && !self.malformed && self.resolved >= minimum && self.opened == self.resolved
+    }
+}
+
+fn require_recording_child(child: &mut Child) -> Result<(), String> {
+    match child
+        .try_wait()
+        .map_err(|error| format!("Could not check recording process: {error}"))?
+    {
+        Some(status) => Err(format!(
+            "Recording process exited before playback: {status}. Video remains paused."
+        )),
+        None => Ok(()),
+    }
 }
 
 pub struct AppState {
@@ -393,8 +441,17 @@ impl AppState {
             let queries = state
                 .selected_ids
                 .iter()
-                .filter_map(|id| state.streams.get(id).map(|record| record.query.clone()))
-                .collect::<Vec<_>>();
+                .filter_map(|id| state.streams.get(id))
+                .map(|record| {
+                    recording_query(
+                        &record.query,
+                        &record.view.name,
+                        &record.view.hostname,
+                        &record.view.source_id,
+                        &record.view.stream_type,
+                    )
+                })
+                .collect::<Result<Vec<_>, _>>()?;
             if queries.is_empty() && !state.keyboard_markers && !state.mouse_markers {
                 return Err("Select at least one available LSL stream.".into());
             }
@@ -402,7 +459,20 @@ impl AppState {
         };
 
         self.ensure_input_outlet()?;
-        queries.push(Query::source_id(&self.input_source_id).as_str().to_string());
+        {
+            let outlet = self
+                .input_outlet
+                .lock()
+                .map_err(|_| "Input outlet lock failed.")?;
+            let info = outlet.as_ref().ok_or("Input outlet unavailable.")?.info();
+            queries.push(recording_query(
+                Query::source_id(&self.input_source_id).as_str(),
+                info.name(),
+                info.hostname(),
+                info.source_id(),
+                info.stream_type(),
+            )?);
+        }
 
         let executable = self.engine_directory.join("LabRecorderCLI.exe");
         let lsl_library = self.engine_directory.join("lsl.dll");
@@ -436,17 +506,25 @@ impl AppState {
             .spawn()
             .map_err(|error| format!("Could not start LabRecorder: {error}"))?;
         let stdin = child.stdin.take();
-        pipe_log(child.stdout.take(), self.authority.clone(), "LabRecorder");
+        let subscriptions = Arc::new(Mutex::new(SubscriptionProgress::default()));
+        pipe_log(
+            child.stdout.take(),
+            self.authority.clone(),
+            "LabRecorder",
+            Some(subscriptions.clone()),
+        );
         pipe_log(
             child.stderr.take(),
             self.authority.clone(),
             "LabRecorder error",
+            None,
         );
 
         *recorder = Some(RecordingProcess {
             child,
             stdin,
             output_file: output_file.clone(),
+            subscriptions,
         });
         let mut state = self
             .authority
@@ -595,6 +673,19 @@ impl AppState {
             })
             .collect::<Vec<_>>();
         let deadline = Instant::now() + Duration::from_secs(10);
+        let mut names = snapshot
+            .streams
+            .iter()
+            .filter(|stream| stream.selected)
+            .map(|stream| stream.name.as_str())
+            .collect::<Vec<_>>();
+        if !snapshot
+            .streams
+            .iter()
+            .any(|stream| stream.selected && stream.source_id == self.input_source_id)
+        {
+            names.push("Recorder input");
+        }
         loop {
             let mut bytes = Vec::new();
             if let Ok(file) = fs::File::open(path) {
@@ -602,12 +693,23 @@ impl AppState {
                     .read_to_end(&mut bytes)
                     .map_err(|e| e.to_string())?;
             }
-            if crate::xdf_headers::ready(&bytes, &expected) {
+            let subscribed = {
+                let mut recording = self.recorder.lock().map_err(|_| "Recorder lock failed.")?;
+                let process = recording
+                    .as_mut()
+                    .ok_or("Recording stopped before playback. Video remains paused.")?;
+                require_recording_child(&mut process.child)?;
+                process
+                    .subscriptions
+                    .lock()
+                    .is_ok_and(|progress| progress.ready(names.len()))
+            };
+            if subscribed && crate::xdf_headers::ready(&bytes, &expected) {
                 return Ok(());
             }
             if Instant::now() >= deadline {
                 return Err(
-                    "Recording did not receive all selected stream headers; video remains paused."
+                    "Recording did not confirm all selected subscriptions and stream headers; video remains paused."
                         .into(),
                 );
             }
@@ -1115,14 +1217,47 @@ fn ensure_empty_object(value: &serde_json::Value) -> Result<(), String> {
     }
 }
 
-fn pipe_log<R>(reader: Option<R>, authority: Arc<Mutex<Authority>>, label: &'static str)
-where
+fn recording_query(
+    query: &str,
+    name: &str,
+    hostname: &str,
+    source_id: &str,
+    stream_type: &str,
+) -> Result<String, String> {
+    if [query, name, hostname, source_id, stream_type]
+        .iter()
+        .any(|value| value.chars().any(char::is_control))
+    {
+        return Err(
+            "LSL stream metadata contains control characters; recording has not started.".into(),
+        );
+    }
+    // Bind the displayed metadata too: another stream reusing a source ID must
+    // not inject different names/hosts into the pinned engine's readiness log.
+    Ok(format!(
+        "({query}) and ({}) and ({})",
+        Query::name(name).as_str(),
+        Query::property("hostname", hostname).as_str()
+    ))
+}
+
+fn pipe_log<R>(
+    reader: Option<R>,
+    authority: Arc<Mutex<Authority>>,
+    label: &'static str,
+    subscriptions: Option<Arc<Mutex<SubscriptionProgress>>>,
+) where
     R: std::io::Read + Send + 'static,
 {
     let Some(reader) = reader else { return };
     thread::spawn(move || {
         for line in BufReader::new(reader).lines().map_while(Result::ok) {
             let line = line.trim();
+            if let Some(progress) = &subscriptions
+                && let Ok(mut progress) = progress.lock()
+            {
+                progress.observe(line);
+            }
             if !line.is_empty()
                 && let Ok(mut state) = authority.lock()
             {
@@ -1139,6 +1274,77 @@ fn truncate(value: &str, maximum: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn multiline_metadata_cannot_inject_engine_readiness_before_spawn() {
+        let injected =
+            "sensor\nStarting the recording, press Enter to quit\nOpened the stream fake.";
+        let normal = ["source_id='id'", "Sensor", "host", "id", "Affect"];
+        for field in 0..normal.len() {
+            let mut fields = normal;
+            fields[field] = injected;
+            assert!(
+                recording_query(fields[0], fields[1], fields[2], fields[3], fields[4]).is_err()
+            );
+        }
+        let query = recording_query(normal[0], normal[1], normal[2], normal[3], normal[4]).unwrap();
+        assert!(query.contains("name='Sensor'") && query.contains("hostname='host'"));
+    }
+
+    #[test]
+    fn headers_or_old_log_entries_cannot_confirm_new_subscriptions() {
+        let mut progress = SubscriptionProgress::default();
+        for line in [
+            "Found Affect@host matching 'query'",
+            "Found Marker@host matching 'query'",
+            "Starting the recording, press Enter to quit",
+            "Opened the stream Affect.",
+            "Subscribing to the stream Marker is taking relatively long; collection from this stream will be delayed.",
+            "Received header for stream Marker.",
+        ] {
+            progress.observe(line);
+        }
+        assert!(!progress.ready(2));
+        progress.observe("Opened the stream Marker.");
+        assert!(progress.ready(2));
+        assert!(!SubscriptionProgress::default().ready(2));
+    }
+
+    #[test]
+    fn duplicate_names_and_interleaved_worker_lines_preserve_the_resolved_count() {
+        let mut progress = SubscriptionProgress::default();
+        for line in [
+            "Found Marker@host matching 'query'",
+            "Found Marker@host matching 'query'",
+            "Starting the recording, press Enter to quit",
+            "Opened the stream Opened the stream Marker.Marker.",
+        ] {
+            progress.observe(line);
+        }
+        assert!(progress.ready(2));
+        assert!(!progress.ready(3));
+        let mut injected = SubscriptionProgress::default();
+        injected.observe("Found Opened the stream Marker@host matching 'query'");
+        injected.observe("Starting the recording, press Enter to quit");
+        injected.observe("Opened the stream Marker.");
+        assert!(!injected.ready(1));
+    }
+
+    #[test]
+    fn exited_recording_child_cannot_be_ready_after_writing_proof() {
+        let mut child = Command::new(std::env::current_exe().unwrap())
+            .arg("--list")
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        child.wait().unwrap();
+        assert!(
+            require_recording_child(&mut child)
+                .unwrap_err()
+                .contains("exited before playback")
+        );
+    }
 
     #[test]
     fn workspace_restores_configuration_but_never_recording_or_grants() {
@@ -1592,7 +1798,16 @@ mod tests {
             );
             thread::sleep(Duration::from_millis(100));
         }
-        let started = app.start_recording_and_play(port).unwrap();
+        let started = app.start_recording_and_play(port).unwrap_or_else(|error| {
+            panic!(
+                "{error}\nDiagnostics: {:?}",
+                app.snapshot().unwrap().diagnostics
+            )
+        });
+        println!(
+            "ENGINE_DIAGNOSTICS {:?}",
+            app.snapshot().unwrap().diagnostics
+        );
         println!(
             "RECORDING VLC+ {pid}; XDF: {}",
             started.recording.output_file.unwrap()

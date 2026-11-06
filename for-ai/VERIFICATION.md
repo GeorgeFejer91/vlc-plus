@@ -230,7 +230,12 @@ The self-contained source build is `.github/workflows/suite-source.yml`.
 `build-recorder.ps1` installs the frozen frontend lock, prepares the pinned
 recording engine, runs source/UI checks and creates the embedded app installer
 plus exact source/build receipt. Its hosted smoke reads the current source
-version and compares the installed executable with that receipt. Both standalone
+version and compares the installed executable against the exact packaged-byte
+hash: `scripts/recorder_payload.py` applies only Tauri CLI2.11.4's documented
+single UNK-to-NSS marker change in memory. The restored compiled binary hash is
+recorded separately. A real isolated NSIS payload was extracted and compared
+byte-for-byte with the prediction; no other change is accepted.
+Both standalone
 smokes must pass at the same root commit before `build.ps1 -BuiltFromSource`.
 The joint check consumes the resulting component lock; publication validates
 both standalone receipts, complete source archives and the joint receipt.
@@ -257,3 +262,21 @@ removal preserving both apps, and separate app uninstallation. No recording
 or phone pairing starts. The Recorder project independently owns its XDF and
 no-kill installer evidence. These scopes do not replace physical-device,
 physical-input, end-to-end participant-session or scientific qualification.
+
+VLC+ playback readiness requires exact complete XDF stream headers and positive
+subscription acknowledgements from the current pinned LabRecorder child. The
+engine can write headers after an open_stream timeout; metadata alone is not
+subscription proof. The pinned CLI resolves a frozen batch before starting its stream workers;
+all resolved streams must acknowledge opening. Prefix counting tolerates
+interleaved names and newlines, including duplicate names. Historical logs
+never satisfy a new recording. The current child must still be running.
+Malformed prelude evidence fails closed with video paused. Control characters
+in metadata/query fields are rejected before engine spawn; queries also bind
+the selected name/hostname to prevent different reused-ID metadata entering
+the readiness log.
+
+Native marker waits explicitly poll awaited snapshots outside page.waitForFunction:
+Playwright1.64.1 resolves an async false predicate immediately. The corrected
+native button diagnostic independently saved all five Start/Pause/Resume/End/Stop
+markers. Full foreground emulated affect/transport/XDF qualification remains
+pending the user's Windows Firewall prompt choice and final tested installers.

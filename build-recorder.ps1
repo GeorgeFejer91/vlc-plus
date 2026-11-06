@@ -20,6 +20,9 @@ try {
         $target = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path (Get-Location) 'src-tauri/target' }
         $installer = Join-Path $target "release/bundle/nsis/Remote LSL Recorder_$($version)_x64-setup.exe"
         $application = Join-Path $target 'release/remote-lsl-recorder.exe'
+        $payloadHashes = & python "$root/scripts/recorder_payload.py" $application
+        if ($LASTEXITCODE -ne 0) { throw 'Could not establish the exact Tauri NSIS application bytes.' }
+        $payloadHashes = $payloadHashes | ConvertFrom-Json
         $output = Join-Path $root 'build/recorder-release'
         New-Item -ItemType Directory -Force -Path $output | Out-Null
         $file = "Remote_LSL_Recorder_$($version)_x64-setup.exe"
@@ -29,7 +32,8 @@ try {
         $receipt = [ordered]@{
             schema='vlc-plus-recorder-build/v1'; sourceCommit=$commit; version=$version; file=$file
             installerSha256=(Get-FileHash -LiteralPath $installer).Hash.ToLowerInvariant()
-            applicationSha256=(Get-FileHash -LiteralPath $application).Hash.ToLowerInvariant()
+            applicationSha256=$payloadHashes.applicationSha256
+            compiledApplicationSha256=$payloadHashes.compiledApplicationSha256
             sourceSha256=(Get-FileHash -LiteralPath "$output/RecorderSource.zip").Hash.ToLowerInvariant()
             rustc=(& rustc --version); node=(& node --version); pnpm=(& pnpm --version)
             engine=@{ cliSha256=(Get-FileHash vendor/labrecorder-win/LabRecorderCLI.exe).Hash.ToLowerInvariant(); lslSha256=(Get-FileHash vendor/labrecorder-win/lsl.dll).Hash.ToLowerInvariant() }

@@ -13,6 +13,8 @@ const output = resolve(root, ".for-ai-local/native-vlc");
 await mkdir(output, { recursive: true });
 const inputDone = join(output, "input-done");
 await unlink(inputDone).catch(error => { if (error.code !== "ENOENT") throw error; });
+const playingInputDone = join(output, "playing-input-done");
+await unlink(playingInputDone).catch(error => { if (error.code !== "ENOENT") throw error; });
 const vlcExe = join(process.env.LOCALAPPDATA, "Programs/VLCPlus/vlc.exe");
 const video = resolve(process.env.VLC_TEST_MEDIA || "../examples/media/dictator-3-study.mp4");
 const recorderExe = process.env.RECORDER_TEST_EXE || resolve(root, "src-tauri/target/release/remote-lsl-recorder.exe");
@@ -49,6 +51,16 @@ async function rc(command, acknowledgement = command) {
 }
 let browser;
 let stopped = false;
+async function waitForMarker(page, source, suffix) {
+  const deadline = Date.now() + 20000;
+  while (Date.now() < deadline) {
+    const state = await page.evaluate(() => window.__TAURI__.core.invoke("get_snapshot"));
+    if (state.markers.some(marker => marker.value.endsWith(suffix)
+      && state.streams.some(stream => stream.id === marker.streamId && stream.sourceId === source))) return;
+    await delay(100);
+  }
+  throw new Error(`Exact player marker ${suffix} was not observed`);
+}
 try {
   const deadline = Date.now() + 30000;
   while (Date.now() < deadline) {
@@ -68,7 +80,12 @@ try {
   await page.getByLabel("Participant ID", { exact: true }).fill("VLC_UI_TEST");
   await page.getByLabel("Recording folder", { exact: true }).fill(output);
   await page.getByRole("button", { name: "Apply session", exact: true }).click();
-  await page.getByRole("checkbox", { name: "Record all available streams", exact: true }).uncheck();
+  const recordAll = page.getByRole("checkbox", { name: "Record all available streams", exact: true });
+  // Checking then clearing also clears individually restored selections when
+  // the saved workspace already had record-all off. Only the synthetic
+  // player's automatically selected pair may enter this test recording.
+  await recordAll.check();
+  await recordAll.uncheck();
   await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
   await page.getByLabel("VLC+ control port").fill(String(rcPort));
   await page.getByLabel("Video path for Start VLC+ and record", { exact: true }).fill(video);
@@ -87,13 +104,13 @@ try {
   affectSource = launched.sourceId;
   markerSource = affectSource.replace(/-affect$/, "-markers");
   assert.ok(before.streams.some(stream => stream.selected && stream.sourceId === markerSource));
-  await page.waitForFunction(async source => {
-    const state = await window.__TAURI__.core.invoke("get_snapshot");
-    return state.markers.some(marker => /_Start$/.test(marker.value)
-      && state.streams.some(stream => stream.id === marker.streamId && stream.sourceId === source));
-  }, markerSource);
+  await waitForMarker(page, markerSource, "_Start");
+  // Start away from time zero so unintended backward seeks cannot be hidden
+  // by VLC's lower bound, and let the audio output become active.
+  await delay(5000);
+  const volumeBefore = await rc("volume");
   await rc("pause");
-  const transportBefore = await rc("get_time\nvolume\nstatus", "status");
+  const transportBefore = await rc("get_time\nstatus", "status");
   await writeFile(join(output, "processes.json"), JSON.stringify({ vlcPid, affectSource, markerSource, recorderPid: recorder.pid, rcPort, debugPort, vlcExe, video }, null, 2));
   console.log(`READY_FOR_KEYS VLC_PID=${vlcPid} RECORDER_PID=${recorder.pid}`);
   const inputDeadline = Date.now() + 120000;
@@ -107,27 +124,36 @@ try {
   const affect = after.streams.find(stream => stream.sourceId === affectSource);
   assert.ok(affect?.preview.some(sample => sample.values[0] !== 0 && sample.values[1] !== 0), "Both rating axes must change in the real LSL preview");
   assert.ok(after.markers.some(marker => /Start|Resume/.test(marker.value)), "Playback marker missing");
-  const transportAfter = await rc("get_time\nvolume\nstatus", "status");
-  const transportValues = text => ({
-    time: text.split(/\r?\n/).map(line => line.replace(/^> /, "").trim()).find(line => /^\d+$/.test(line)),
-    volume: text.match(/audio volume: (\d+)/)?.[1],
-  });
-  assert.deepEqual(transportValues(transportAfter), transportValues(transportBefore), "Affect arrows must not change paused VLC time or volume");
-  assert.ok(transportValues(transportBefore).time !== undefined && transportValues(transportBefore).volume !== undefined, "Transport assertions require actual time and volume values");
+  const transportAfter = await rc("get_time\nstatus", "status");
+  const number = text => text.split(/\r?\n/).map(line => line.replace(/^> /, "").trim()).find(line => /^\d+$/.test(line));
+  assert.ok(number(transportBefore) !== undefined, "Transport assertion requires actual media time");
+  assert.equal(number(transportAfter), number(transportBefore), "Affect arrows must not seek the paused video");
   await rc("pause");
   await delay(1200);
+  // VLC's RC interface refuses volume queries while paused. Query on either
+  // side of the paused key phase, while audio is active, instead.
+  const volumeAfter = await rc("volume");
+  await writeFile(join(output, "transport.json"), JSON.stringify({ transportBefore, transportAfter, volumeBefore, volumeAfter }, null, 2));
+  const volume = text => text.match(/audio volume: (\d+)/)?.[1];
+  assert.ok(volume(volumeBefore) !== undefined, "Volume assertion requires an actual VLC volume value");
+  assert.equal(volume(volumeAfter), volume(volumeBefore), "Affect arrows must preserve VLC volume");
+  console.log(`READY_FOR_PLAYING_KEYS VLC_PID=${vlcPid}: emulate both axes again during playback so CSV and XDF capture the trajectory.`);
+  const playingDeadline = Date.now() + 120000;
+  while (Date.now() < playingDeadline) {
+    if (await stat(playingInputDone).then(() => true, () => false)) break;
+    await delay(200);
+  }
+  assert.equal(await stat(playingInputDone).then(() => true, () => false), true, "Playing keyboard phase was not completed");
+  const playingAfter = await page.evaluate(() => window.__TAURI__.core.invoke("get_snapshot"));
+  assert.ok((await rc("status")).includes("play state: 3"), "Video must remain playing during emulated ratings");
   await rc("stop");
-  await page.waitForFunction(async source => {
-    const state = await window.__TAURI__.core.invoke("get_snapshot");
-    return state.markers.some(marker => /_Stop$/.test(marker.value)
-      && state.streams.some(stream => stream.id === marker.streamId && stream.sourceId === source));
-  }, markerSource);
+  await waitForMarker(page, markerSource, "_Stop");
   await page.screenshot({ path: join(output, "native-recording.png") });
   await page.getByRole("button", { name: "Stop recording", exact: true }).click();
   await page.waitForFunction(() => document.querySelector("#record-phase").textContent === "Complete");
   const snapshot = await page.evaluate(() => window.__TAURI__.core.invoke("get_snapshot"));
   stopped = true;
-  await writeFile(join(output, "receipt.json"), JSON.stringify({ before, after, stopped: snapshot, transportBefore, transportAfter, vlcPid, affectSource, markerSource, physicalInput: false }, null, 2));
+  await writeFile(join(output, "receipt.json"), JSON.stringify({ before, after, playingAfter, stopped: snapshot, transportBefore, transportAfter, volumeBefore, volumeAfter, vlcPid, affectSource, markerSource, physicalInput: false }, null, 2));
   console.log(`XDF_READY ${snapshot.recording.outputFile}`);
   console.log("CLOSE_RECORDER: close the owned Recorder window to finish the native test.");
   await new Promise((done, reject) => {
