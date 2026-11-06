@@ -103,7 +103,7 @@ unchanged. Dialogs and popups retain normal keyboard behavior.
 
 | Keys | Action |
 | --- | --- |
-| Alt+G / Alt+Shift+G | Next/previous: Flubber → 2D grid → original portrait → synthetic faces 01–08 → Flubber. Held keys do not repeatedly cycle. |
+| Alt+G / Alt+Shift+G | Next/previous: Flubber → 2D grid → affective face morph map → Flubber. Retains the selected face preset. Held keys do not repeatedly cycle. |
 | Ctrl+Alt+Left/Right/Up/Down | Move the main feedback by two percentage points. |
 | Ctrl+Alt+= / Ctrl+Alt+- | Increase/decrease main feedback size by two percentage points. |
 | Ctrl+Shift+PageUp/PageDown | Increase/decrease panel height by 16 px; an explicit session panel-ratio override stays authoritative. |
@@ -112,7 +112,10 @@ unchanged. Dialogs and popups retain normal keyboard behavior.
 | Ctrl+Alt+PageUp/PageDown | Increase/decrease grid rows and columns by two, keeping an odd grid (3–2001). |
 | Ctrl+Shift+S | Open detailed settings. Use Tab/Shift+Tab, arrows and Space to adjust colors, appearance, visibility, and individual layer/grid/face controls. |
 
-The existing Alt+F, Ctrl+Shift+1/2/3 and Ctrl+Alt+1/2/3 remain available.
+Alt+F reserves all arrow shortcuts from VLC while affect control is active.
+Plain arrows change affect; modified arrows are reserved, with Ctrl+Alt+arrows
+assigned to feedback layout. Alt+F again restores VLC's arrow shortcuts.
+The existing Ctrl+Shift+1/2/3 and Ctrl+Alt+1/2/3 remain available.
 Quick changes persist in the VLC-owned profile; the environment's rating-step
 override still takes precedence on the next launch. A missing face atlas leaves
 the active feedback intact and reports the load error in the panel tooltip.

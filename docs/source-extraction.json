@@ -181,8 +181,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "d91f413b1e10529cf084d11f2639cc1f18d3dcbab476e8ff92ed230f77a31253",
-      "adaptation": "Native feedback/face cycling and bounded quick-setting hotkeys, full atlas/rendered regression coverage; acquisition and source lineage preserved."
+      "standaloneSha256": "ad8a8fdd9d30ec1c58ad1c5e02f5490021c33978e2e2fa74ebedb5a37fade8a4",
+      "adaptation": "Three-mode feedback cycling, exclusive affect arrows and bounded quick settings; native regression coverage preserves acquisition and source lineage."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -195,8 +195,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "5a64354375eae964ef2b45ec44ee9999641f735aa034e699e8317e6c8ceec0f1",
-      "adaptation": "Native feedback/face cycling and bounded quick-setting hotkeys, full atlas/rendered regression coverage; acquisition and source lineage preserved."
+      "standaloneSha256": "5765c843505dcd28e5dfe3ae2914e7f8b12193526d36d04e038f4eb25fc3abc0",
+      "adaptation": "Three-mode feedback cycling, exclusive affect arrows and bounded quick settings; native regression coverage preserves acquisition and source lineage."
     },
     {
       "path": "vlc-qt/test-panel.ps1",

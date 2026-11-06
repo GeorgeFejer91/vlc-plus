@@ -22,47 +22,35 @@ This compatibility goal stays **open**. Full master execution, questionnaires,
 variant/participant selection and recovery are not implemented in VLC+.
 See [Planner integration](PLANNER-INTEGRATION.md).
 
-## Active milestone: 2026-11-06 keyboard and live recording qualification
+## Active milestone: keyboard, joint handoff and recording qualification
 
-- [x] Clone current source into the central GitHub folder and read the unmerged
-  `codex/suite-installed-evidence` handoff before resuming.
-- [x] Install the hash-verified released VLC+ and safe Recorder installers here;
-  verify VLC+'s 701 immutable installed files and source identity.
-- [x] Add Alt+G/Alt+Shift+G cycling through Flubber, grid and every face;
-  verify the missing-handler regression fails before implementation.
-- [x] Add quick layout, panel height, rating-step, face-speed, grid-density
-  and settings-dialog hotkeys; pass native Qt controls/rendering and bridge tests.
-- [ ] Qualify the updated VLC+ payload with the Great Dictator clip and the
-  Recorder's native Record and play button; independently inspect changing
-  valence/arousal and playback markers in XDF.
-- [ ] Finish the existing joint installer shutdown/uninstall gate; keep its
-  hosted/physical evidence boundaries and source/component locks intact.
-- [x] Leave verified local commits, exact artifact identities, test evidence
-  and remaining publication steps in this state owner.
+- [x] Recover both saved branches and preserve the primary checkout's unfinished
+  suite-shutdown changes; use the isolated `codex/complete-controls` worktree.
+- [x] Alt+F reserves all arrow variants from VLC while plain arrows change
+  affect; Alt+G/Alt+Shift+G cycle exactly Flubber/grid/face. Detailed settings
+  release mouse capture before opening. Existing quick controls remain.
+- [x] Pass Windows Qt offscreen controls/rendering, all nine face atlases,
+  Rust bridge tests, source/context and launcher checks; independent review
+  found and corrected capture handling. Host/PID isolation is Recorder-owned.
+- [x] Trace absent hosted RC listener to the wrong profile path; core reads
+  `portable/vlcrc`, whereas Qt uses `portable/vlc/`. Keep process ownership,
+  acknowledgement, real exit and uninstall assertions.
+- [ ] Run the full hosted joint install/uninstall test after the profile fix.
+- [ ] Qualify updated installed player plus Recorder's Start VLC+ and record
+  button, emulated valence/arousal changes, unchanged paused VLC time/volume,
+  terminal markers, CSV and independently read XDF. Native launch/record/play
+  reached recording but the privacy dialog blocked keyboard input: FAILED,
+  not qualification. User must handle the privacy dialog; do not bypass it.
+- [ ] Merge reviewed source, publish exact tested component and joint versions,
+  verify public hashes, update live download links and install the joint suite.
 
-Local evidence (2026-11-06): product commit `8040eed`; Windows build,
-native Qt offscreen controls/rendering, all nine face atlases, bridge tests,
-source provenance and launcher checks pass. Updated candidate installed;
-`build/installed-candidate-integrity.json` verifies all 701 immutable files
-against `8040eedd618291d494952fb39b14ac2d124b5e66`. Installer and matching
-source companion are in `build/stock-vlc-package/out/`. These retain application
-version 0.3.2 and are local candidates, not published releases.
-
-The Recorder's real WebView Record and play action resumed the Great Dictator
-clip after starting LabRecorder. Independent XDF inspection found 3,706 affect
-samples and a Start marker. Ratings remained zero: a Windows Security firewall
-prompt blocked the keyboard phase. The user must dismiss that security prompt;
-no consent was automated. Changing-ratings native qualification remains OPEN.
-
-The CI shutdown hypothesis is now implemented in `stop-owned-player.ps1`:
-verify exact executable/PID/listener ownership, await RC quit acknowledgement,
-and require actual exit without force. A local native VLC probe passed. The
-fresh hosted joint install/uninstall gate has NOT rerun; do not publish or
-claim that gate passed from the local probe. Historical handoff below is
-retained; these current evidence notes supersede its local installation state.
-
-Local task branches are `codex/hotkeys-recorder-ui` and Recorder's
-`codex/record-and-play`. No push or release was requested in this session.
+New component candidate versions are VLC+0.3.3 and Recorder0.1.8; no new
+release is claimed. The Recorder companion contains the shared hotkey guide.
+Existing installer/source artifacts under the primary checkout's build folder
+remain historical 0.3.2 candidates and must not substitute for newly tested
+bytes. The current source CI and hosted installer checks must be recorded below
+when observed. Full Planner-master execution and scientific/physical-device
+qualification remain open.
 
 ## Completed milestone: Alt+F affect arrows and bundled study clip
 

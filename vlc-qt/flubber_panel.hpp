@@ -373,7 +373,7 @@ public:
             event->accept();
             return true;
         }
-        if( !arrowMode_ || modifiers ) return false;
+        if( !arrowMode_ ) return false;
         int x = 0, y = 0;
         switch( event->key() )
         {
@@ -385,7 +385,7 @@ public:
         }
         // Claim arrows before Qt/VLC shortcuts. Keep the existing supported-input
         // gate (including pause); ShortcutOverride never changes affect.
-        if( event->type() == QEvent::KeyPress && ( !rateAllowed_ || rateAllowed_() ) )
+        if( event->type() == QEvent::KeyPress && !modifiers && ( !rateAllowed_ || rateAllowed_() ) )
         {
             const double step = stepPercent_ / 100.0;
             setAffect( affectX_ + x * step, affectY_ + y * step );
@@ -410,14 +410,8 @@ public:
         if( event->type() != QEvent::KeyPress || event->isAutoRepeat() ) return true;
         if( cycle )
         {
-            const QStringList faces = faceIds();
-            const int current = primary_ == FaceKind ? faces.indexOf( faceId_ ) + 2 : int( primary_ );
             const int direction = modifiers.testFlag( Qt::ShiftModifier ) ? -1 : 1;
-            const int next = ( current + direction + faces.size() + 2 ) % ( faces.size() + 2 );
-            QString error;
-            if( next >= 2 && !setFaceId( faces[next - 2], &error ) )
-            { appearanceLoadError_ = error; setToolTip( error ); return true; }
-            setPrimary( next < 2 ? static_cast<FeedbackKind>( next ) : FaceKind );
+            setPrimary( static_cast<FeedbackKind>( ( int( primary_ ) + direction + 3 ) % 3 ) );
         }
         else if( panel && key == Qt::Key_S ) showControls( window() );
         else if( panel )
@@ -467,6 +461,7 @@ public:
 
     void showControls( QWidget *parent )
     {
+        releaseRating();
         QDialog dialog( parent );
         dialog.setWindowTitle( tr( "Flubber Controls" ) );
         dialog.resize( 650, 640 );

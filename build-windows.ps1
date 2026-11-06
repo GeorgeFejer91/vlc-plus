@@ -74,8 +74,8 @@ try {
     if (-not (Test-Path -LiteralPath $InnoCompiler -PathType Leaf)) { throw 'Supply -InnoCompiler with the Inno Setup 6 ISCC.exe path.' }
     & $InnoCompiler (Join-Path $root 'installer-stock-vlc.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
-    $installer = Join-Path $root 'build\stock-vlc-package\out\VLC_Plus_Setup_0.3.2_x64.exe'
-    $sourceBundle = Join-Path $root 'build\stock-vlc-package\out\VLC_Plus_Source_0.3.2.zip'
+    $installer = Join-Path $root 'build\stock-vlc-package\out\VLC_Plus_Setup_0.3.3_x64.exe'
+    $sourceBundle = Join-Path $root 'build\stock-vlc-package\out\VLC_Plus_Source_0.3.3.zip'
     $innoEngine = Join-Path (Split-Path -Parent $InnoCompiler) 'ISCmplr.dll'
     $receipt = [ordered]@{
         schema = 'vlc-plus-build-receipt/v1'

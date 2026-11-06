@@ -110,7 +110,8 @@ int main( int argc, char **argv )
         sessionPanel.setVideoAffect( -.8, -.8 );
         if( !qFuzzyCompare( sessionPanel.valence() + 1.f, 1.2f ) ) return false;
         QKeyEvent modified( QEvent::KeyPress, Qt::Key_Right, Qt::ControlModifier );
-        if( sessionPanel.handleInputKey( &modified ) ) return false;
+        if( !sessionPanel.handleInputKey( &modified ) ||
+            !qFuzzyCompare( sessionPanel.valence() + 1.f, 1.2f ) ) return false;
         sessionPanel.setArrowMode( false );
         if( sessionPanel.handleInputKey( &right ) ) return false;
         sessionPanel.setVideoAffect( -.5, .5 );
@@ -142,15 +143,22 @@ int main( int argc, char **argv )
     const QStringList expectedFaces{ "photo-reference-v3", "photo-synthetic-01", "photo-synthetic-02",
         "photo-synthetic-03", "photo-synthetic-04", "photo-synthetic-05", "photo-synthetic-06",
         "photo-synthetic-07", "photo-synthetic-08" };
-    for( const QString &face : expectedFaces )
-        if( !keysPanel.handleInputKey( &cycle ) || keysPanel.primary() != FlubberPanel::FaceKind ||
-            keysPanel.faceId() != face || !keysPanel.visible( FlubberPanel::FaceKind ) ) return 37;
+    if( !keysPanel.handleInputKey( &cycle ) || keysPanel.primary() != FlubberPanel::FaceKind ||
+        !keysPanel.visible( FlubberPanel::FaceKind ) ) return 37;
+    const QString retainedFace = keysPanel.faceId();
     if( !keysPanel.handleInputKey( &cycle ) || keysPanel.primary() != FlubberPanel::FlubberKind ) return 38;
     QKeyEvent cycleRepeat( QEvent::KeyPress, Qt::Key_G, Qt::AltModifier, QString(), true );
     if( !keysPanel.handleInputKey( &cycleRepeat ) || keysPanel.primary() != FlubberPanel::FlubberKind ) return 39;
     QKeyEvent previous( QEvent::KeyPress, Qt::Key_G, Qt::AltModifier | Qt::ShiftModifier );
     if( !keysPanel.handleInputKey( &previous ) || keysPanel.primary() != FlubberPanel::FaceKind ||
-        keysPanel.faceId() != QLatin1String( "photo-synthetic-08" ) ) return 40;
+        keysPanel.faceId() != retainedFace ) return 40;
+    keysPanel.setArrowMode( true );
+    for( auto modifier : { Qt::ShiftModifier, Qt::ControlModifier, Qt::AltModifier } )
+    {
+        QKeyEvent modifiedArrow( QEvent::KeyPress, Qt::Key_Right, modifier );
+        if( !keysPanel.handleInputKey( &modifiedArrow ) || keysPanel.valence() != 0 ) return 56;
+    }
+    keysPanel.setArrowMode( false );
     const auto beforeMove = keysPanel.layoutFor( FlubberPanel::FaceKind );
     QKeyEvent moveRight( QEvent::KeyPress, Qt::Key_Right, Qt::ControlModifier | Qt::AltModifier );
     if( !keysPanel.handleInputKey( &moveRight ) ||

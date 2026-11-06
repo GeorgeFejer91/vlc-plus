@@ -41,8 +41,8 @@ It never starts recording. `.github/workflows/suite-installer.yml` publishes
 only after this exact smoke test and an independent current-run artifact/hash
 check. Existing tags cannot be overwritten.
 
-The disposable install test writes a loopback-only RC fixture into its fresh
-portable profile. Shutdown verifies the exact test-owned executable, PID and
+The disposable install test writes a loopback-only RC fixture to `portable/vlcrc`
+(VLC core's profile; Qt alone uses `portable/vlc/`). Shutdown verifies the exact test-owned executable, PID and
 listener, waits for VLC's quit acknowledgement and requires actual process
 exit. A failed shutdown preserves the installation for diagnosis; no force
 termination fallback is used. This does not change a user's privacy choices.

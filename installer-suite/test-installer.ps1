@@ -28,7 +28,7 @@ $recorderExe = "$recorder\remote-lsl-recorder.exe"
 if ((Get-FileHash -LiteralPath $recorderExe).Hash.ToLowerInvariant() -ne $lock.recorder.applicationSha256) { throw 'Recorder executable differs from its tested package.' }
 $portProbe = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
 $portProbe.Start(); $ownedRcPort = $portProbe.LocalEndpoint.Port; $portProbe.Stop()
-$profile = Join-Path $vlc 'portable/vlc'
+$profile = Join-Path $vlc 'portable'
 New-Item -ItemType Directory -Force -Path $profile | Out-Null
 $rcFixture = Join-Path $profile 'vlcrc'
 if (Test-Path -LiteralPath $rcFixture) { throw 'Unexpected pre-existing VLC core profile in fresh install.' }
