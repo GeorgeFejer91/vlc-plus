@@ -72,7 +72,7 @@ try {
     const page = await context.newPage();
     const active = page.locator(".external-page:not([hidden])");
     const errors = [];
-    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("pageerror", (error) => { errors.push(error.message); console.error(surface, error.message); });
     page.on("console", message => { if (message.text().startsWith("Fixture ")) console.log(surface, message.text()); });
     let desktopPages = [];
     let durablePages = [];
@@ -124,7 +124,7 @@ try {
     await active.getByLabel("Remote page URL").fill(`${origin}/fixture.html?token=private#secret=private`);
     await page.getByRole("button", { name: "Load page", exact: true }).click();
     const frame = page.frameLocator("iframe");
-    await frame.getByRole("button", { name: "Connect", exact: true }).click();
+    await frame.locator("#connect:enabled").press("Enter");
     await frame.getByRole("button", { name: "Start experiment" }).click();
     await frame.getByText("Confirmed running revision 1").waitFor();
     assert.equal(await page.locator("iframe").getAttribute("sandbox"), "allow-scripts allow-forms");
@@ -268,7 +268,7 @@ try {
   snapshot.remote.approval = "approved"; snapshot.revision += 1;
   target.publishState();
   await page.getByRole("tab", { name: "Desktop experiment", exact: true }).click();
-  await page.frameLocator('section[data-origin="desktop"] iframe').getByRole("button", { name: "Connect", exact: true }).click();
+  await page.frameLocator('section[data-origin="desktop"] iframe').locator("#connect:enabled").press("Enter");
   await page.frameLocator('section[data-origin="desktop"] iframe').getByRole("button", { name: "Start experiment" }).click();
   await page.frameLocator('section[data-origin="desktop"] iframe').getByText("Confirmed running revision 1").waitFor();
   assert.ok(!await page.evaluate(() => JSON.stringify({ ...localStorage }).includes("private-desktop-invite")));

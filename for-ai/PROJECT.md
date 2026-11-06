@@ -43,6 +43,16 @@ probe polls exclusive state after each grid/Flubber/grid/face command. The
 new regression rejects legacy multiple, missing and duplicate flags. No
 production behavior was relaxed; rerun the full exact-source suite.
 
+PR13's source CI 42253576653 then passed native/Qt/source/Rust checks but
+failed the companion browser fixture with no connection phases. A deterministic
+reproduction dispatches the real host resize between Connect pointer-down/up:
+ancestor scrolling moves release off the button. Enabled-button keyboard
+activation reaches Ready and acknowledged revision 1. Both fixture setup sites
+now use Enter on `#connect:enabled`, retaining hydration/authentication checks;
+browser errors print immediately. Both surfaces, BRSP approval/catalog/revocation,
+panel sharing and all 22 JS tests pass locally. This reproduces the CI symptom;
+the exact hosted event ordering was not captured. Fresh CI remains required.
+
 This chat cancelled parallel run 42248574349 before publication because it
 used older source without the native arrow fix. It was an agent cancellation,
 not a user request to stop. Its local handoff note is preserved at local-only
