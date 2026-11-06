@@ -35,7 +35,13 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 - [x] Trace absent hosted RC listener to the wrong profile path; core reads
   `portable/vlcrc`, whereas Qt uses `portable/vlc/`. Keep process ownership,
   acknowledgement, real exit and uninstall assertions.
-- [ ] Run the full hosted joint install/uninstall test after the profile fix.
+- [x] Full hosted joint install/uninstall run
+  [42217605478](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42217605478)
+  passes at `4b90bcba626d77d87ce53e5441f0ed8a7e651141`, with original pinned
+  released components. Joint installer SHA-256:
+  `65cd15e5a85f2c5e40cfdeee401c20ac194e040141b8dbf1cfa615d6661a28e1`.
+  Fresh both-window shortcut, reuse, open-app refusal, graceful shutdown,
+  suite-only preservation and both independent uninstalls pass. No recording.
 - [ ] Qualify updated installed player plus Recorder's Start VLC+ and record
   button, emulated valence/arousal changes, unchanged paused VLC time/volume,
   terminal markers, CSV and independently read XDF. Native launch/record/play
@@ -45,7 +51,10 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   verify public hashes, update live download links and install the joint suite.
 
 New component candidate versions are VLC+0.3.3 and Recorder0.1.8; no new
-release is claimed. The Recorder companion contains the shared hotkey guide.
+release is claimed. The [Recorder guide](https://georgefejer91.github.io/Remote-LSL-Recorder/vlc.html)
+is live with exact-file and rendered-width checks. The first new VLC installer
+run built the native player and installer but failed its receipt because one
+source-companion filename retained 0.3.2; that filename is now corrected.
 Existing installer/source artifacts under the primary checkout's build folder
 remain historical 0.3.2 candidates and must not substitute for newly tested
 bytes. The current source CI and hosted installer checks must be recorded below
