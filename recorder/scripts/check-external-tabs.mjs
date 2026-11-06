@@ -14,7 +14,7 @@ const root = resolve(import.meta.dirname, "..");
 const output = resolve(root, ".for-ai-local/external-tabs");
 await mkdir(output, { recursive: true });
 const fixture = `<!doctype html><html lang="en"><meta charset="utf-8">
-<h1>Fixture experiment</h1><button id="connect">Connect</button>
+<h1>Fixture experiment</h1><button id="connect" disabled>Connect</button>
 <button id="start" disabled>Start experiment</button><p id="state">Disconnected</p>
 <script type="module" src="/fixture.js"></script></html>`;
 const fixtureScript = `import { BRSPConnection } from '/web/vendor/brsp.js';
@@ -39,6 +39,7 @@ document.querySelector('#connect').onclick=async()=>{
   a.dispatchEvent(new CustomEvent('peeropen',{detail:{peerKey:'fixture'}}));b.dispatchEvent(new CustomEvent('peeropen',{detail:{peerKey:'fixture'}}));
 };
 document.querySelector('#start').onclick=()=>controller.sendCommand('experiment.control','start',{}, {expectedRevision:0});
+document.querySelector('#connect').disabled=false;
 window.addEventListener('pagehide',()=>{void target?.close();void controller?.close();});`;
 
 const server = createServer(async (req, res) => {
