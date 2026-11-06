@@ -29,6 +29,37 @@ fn command(socket: &mut TcpStream, value: &str) -> Result<()> {
     Ok(())
 }
 
+fn exclusive_feedback(settings: &str, primary: &str) -> bool {
+    let single = |key: &str, value: &str| {
+        let prefix = format!("{key}=");
+        let expected = format!("{key}={value}");
+        let mut lines = settings.lines().filter(|line| line.starts_with(&prefix));
+        lines.next() == Some(expected.as_str()) && lines.next().is_none()
+    };
+    single("primary", primary)
+        && ["flubber", "grid", "face"].into_iter().all(|kind| {
+            single(
+                &format!(r"layers\{kind}\visible"),
+                if kind == primary { "true" } else { "false" },
+            )
+        })
+}
+
+fn wait_exclusive_feedback(path: &Path, primary: &str) -> Result<()> {
+    let began = Instant::now();
+    loop {
+        if fs::read_to_string(path).is_ok_and(|text| exclusive_feedback(&text, primary)) {
+            return Ok(());
+        }
+        if began.elapsed() > Duration::from_secs(3) {
+            return Err(
+                format!("installed {primary} selection was not persisted exclusively").into(),
+            );
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+}
+
 fn csv_files(folder: &Path) -> Result<Vec<PathBuf>> {
     let mut files = fs::read_dir(folder)?
         .filter_map(|entry| entry.ok().map(|entry| entry.path()))
@@ -173,15 +204,20 @@ fn main() -> Result<()> {
         .recover(false)
         .postprocess(Post::NONE)
         .open(timeout)?;
-    for value in [
-        "flubber primary grid",
-        "flubber visible flubber on",
-        "flubber visible grid on",
-        "flubber visible face on",
-        "flubber input arrows",
+    let settings = exe
+        .parent()
+        .unwrap()
+        .join("portable/vlc/vlc-qt-interface.ini");
+    for (value, primary) in [
+        ("flubber primary grid", "grid"),
+        ("flubber visible flubber on", "flubber"),
+        ("flubber visible grid on", "grid"),
+        ("flubber visible face on", "face"),
     ] {
         command(&mut socket, value)?;
+        wait_exclusive_feedback(&settings, primary)?;
     }
+    command(&mut socket, "flubber input arrows")?;
     command(&mut socket, &format!("add {}", media.display()))?;
     let mut labels = Vec::new();
     let mut marker_log = File::create(evidence.join("observed-markers.txt"))?;
@@ -405,4 +441,28 @@ fn main() -> Result<()> {
     fs::write(evidence.join("installed-probe.json"), &receipt)?;
     println!("{receipt}");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::exclusive_feedback;
+
+    #[test]
+    fn reject_legacy_multiple_missing_or_duplicate_visibility() {
+        let face = "primary=face\nlayers\\flubber\\visible=false\nlayers\\grid\\visible=false\nlayers\\face\\visible=true\n";
+        assert!(exclusive_feedback(face, "face"));
+        assert!(!exclusive_feedback(face, "grid"));
+        assert!(!exclusive_feedback(
+            &face.replace("grid\\visible=false", "grid\\visible=true"),
+            "face"
+        ));
+        assert!(!exclusive_feedback(
+            &face.replace("layers\\grid\\visible=false\n", ""),
+            "face"
+        ));
+        assert!(!exclusive_feedback(
+            &format!("{face}layers\\face\\visible=false\n"),
+            "face"
+        ));
+    }
 }

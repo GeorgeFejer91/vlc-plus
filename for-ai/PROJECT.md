@@ -26,7 +26,28 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ## Active milestone: keyboard, joint handoff and recording qualification
 
-### Latest status (2026-11-06, PR11 preparation)
+### Latest status (2026-11-06)
+
+PR11 and PR12 are combined on main at `5e7c017`; all four source/UI CI jobs
+pass (42249796964). Pages 42250902744 passes; all 82 actual public assets
+byte-match the audited build, including the rendered 18-entry hotkey list at
+320–1920 px and enlarged text. All nine face atlases also load through the
+real native CLI; a native screenshot confirms only Face is visible.
+
+Source-suite run 42250905725 built the combined source, verified 701 immutable
+installed files, decoded 204 frames, sampled 30.0002 Hz LSL, and verified CSV
+and terminal/transport markers. It then FAILED an obsolete installer assertion
+requiring grid and face visible simultaneously. The test now requires all
+three explicit visibility flags and the selected Face; its independent Rust
+probe polls exclusive state after each grid/Flubber/grid/face command. The
+new regression rejects legacy multiple, missing and duplicate flags. No
+production behavior was relaxed; rerun the full exact-source suite.
+
+This chat cancelled parallel run 42248574349 before publication because it
+used older source without the native arrow fix. It was an agent cancellation,
+not a user request to stop. Its local handoff note is preserved at local-only
+branch `codex/preserved-alt-layout-handoff-20261106` (`87af57a`); the primary
+checkout is now clean main. Earlier preservation branch `bc50de8` also remains.
 
 PR9 (`0d84abc`) and PR10 (`fe35248`) are merged. PR10's full source/UI
 checks pass. The source-built suite still needs a complete passing run and
@@ -85,9 +106,9 @@ latest status until the final installed qualification and publication pass.
 - [ ] Pass the same-checkout component/standalone/joint build in
   `suite-source.yml`, then publish its exact tested three choices.
 - [x] Publish VLC+'s own [live page](https://georgefejer91.github.io/vlc-plus/)
-  with its hotkey list and local controller. Pages run 42227046711 passes.
+  with its hotkey list and local controller. Pages run 42250902744 passes.
   All 82 live assets match the audited build; actual rendered 320–1920 px,
-  200% text/spacing, all 14 entries and own controller navigation pass.
+  200% text/spacing, all 18 entries and own controller navigation pass.
 - [x] Recover both saved branches and preserve the primary checkout's unfinished
   suite-shutdown changes; use the isolated `codex/complete-controls` worktree.
 - [x] Alt+F reserves all arrow variants from VLC while plain arrows change

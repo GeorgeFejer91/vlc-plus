@@ -58,8 +58,8 @@ try {
     }
     if (-not (Test-Path -LiteralPath $ini)) { throw 'VLC+ did not persist its own portable profile.' }
     $settings = Get-Content -Raw -LiteralPath $ini
-    foreach ($expected in @('primary=grid','inputMode=arrows','layers\face\visible=true','layers\grid\visible=true')) {
-        if (-not $settings.Contains($expected)) { throw "Installed feedback command was not persisted: $expected" }
+    foreach ($expected in @('primary=face','inputMode=arrows','layers\flubber\visible=false','layers\grid\visible=false','layers\face\visible=true')) {
+        if (($settings -split '\r?\n') -cnotcontains $expected) { throw "Installed exclusive feedback command was not persisted: $expected" }
     }
     & python (Join-Path $PSScriptRoot 'verify-installed.py') $installed --source-commit $commit --receipt (Join-Path $evidence 'post-run-integrity.json')
     if ($LASTEXITCODE -ne 0) { throw 'Immutable payload changed during playback.' }
@@ -92,6 +92,7 @@ $receipt = [ordered]@{
     uninstallExitCode = 0
     offscreen = $true
     physicalInputTested = $false
+    exclusiveRepresentationsVerified = $true
     userSettingsPreserved = $true
 }
 [IO.File]::WriteAllText((Join-Path $evidence 'installer-check.json'), (($receipt | ConvertTo-Json) + "`n"), [Text.UTF8Encoding]::new($false))
