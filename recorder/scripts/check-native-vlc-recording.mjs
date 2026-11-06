@@ -13,6 +13,8 @@ const output = resolve(root, ".for-ai-local/native-vlc");
 await mkdir(output, { recursive: true });
 const inputDone = join(output, "input-done");
 await unlink(inputDone).catch(error => { if (error.code !== "ENOENT") throw error; });
+const playingInputDone = join(output, "playing-input-done");
+await unlink(playingInputDone).catch(error => { if (error.code !== "ENOENT") throw error; });
 const vlcExe = join(process.env.LOCALAPPDATA, "Programs/VLCPlus/vlc.exe");
 const video = resolve(process.env.VLC_TEST_MEDIA || "../examples/media/dictator-3-study.mp4");
 const recorderExe = process.env.RECORDER_TEST_EXE || resolve(root, "src-tauri/target/release/remote-lsl-recorder.exe");
@@ -130,6 +132,15 @@ try {
   const volume = text => text.match(/audio volume: (\d+)/)?.[1];
   assert.ok(volume(volumeBefore) !== undefined, "Volume assertion requires an actual VLC volume value");
   assert.equal(volume(volumeAfter), volume(volumeBefore), "Affect arrows must preserve VLC volume");
+  console.log(`READY_FOR_PLAYING_KEYS VLC_PID=${vlcPid}: emulate both axes again during playback so CSV and XDF capture the trajectory.`);
+  const playingDeadline = Date.now() + 120000;
+  while (Date.now() < playingDeadline) {
+    if (await stat(playingInputDone).then(() => true, () => false)) break;
+    await delay(200);
+  }
+  assert.equal(await stat(playingInputDone).then(() => true, () => false), true, "Playing keyboard phase was not completed");
+  const playingAfter = await page.evaluate(() => window.__TAURI__.core.invoke("get_snapshot"));
+  assert.ok((await rc("status")).includes("play state: 3"), "Video must remain playing during emulated ratings");
   await rc("stop");
   await waitForMarker(page, markerSource, "_Stop");
   await page.screenshot({ path: join(output, "native-recording.png") });
@@ -137,7 +148,7 @@ try {
   await page.waitForFunction(() => document.querySelector("#record-phase").textContent === "Complete");
   const snapshot = await page.evaluate(() => window.__TAURI__.core.invoke("get_snapshot"));
   stopped = true;
-  await writeFile(join(output, "receipt.json"), JSON.stringify({ before, after, stopped: snapshot, transportBefore, transportAfter, volumeBefore, volumeAfter, vlcPid, affectSource, markerSource, physicalInput: false }, null, 2));
+  await writeFile(join(output, "receipt.json"), JSON.stringify({ before, after, playingAfter, stopped: snapshot, transportBefore, transportAfter, volumeBefore, volumeAfter, vlcPid, affectSource, markerSource, physicalInput: false }, null, 2));
   console.log(`XDF_READY ${snapshot.recording.outputFile}`);
   console.log("CLOSE_RECORDER: close the owned Recorder window to finish the native test.");
   await new Promise((done, reject) => {
