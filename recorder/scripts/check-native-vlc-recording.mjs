@@ -80,7 +80,12 @@ try {
   await page.getByLabel("Participant ID", { exact: true }).fill("VLC_UI_TEST");
   await page.getByLabel("Recording folder", { exact: true }).fill(output);
   await page.getByRole("button", { name: "Apply session", exact: true }).click();
-  await page.getByRole("checkbox", { name: "Record all available streams", exact: true }).uncheck();
+  const recordAll = page.getByRole("checkbox", { name: "Record all available streams", exact: true });
+  // Checking then clearing also clears individually restored selections when
+  // the saved workspace already had record-all off. Only the synthetic
+  // player's automatically selected pair may enter this test recording.
+  await recordAll.check();
+  await recordAll.uncheck();
   await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
   await page.getByLabel("VLC+ control port").fill(String(rcPort));
   await page.getByLabel("Video path for Start VLC+ and record", { exact: true }).fill(video);
