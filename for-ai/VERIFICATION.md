@@ -31,6 +31,13 @@ Euro/@. The focused regression failed at exit 128 before Windows VK
 normalization. Translated symbols, shifted 4–9, ShortcutOverride and native
 numpad parity now pass; no other actionable review finding remains.
 
+PR14 CI exposed ignored editor function keys bubbling to the parent (Linux
+exit 124). A portable forced-bubbling regression also failed at exit 135 before
+the fix. The shared editor/focus guard includes rich/plain editor viewports,
+spinboxes and editable combos, preserves noneditable combo controls, and
+rejects queued native commands with arrow intent resynchronized. Original
+Linux assertions remain; repeat CI for the corrected source.
+
 VERIFIED locally: all 23 JavaScript tests, generated-copy check, rendered
 record/play fixture, full 64-group category/page traversal, visible keyboard
 focus, 320×600 through 1920×1080, and 1280×900 with 200% text and spacing.

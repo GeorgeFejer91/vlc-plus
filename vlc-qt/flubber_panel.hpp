@@ -420,6 +420,7 @@ public:
     bool handleInputKey( QKeyEvent *event )
     {
         if( event->type() != QEvent::KeyPress && event->type() != QEvent::ShortcutOverride ) return false;
+        if( textEditorOwnsShortcut() ) return false;
         Qt::KeyboardModifiers modifiers = event->modifiers() & ~Qt::KeypadModifier;
         if( ( event->key() == Qt::Key_Plus || event->key() == Qt::Key_Equal ) &&
             modifiers == ( Qt::ControlModifier | Qt::AltModifier | Qt::ShiftModifier ) ) modifiers &= ~Qt::ShiftModifier;
@@ -902,7 +903,7 @@ protected:
         if( event->type() == FlubberNativeKeyEvent::eventType() )
         {
             if( !nativeKeys_ ) { event->accept(); return; }
-            if( QApplication::activeModalWidget() || QApplication::activePopupWidget() )
+            if( QApplication::activeModalWidget() || QApplication::activePopupWidget() || textEditorOwnsShortcut() )
             { nativeKeys_->setArrowMode( arrowMode_ ); event->accept(); return; }
             const FlubberNativeKeyEvent *native = static_cast<FlubberNativeKeyEvent *>( event );
             if( native->guiRevision != nativeKeys_->guiRevision() ) { event->accept(); return; }
@@ -929,9 +930,7 @@ protected:
             ratingWindowIsForeground() )
         {
             QWidget *target = qobject_cast<QWidget *>( watched );
-            if( target && target->window() == window() &&
-                !target->inherits( "QLineEdit" ) && !target->inherits( "QTextEdit" ) &&
-                !target->inherits( "QPlainTextEdit" ) )
+            if( target && target->window() == window() && !textEditorOwnsShortcut( target ) )
             {
                 QKeyEvent *key = static_cast<QKeyEvent *>( event );
                 if( handleInputKey( key ) ) return true;
@@ -1030,6 +1029,23 @@ protected:
     }
 
 private:
+    bool textEditorOwnsShortcut( const QWidget *target = NULL ) const
+    {
+        const QWidget *candidates[] = { target, QApplication::focusWidget() };
+        for( const QWidget *candidate : candidates )
+        {
+            if( !candidate || candidate->window() != window() ) continue;
+            for( const QWidget *widget = candidate; widget; widget = widget->parentWidget() )
+            {
+                if( widget->inherits( "QLineEdit" ) || widget->inherits( "QTextEdit" ) ||
+                    widget->inherits( "QPlainTextEdit" ) || widget->inherits( "QAbstractSpinBox" ) ) return true;
+                const QComboBox *combo = qobject_cast<const QComboBox *>( widget );
+                if( combo && combo->isEditable() ) return true;
+                if( widget == window() ) break;
+            }
+        }
+        return false;
+    }
     void applyDedicatedSetting( const FlubberSettingKey &key, int direction )
     {
         const bool gridSetting = key.action >= FlubberGridColumns && key.action <= FlubberGridCursorSize;

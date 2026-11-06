@@ -8,6 +8,8 @@
 #include <QTimer>
 #include <QSpinBox>
 #include <QVBoxLayout>
+#include <QTextEdit>
+#include <QPlainTextEdit>
 #ifndef Q_OS_WIN
 #include <QShortcut>
 #include <QtTest/QTest>
@@ -89,6 +91,64 @@ static int checkTranslatedDedicatedKeys( const QString &directory )
     return 0;
 }
 #endif
+
+
+class BubblingEditor : public QLineEdit
+{
+public:
+    explicit BubblingEditor( QWidget *parent ) : QLineEdit( parent ) {}
+protected:
+    void keyPressEvent( QKeyEvent *event ) Q_DECL_OVERRIDE { event->ignore(); }
+};
+class ShortcutParent : public QWidget
+{
+public:
+    FlubberPanel *panel = NULL;
+    int bubbled = 0;
+protected:
+    void keyPressEvent( QKeyEvent *event ) Q_DECL_OVERRIDE
+    {
+        ++bubbled;
+        if( !panel || !panel->handleInputKey( event ) ) QWidget::keyPressEvent( event );
+    }
+};
+static int checkEditorShortcutOwnership( const QString &directory )
+{
+    QSettings settings( directory + "/editor-shortcuts.ini", QSettings::IniFormat );
+    ShortcutParent host;
+    QVBoxLayout layout( &host );
+    FlubberPanel panel( &settings, &host ); host.panel = &panel;
+    BubblingEditor line( &host ); QTextEdit rich( &host ); QPlainTextEdit plain( &host );
+    QComboBox combo( &host ); combo.setEditable( true ); QSpinBox spin( &host );
+    QWidget *editors[] = { &line, &rich, &plain, &combo, &spin };
+    layout.addWidget( &panel );
+    for( QWidget *editor : editors ) layout.addWidget( editor );
+    host.show(); QApplication::setActiveWindow( &host );
+    const Qt::KeyboardModifiers chord = Qt::ControlModifier | Qt::AltModifier;
+    for( QWidget *editor : editors )
+    {
+        editor->setFocus(); QApplication::processEvents();
+        QWidget *focus = QApplication::focusWidget();
+        if( !focus || ( focus != editor && !editor->isAncestorOf( focus ) ) ) return 134;
+        const QJsonObject before = panel.settingsJson();
+        QKeyEvent key( QEvent::KeyPress, Qt::Key_F1, chord );
+        QApplication::sendEvent( editor, &key );
+        if( panel.settingsJson() != before ) return 135;
+        QKeyEvent claim( QEvent::ShortcutOverride, Qt::Key_F1, chord );
+        if( panel.handleInputKey( &claim ) || panel.settingsJson() != before ) return 136;
+    }
+    if( host.bubbled == 0 ) return 137;
+    combo.setEditable( false ); combo.setFocus(); QApplication::processEvents();
+    const QJsonObject beforeCombo = panel.settingsJson();
+    QKeyEvent setting( QEvent::KeyPress, Qt::Key_T, chord );
+    if( !panel.handleInputKey( &setting ) || panel.settingsJson() == beforeCombo ) return 138;
+    line.setFocus(); QApplication::processEvents();
+    const QJsonObject beforeNative = panel.settingsJson();
+    FlubberNativeKeyEvent queued( Qt::Key_F, Qt::AltModifier, false, 1 );
+    QCoreApplication::sendEvent( &panel, &queued );
+    if( panel.settingsJson() != beforeNative || panel.arrowMode() ) return 139;
+    return 0;
+}
 
 static int checkDedicatedSettings( const QString &directory )
 {
@@ -299,6 +359,8 @@ int main( int argc, char **argv )
         return 3;
     }
     QTemporaryDir temp;
+    const int editorShortcuts = checkEditorShortcutOwnership( temp.path() );
+    if( editorShortcuts ) return editorShortcuts;
 #ifdef Q_OS_WIN
     const int translatedKeys = checkTranslatedDedicatedKeys( temp.path() );
     if( translatedKeys ) return translatedKeys;

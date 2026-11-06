@@ -45,6 +45,13 @@ without an internal scrollbar. Independent review found and resolved German tran
 parity gaps, with targeted regressions. Exact source CI and installed native/XDF
 qualification remain open for this expansion.
 
+PR14's first source run 42272980335 passed Windows, native key routing and
+Recorder, but Linux Qt failed the retained text-entry assertion at exit 124.
+An ignored function key bubbled from the editor to a non-editor parent. A
+shared focus/ancestor guard now covers direct, filtered and queued native
+commands; a portable forced-bubbling test reproduced red exit 135 first.
+Independent review found no remaining issue. Fresh Linux CI is required.
+
 PR13 merged at `5b94b16`. Its four source/UI jobs pass (42255769856), and full
 same-checkout suite run
 [42256759568](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42256759568)
