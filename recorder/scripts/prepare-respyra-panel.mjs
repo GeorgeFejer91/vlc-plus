@@ -13,5 +13,13 @@ if (descriptor.id !== 'respyra-2' || descriptor.url !== 'https://georgefejer91.g
 const target = resolve(import.meta.dirname, '../companion/panels/respyra');
 await mkdir(target, { recursive: true });
 for (const name of ['index.html', 'app.js', 'style.css', 'text-fit.js', 'remote-profile.js', 'panel.json', 'vendor']) await cp(resolve(companion, name), resolve(target, name), { recursive: true });
+// Preserve the upstream validation above, then adapt only the canonical host.
+for (const name of ['remote-profile.js', 'panel.json']) {
+  const file = resolve(target, name);
+  const text = await readFile(file, 'utf8');
+  const upstream = 'https://georgefejer91.github.io/Remote-LSL-Recorder/panels/respyra/';
+  if (!text.includes(upstream)) throw new Error(`Missing canonical upstream route in ${name}`);
+  await writeFile(file, text.replaceAll(upstream, 'https://georgefejer91.github.io/vlc-plus/remote/panels/respyra/'));
+}
 await writeFile(resolve(target, 'source.json'), JSON.stringify({ repository: 'https://github.com/GeorgeFejer91/respyra-2.0', commit, profile: 'respyra.observer/1' }, null, 2) + '\n');
 console.log(`Prepared Respyra static panel from ${commit}`);

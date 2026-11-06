@@ -1,4 +1,4 @@
-export const VIEWER_URL = 'https://georgefejer91.github.io/Remote-LSL-Recorder/panels/respyra/';
+export const VIEWER_URL = 'https://georgefejer91.github.io/vlc-plus/remote/panels/respyra/';
 export const OBSERVE_SCOPE = 'experiment.observe';
 export const PANEL = Object.freeze({ id: 'respyra-2', name: 'Respyra 2.0', url: VIEWER_URL });
 
