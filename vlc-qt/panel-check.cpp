@@ -17,7 +17,26 @@
 int main( int argc, char **argv )
 {
     QApplication app( argc, argv );
+    {
+        QTemporaryDir inputRaceRoot;
+        QSettings inputRaceSettings( inputRaceRoot.filePath( "native-mode-ordering.ini" ), QSettings::IniFormat );
+        FlubberPanel inputRace( &inputRaceSettings );
+        QCoreApplication::postEvent( &inputRace, new FlubberNativeKeyEvent( Qt::Key_F, Qt::AltModifier, false, 1 ) );
+        inputRace.setArrowMode( false );
+        QCoreApplication::sendPostedEvents( &inputRace, FlubberNativeKeyEvent::eventType() );
+        if( inputRace.arrowMode() || inputRaceSettings.value( "Flubber/inputMode" ).toString() != QLatin1String( "mouse" ) ) return 81;
+        inputRaceSettings.clear();
+    }
     if( argc != 3 ) return 2;
+    const auto onlyVisible = []( const FlubberPanel &checked, FlubberPanel::FeedbackKind selected ) {
+        const QJsonObject layers = checked.settingsJson().value( "layers" ).toObject();
+        for( auto kind : { FlubberPanel::FlubberKind, FlubberPanel::GridKind, FlubberPanel::FaceKind } )
+            if( checked.visible( kind ) != ( kind == selected ) ||
+                checked.layoutFor( kind ).visible != ( kind == selected ) ||
+                layers.value( FlubberPanel::kindName( kind ) ).toObject().value( "visible" ).toBool() != ( kind == selected ) )
+                return false;
+        return checked.primary() == selected;
+    };
     QJsonObject appearance;
     QString error;
     if( !FlubberPanel::readAppearance( QString::fromLocal8Bit( argv[1] ), appearance, error ) )
@@ -74,7 +93,10 @@ int main( int argc, char **argv )
         QSpinBox *size = dialog->findChild<QSpinBox *>( "flubber-layer-0-size" );
         QSpinBox *x = dialog->findChild<QSpinBox *>( "flubber-layer-0-x" );
         QSpinBox *y = dialog->findChild<QSpinBox *>( "flubber-layer-0-y" );
-        if( !height || !size || !x || !y ) { dialog->reject(); return; }
+        QComboBox *selection = dialog->findChild<QComboBox *>( "flubber-representation" );
+        for( QCheckBox *box : dialog->findChildren<QCheckBox *>() )
+            if( box->text() == QLatin1String( "Show" ) ) { dialog->reject(); return; }
+        if( !height || !size || !x || !y || !selection ) { dialog->reject(); return; }
         height->setValue( 200 ); size->setValue( 80 );
         x->setValue( 25 ); y->setValue( 75 );
         dialog->accept();
@@ -120,6 +142,19 @@ int main( int argc, char **argv )
                settings.value( "Flubber/inputMode" ).toString() == QLatin1String( "mouse" );
     };
     if( !ratioCheck( "100", 400 ) || !ratioCheck( "10", 73 ) ) return 14;
+    for( bool oldVisible : { true, false } )
+    {
+        QSettings legacy( temp.filePath( oldVisible ? "all-visible.ini" : "all-hidden.ini" ), QSettings::IniFormat );
+        legacy.setValue( "Flubber/primary", "grid" );
+        for( const QString &kind : { QStringLiteral( "flubber" ), QStringLiteral( "grid" ), QStringLiteral( "face" ) } )
+            legacy.setValue( "Flubber/layers/" + kind + "/visible", oldVisible );
+        legacy.setValue( "Flubber/layers/face/x", 73 );
+        FlubberPanel migrated( &legacy );
+        if( !onlyVisible( migrated, FlubberPanel::GridKind ) || migrated.layoutFor( FlubberPanel::FaceKind ).x != 73 ||
+            legacy.value( "Flubber/layers/flubber/visible" ).toBool() ||
+            !legacy.value( "Flubber/layers/grid/visible" ).toBool() ||
+            legacy.value( "Flubber/layers/face/visible" ).toBool() ) return 61;
+    }
     QSettings keySettings( temp.filePath( "keys.ini" ), QSettings::IniFormat );
     FlubberPanel keysPanel( &keySettings );
     bool inputAllowed = true;
@@ -139,19 +174,39 @@ int main( int argc, char **argv )
     QKeyEvent cycleClaim( QEvent::ShortcutOverride, Qt::Key_G, Qt::AltModifier );
     if( !keysPanel.handleInputKey( &cycleClaim ) || keysPanel.primary() != FlubberPanel::FlubberKind ) return 35;
     QKeyEvent cycle( QEvent::KeyPress, Qt::Key_G, Qt::AltModifier );
-    if( !keysPanel.handleInputKey( &cycle ) || keysPanel.primary() != FlubberPanel::GridKind ) return 36;
+    if( !keysPanel.handleInputKey( &cycle ) || !onlyVisible( keysPanel, FlubberPanel::GridKind ) ) return 36;
     const QStringList expectedFaces{ "photo-reference-v3", "photo-synthetic-01", "photo-synthetic-02",
         "photo-synthetic-03", "photo-synthetic-04", "photo-synthetic-05", "photo-synthetic-06",
         "photo-synthetic-07", "photo-synthetic-08" };
-    if( !keysPanel.handleInputKey( &cycle ) || keysPanel.primary() != FlubberPanel::FaceKind ||
-        !keysPanel.visible( FlubberPanel::FaceKind ) ) return 37;
+    if( !keysPanel.handleInputKey( &cycle ) || !onlyVisible( keysPanel, FlubberPanel::FaceKind ) ) return 37;
     const QString retainedFace = keysPanel.faceId();
-    if( !keysPanel.handleInputKey( &cycle ) || keysPanel.primary() != FlubberPanel::FlubberKind ) return 38;
+    if( !keysPanel.handleInputKey( &cycle ) || !onlyVisible( keysPanel, FlubberPanel::FlubberKind ) ) return 38;
     QKeyEvent cycleRepeat( QEvent::KeyPress, Qt::Key_G, Qt::AltModifier, QString(), true );
     if( !keysPanel.handleInputKey( &cycleRepeat ) || keysPanel.primary() != FlubberPanel::FlubberKind ) return 39;
     QKeyEvent previous( QEvent::KeyPress, Qt::Key_G, Qt::AltModifier | Qt::ShiftModifier );
     if( !keysPanel.handleInputKey( &previous ) || keysPanel.primary() != FlubberPanel::FaceKind ||
         keysPanel.faceId() != retainedFace ) return 40;
+    keysPanel.setPrimary( FlubberPanel::FlubberKind );
+    if( !keysPanel.setFaceId( "photo-reference-v3" ) || !onlyVisible( keysPanel, FlubberPanel::FlubberKind ) ) return 62;
+    QKeyEvent faceClaim( QEvent::ShortcutOverride, Qt::Key_H, Qt::AltModifier );
+    QKeyEvent faceRepeat( QEvent::KeyPress, Qt::Key_H, Qt::AltModifier, QString(), true );
+    QKeyEvent wrongFaceModifier( QEvent::KeyPress, Qt::Key_H, Qt::ControlModifier );
+    if( !keysPanel.handleInputKey( &faceClaim ) || !faceClaim.isAccepted() ||
+        !keysPanel.handleInputKey( &faceRepeat ) || keysPanel.handleInputKey( &wrongFaceModifier ) ||
+        keysPanel.faceId() != QLatin1String( "photo-reference-v3" ) ||
+        !onlyVisible( keysPanel, FlubberPanel::FlubberKind ) ) return 63;
+    QKeyEvent nextFace( QEvent::KeyPress, Qt::Key_H, Qt::AltModifier );
+    QKeyEvent previousFace( QEvent::KeyPress, Qt::Key_H, Qt::AltModifier | Qt::ShiftModifier );
+    for( int i = 1; i <= 9; ++i )
+        if( !keysPanel.handleInputKey( &nextFace ) || keysPanel.faceId() != expectedFaces[i % 9] ||
+            !onlyVisible( keysPanel, FlubberPanel::FaceKind ) ) return 64;
+    for( int i = 8; i >= 0; --i )
+        if( !keysPanel.handleInputKey( &previousFace ) || keysPanel.faceId() != expectedFaces[i] ||
+            !onlyVisible( keysPanel, FlubberPanel::FaceKind ) ) return 65;
+    if( !keysPanel.handleInputKey( &nextFace ) || !keysPanel.handleInputKey( &cycle ) ||
+        !onlyVisible( keysPanel, FlubberPanel::FlubberKind ) || !keysPanel.handleInputKey( &previous ) ||
+        !onlyVisible( keysPanel, FlubberPanel::FaceKind ) || keysPanel.faceId() != QLatin1String( "photo-synthetic-01" ) ||
+        keySettings.value( "Flubber/faceId" ).toString() != QLatin1String( "photo-synthetic-01" ) ) return 66;
     keysPanel.setArrowMode( true );
     for( auto modifier : { Qt::ShiftModifier, Qt::ControlModifier, Qt::AltModifier } )
     {
@@ -207,9 +262,8 @@ int main( int argc, char **argv )
     };
     for( auto kind : { FlubberPanel::FlubberKind, FlubberPanel::GridKind, FlubberPanel::FaceKind } )
     {
-        for( auto other : { FlubberPanel::FlubberKind, FlubberPanel::GridKind, FlubberPanel::FaceKind } )
-            manualPanel.setVisible( other, false );
         manualPanel.setPrimary( kind );
+        if( !onlyVisible( manualPanel, kind ) ) return 67;
         if( kind != FlubberPanel::FaceKind ) { if( !renderedChange() ) return 53; }
         else for( const QString &id : expectedFaces )
         {
@@ -293,26 +347,52 @@ int main( int argc, char **argv )
     if( keySettings.value( "Flubber/lastSettingsPath" ).toString() != videoSnapshot ) return 78;
 #endif
     if( settings.value( "Flubber/panelHeight" ).toInt() != 200 ) return 15;
+    panel.setPrimary( FlubberPanel::GridKind );
     panel.setLayout( FlubberPanel::GridKind, { true, 45, 18, 50 } );
     panel.setLayout( FlubberPanel::FaceKind, { true, 45, 82, 50 } );
-    panel.setPrimary( FlubberPanel::GridKind );
-    if( panel.primary() != FlubberPanel::GridKind || !panel.visible( FlubberPanel::FaceKind ) ||
-        !panel.visible( FlubberPanel::FlubberKind ) ) return 16;
+    if( !onlyVisible( panel, FlubberPanel::GridKind ) ) return 16;
     QString faceError;
     if( !panel.setFaceId( "photo-synthetic-01", &faceError ) ) return 17;
     panel.resize( 900, panel.height() ); app.processEvents();
-    const QImage three = panel.grab().toImage();
-    three.save( QFileInfo( QString::fromLocal8Bit( argv[2] ) ).dir().filePath( "three-layers.png" ) );
-    if( three.pixelColor( 0, 0 ) != QColor( Qt::black ) ||
-        three.pixelColor( 162, 100 ) == QColor( Qt::black ) ||
-        three.pixelColor( 738, 100 ) == QColor( Qt::black ) ) return 18;
+    const QImage exclusive = panel.grab().toImage();
+    exclusive.save( QFileInfo( QString::fromLocal8Bit( argv[2] ) ).dir().filePath( "exclusive-grid.png" ) );
+    if( exclusive.pixelColor( 0, 0 ) != QColor( Qt::black ) ||
+        exclusive.pixelColor( 162, 100 ) == QColor( Qt::black ) ||
+        exclusive.pixelColor( 738, 100 ) != QColor( Qt::black ) ) return 18;
     const QString fullSettings = temp.filePath( "full-settings.json" );
     if( !panel.saveSettingsFile( fullSettings, error ) ) return 19;
     FlubberPanel restored( &settings );
     if( !restored.loadSettingsFile( fullSettings, error ) ||
         restored.primary() != FlubberPanel::GridKind ||
         restored.faceId() != QLatin1String( "photo-synthetic-01" ) ||
-        !restored.visible( FlubberPanel::FaceKind ) ) return 20;
+        !onlyVisible( restored, FlubberPanel::GridKind ) ) return 20;
+    for( bool oldVisible : { true, false } )
+    {
+        QJsonObject legacy = panel.settingsJson();
+        QJsonObject layers = legacy.value( "layers" ).toObject();
+        for( const QString &kind : layers.keys() )
+        {
+            QJsonObject layer = layers.value( kind ).toObject();
+            layer.insert( "visible", oldVisible ); layers.insert( kind, layer );
+        }
+        legacy.insert( "layers", layers );
+        QFile file( temp.filePath( "legacy-settings.json" ) );
+        if( !file.open( QIODevice::WriteOnly ) ) return 68;
+        file.write( QJsonDocument( legacy ).toJson() ); file.close();
+        if( !restored.loadSettingsFile( file.fileName(), error ) || !onlyVisible( restored, FlubberPanel::GridKind ) ||
+            restored.layoutFor( FlubberPanel::GridKind ).size != 45 ||
+            restored.layoutFor( FlubberPanel::GridKind ).x != 18 ||
+            restored.layoutFor( FlubberPanel::FaceKind ).x != 82 ||
+            restored.faceId() != QLatin1String( "photo-synthetic-01" ) ) return 69;
+    }
+    restored.setVisible( FlubberPanel::FaceKind, true );
+    if( !onlyVisible( restored, FlubberPanel::FaceKind ) ) return 70;
+    restored.setVisible( FlubberPanel::GridKind, false );
+    if( !onlyVisible( restored, FlubberPanel::FaceKind ) ) return 71;
+    restored.setVisible( FlubberPanel::FaceKind, false );
+    restored.setVisible( FlubberPanel::FlubberKind, false );
+    if( !onlyVisible( restored, FlubberPanel::FlubberKind ) ) return 72;
+    restored.setPrimary( FlubberPanel::GridKind );
     QJsonObject invalid = panel.settingsJson(); invalid.insert( "primary", "unknown" );
     QFile invalidFile( temp.filePath( "invalid-settings.json" ) );
     if( !invalidFile.open( QIODevice::WriteOnly ) ) return 21;

@@ -14,6 +14,22 @@ permissions:
   contents: read
 
 jobs:
+  native-key-routing:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e
+        id: msys
+        with:
+          msystem: MINGW64
+          update: true
+          path-type: inherit
+          install: >-
+            mingw-w64-x86_64-gcc mingw-w64-x86_64-qt5-base mingw-w64-x86_64-pkgconf
+      - name: Own native video message loop and teardown
+        shell: pwsh
+        run: ./vlc-qt/test-native-keys.ps1 -QtBin '${{ steps.msys.outputs.msys2-location }}/mingw64/bin'
   recorder:
     runs-on: windows-2025
     timeout-minutes: 30
@@ -62,6 +78,8 @@ jobs:
         run: ./installer-suite/test-launcher.ps1
       - name: Source-built release boundary
         run: python installer-suite/test-source-release.py
+      - name: Exact tested-run promotion
+        run: python installer-suite/test-promotion.py
       - name: Recorder NSIS payload identity
         run: python scripts/test-recorder-payload.py
       - name: Rust bridge

@@ -13,7 +13,7 @@ and position. It is separate from the standard Experiment Runner.
   `adc7285b4d2721cddf40eb5270cada2aaa10a334cb546fd55a06353447ba29b5`.
 - Apply `apply-patch.ps1 -SourceRoot <unmodified VLC 3.0.20 tree>` once. It
   checks the unified patch, modifies five upstream Qt files plus `bin/winvlc.c`, and copies
-  `flubber_panel.hpp` and `flubber_bridge.hpp` into `modules/gui/qt/`.
+  `flubber_panel.hpp`, `flubber_bridge.hpp` and `flubber_video_keys.hpp` into `modules/gui/qt/`.
 - Build a matching Windows x64 VLC Qt module from that tree. Do not mix a Qt
   module with a different VLC core/CRT without installed ABI verification.
 - Rebuild and package `vlc.exe` from the patched `bin/winvlc.c` as well as the
@@ -39,7 +39,7 @@ and position. It is separate from the standard Experiment Runner.
   fill/transparency and manual controls, and render a black idle PNG without
   foregrounding the desktop.
 
-The Qt source modification and its two headers are GPL-2.0-or-later, matching
+The Qt source modification and its three headers are GPL-2.0-or-later, matching
 the host VLC Qt module. The Rust bridge is GPL-2.0-or-later. Packaging the
 modified VLC Qt binary must retain the VideoLAN license notices and provide the
 corresponding source patch and dependency notices.
@@ -93,9 +93,10 @@ VLC 3.0.20's stock `oldrc` interface supports
 `pause`, `stop`, `volume`, `is_playing`, and `f on|off` commands. An armed Recorder
 can launch idle VLC, wait for the two LSL outlets, then send `add <media>`.
 
-The Flubber menu adds **Main feedback** shortcuts Ctrl+Shift+1/2/3 for
-Flubber, 2D grid, and face morph. Ctrl+Alt+1/2/3 independently shows or hides
-each element, so all three can appear together. Ctrl+Shift+A and Ctrl+Shift+M
+The Flubber menu selects Flubber, 2D grid, or face morph with Ctrl+Shift+1/2/3.
+Ctrl+Alt+1/2/3 provides the same exclusive selection. Exactly one representation
+is visible; older saved profiles and imported settings use their selected
+`primary` representation and retain each layer's geometry. Ctrl+Shift+A and Ctrl+Shift+M
 select arrow and mouse input. **Flubber → Settings…** holds the detailed
 appearance, face preset, and layout controls.
 
@@ -108,13 +109,14 @@ unchanged. Dialogs and popups retain normal keyboard behavior.
 | Alt+plus / Alt+minus | Increase/decrease selected feedback size by two percentage points. Alt+=, shifted plus and numpad plus/minus are supported. |
 | Alt+J | Save a new settings JSON snapshot; automatically restore the last successful snapshot on the next launch. |
 | Alt+G / Alt+Shift+G | Next/previous: Flubber → 2D grid → affective face morph map → Flubber. Retains the selected face preset. Held keys do not repeatedly cycle. |
+| Alt+H / Alt+Shift+H | Next/previous face character across the original portrait and eight synthetic characters, wrapping in both directions. Selects face morph. Held keys do not repeatedly cycle. |
 | Ctrl+Alt+Left/Right/Up/Down | With affect arrows on, move the main feedback by two percentage points. With them off, VLC keeps these keys. |
 | Ctrl+Alt+= / Ctrl+Alt+- | Increase/decrease main feedback size by two percentage points. |
 | Ctrl+Shift+PageUp/PageDown | Increase/decrease panel height by 16 px; an explicit session panel-ratio override stays authoritative. |
 | Ctrl+Alt+[ / Ctrl+Alt+] | Decrease/increase the affect arrow step by one percentage point (1–100). |
 | Ctrl+Alt+, / Ctrl+Alt+. | Decrease/increase face transition speed by 0.5 (0.5–20). |
 | Ctrl+Alt+PageUp/PageDown | Increase/decrease grid rows and columns by two, keeping an odd grid (3–2001). |
-| Ctrl+Shift+S | Open detailed settings. Use Tab/Shift+Tab, arrows and Space to adjust colors, appearance, visibility, and individual layer/grid/face controls. |
+| Ctrl+Shift+S | Open detailed settings. **Visible representation** selects one mode. Use Tab/Shift+Tab, arrows and Space to adjust colors, appearance, and individual layer/grid/face controls. |
 
 Alt+F reserves all arrow shortcuts from VLC while affect control is active.
 Plain arrows change affect; modified arrows are reserved, with Ctrl+Alt+arrows
@@ -150,7 +152,10 @@ flubber face photo-reference-v3|photo-synthetic-01..08
 flubber load <absolute JSON path>
 ```
 
-Example: `flubberctl.ps1 -Port 42123 -Command 'visible grid on'`. The existing
+Example: `flubberctl.ps1 -Port 42123 -Command 'visible grid on'`.
+The `visible ... on` command selects that representation exclusively. For legacy
+`visible ... off`, an active grid or face returns to Flubber; hiding an inactive
+representation or the final Flubber leaves the selection unchanged. The existing
 VLC RC interface is the command transport. The Qt callback queues state
 changes to the GUI thread; malformed commands and invalid settings show an
 error in the player.

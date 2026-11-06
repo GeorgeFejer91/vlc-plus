@@ -43,9 +43,18 @@ preserves the successful first app and reports the error for repair.
 checks component identities, launches the actual desktop shortcut, observes
 both windows, checks repeat launch and open-Recorder refusal, removes only the
 suite, then closes its own idle apps gracefully and tests separate uninstall.
-It never starts recording. `.github/workflows/suite-installer.yml` publishes
-only after this exact smoke test and an independent current-run artifact/hash
-check. Existing tags cannot be overwritten.
+It never starts recording. `.github/workflows/suite-source.yml` is the only
+publisher, after both source-built standalone tests, this exact joint smoke
+test and the closed artifact/hash check. Existing tags cannot be overwritten.
+
+For local native qualification, first dispatch `suite-source.yml` on main with
+`publish_release=false`. Install and qualify that run's exact candidate files.
+Then dispatch on the same main commit with `publish_release=true` and
+`promote_run_id=<qualified run ID>`. Promotion requires a completed successful
+dispatch of this same workflow, repository, main branch and exact commit;
+the complete artifact inventory, matching sources, receipts and installer
+hashes are verified again before those existing bytes are published. A main
+source change requires a new candidate run.
 
 The disposable install test writes a loopback-only RC fixture to `portable/vlcrc`
 (VLC core's profile; Qt alone uses `portable/vlc/`). Shutdown verifies the exact test-owned executable, PID and

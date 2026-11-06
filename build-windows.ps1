@@ -60,6 +60,7 @@ try {
     }
     if (-not $linker) { throw 'The actual MSVC linker was not captured in the release link command.' }
     & (Join-Path $root 'vlc-qt\test-panel.ps1') -QtBin $mingw -AppearanceJson (Join-Path $root 'examples\planner-appearance.v1.json')
+    & (Join-Path $root 'vlc-qt\test-native-keys.ps1') -QtBin $mingw
     if ($BuildOnly) { Write-Output 'Native build and focused checks complete.'; return }
 
     & (Join-Path $root 'package-stock-vlc.ps1') `
