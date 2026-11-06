@@ -31,7 +31,10 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   release mouse capture before opening. Existing quick controls remain.
 - [x] Pass Windows Qt offscreen controls/rendering, all nine face atlases,
   Rust bridge tests, source/context and launcher checks; independent review
-  found and corrected capture handling. Host/PID isolation is Recorder-owned.
+  found and corrected capture handling. Recorder verifies RC PID ownership and
+  supplies a random per-launch stream session ID: the pinned Windows LSL
+  library reports hostname `unknown`, so hostname alone is not host identity.
+  Ordinary launches retain their original PID-based source IDs.
 - [x] Trace absent hosted RC listener to the wrong profile path; core reads
   `portable/vlcrc`, whereas Qt uses `portable/vlc/`. Keep process ownership,
   acknowledgement, real exit and uninstall assertions.

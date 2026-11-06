@@ -159,8 +159,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/bridge/src/lib.rs",
       "upstreamSha256": "d1f34eb4902ea8245cffdfce9113fc9beaf7d2cca32273fbfc3e769acebd04cd",
       "adapted": true,
-      "adaptation": "Test-only LSL discovery now matches the test process source IDs so an already-running VLC+ cannot capture the test receiver; runtime unchanged.",
-      "standaloneSha256": "d8d79186d2fd2593dba3c9e4bb38cffc7aca7f83929abb06cb62b15600dd8e20"
+      "adaptation": "Preserve default PID source IDs; optionally append a validated Recorder session ID for collision-free launched-stream selection. Existing acquisition, CSV and marker formats unchanged; tests isolate source IDs.",
+      "standaloneSha256": "2f942f632a6c5bc330cfcd3f3e5746702a249e35e1faadeee846fe62b70bee6b"
     },
     {
       "path": "vlc-qt/build-bridge.ps1",

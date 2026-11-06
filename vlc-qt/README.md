@@ -86,6 +86,7 @@ the session parameters:
 | `VLC_FLUBBER_PANEL_PERCENT` | 10–100 percent of the current video surface height; invalid values are ignored. |
 | `VLC_FLUBBER_STEP_PERCENT` | 1–100 percent per arrow rating step while the panel has focus; invalid values are ignored. |
 | `VLC_FLUBBER_CSV_PATH` | First local media session's CSV; must be an absolute `.csv` path beside the media and is opened with `create_new`. Later sessions use unique automatic names. |
+| `VLC_FLUBBER_SESSION_ID` | Optional 1–64 character ASCII letter/digit/`-`/`_` session ID, appended after the PID in both stream source IDs. Recorder supplies a fresh random ID so shared-lab PID collisions cannot select another player's streams. Unset preserves legacy IDs. Invalid values fail visibly. |
 
 VLC 3.0.20's stock `oldrc` interface supports
 `--extraintf=rc --rc-host=127.0.0.1:<port> --rc-quiet` and the `add`, `play`,
