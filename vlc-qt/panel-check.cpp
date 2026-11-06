@@ -135,6 +135,78 @@ int main( int argc, char **argv )
     QKeyEvent repeat( QEvent::KeyPress, Qt::Key_F, Qt::AltModifier, QString(), true );
     if( !keysPanel.handleInputKey( &repeat ) || !keysPanel.arrowMode() ) return 27;
     if( !keysPanel.handleInputKey( &toggle ) || keysPanel.arrowMode() || keysPanel.handleInputKey( &up ) ) return 28;
+    QKeyEvent cycleClaim( QEvent::ShortcutOverride, Qt::Key_G, Qt::AltModifier );
+    if( !keysPanel.handleInputKey( &cycleClaim ) || keysPanel.primary() != FlubberPanel::FlubberKind ) return 35;
+    QKeyEvent cycle( QEvent::KeyPress, Qt::Key_G, Qt::AltModifier );
+    if( !keysPanel.handleInputKey( &cycle ) || keysPanel.primary() != FlubberPanel::GridKind ) return 36;
+    const QStringList expectedFaces{ "photo-reference-v3", "photo-synthetic-01", "photo-synthetic-02",
+        "photo-synthetic-03", "photo-synthetic-04", "photo-synthetic-05", "photo-synthetic-06",
+        "photo-synthetic-07", "photo-synthetic-08" };
+    for( const QString &face : expectedFaces )
+        if( !keysPanel.handleInputKey( &cycle ) || keysPanel.primary() != FlubberPanel::FaceKind ||
+            keysPanel.faceId() != face || !keysPanel.visible( FlubberPanel::FaceKind ) ) return 37;
+    if( !keysPanel.handleInputKey( &cycle ) || keysPanel.primary() != FlubberPanel::FlubberKind ) return 38;
+    QKeyEvent cycleRepeat( QEvent::KeyPress, Qt::Key_G, Qt::AltModifier, QString(), true );
+    if( !keysPanel.handleInputKey( &cycleRepeat ) || keysPanel.primary() != FlubberPanel::FlubberKind ) return 39;
+    QKeyEvent previous( QEvent::KeyPress, Qt::Key_G, Qt::AltModifier | Qt::ShiftModifier );
+    if( !keysPanel.handleInputKey( &previous ) || keysPanel.primary() != FlubberPanel::FaceKind ||
+        keysPanel.faceId() != QLatin1String( "photo-synthetic-08" ) ) return 40;
+    const auto beforeMove = keysPanel.layoutFor( FlubberPanel::FaceKind );
+    QKeyEvent moveRight( QEvent::KeyPress, Qt::Key_Right, Qt::ControlModifier | Qt::AltModifier );
+    if( !keysPanel.handleInputKey( &moveRight ) ||
+        keysPanel.layoutFor( FlubberPanel::FaceKind ).x != qMin( 100, beforeMove.x + 2 ) ) return 41;
+    QKeyEvent bigger( QEvent::KeyPress, Qt::Key_Equal, Qt::ControlModifier | Qt::AltModifier );
+    if( !keysPanel.handleInputKey( &bigger ) ||
+        keysPanel.layoutFor( FlubberPanel::FaceKind ).size != qMin( 100, beforeMove.size + 2 ) ) return 42;
+    if( keysPanel.valence() != 0 || keysPanel.arousal() != arousal ) return 43;
+    QKeyEvent finer( QEvent::KeyPress, Qt::Key_BracketRight, Qt::ControlModifier | Qt::AltModifier );
+    if( !keysPanel.handleInputKey( &finer ) || keySettings.value( "Flubber/stepPercent" ).toInt() != 21 ) return 44;
+    QKeyEvent faster( QEvent::KeyPress, Qt::Key_Period, Qt::ControlModifier | Qt::AltModifier );
+    if( !keysPanel.handleInputKey( &faster ) ||
+        keysPanel.settingsJson().value( "face" ).toObject().value( "transitionRate" ).toDouble() != 10.5 ) return 45;
+    QKeyEvent denser( QEvent::KeyPress, Qt::Key_PageUp, Qt::ControlModifier | Qt::AltModifier );
+    if( !keysPanel.handleInputKey( &denser ) || keySettings.value( "Flubber/gridColumns" ).toInt() != 23 ||
+        keySettings.value( "Flubber/gridRows" ).toInt() != 23 ) return 46;
+    QKeyEvent taller( QEvent::KeyPress, Qt::Key_PageUp, Qt::ControlModifier | Qt::ShiftModifier );
+    if( !keysPanel.handleInputKey( &taller ) || keysPanel.height() != 130 ) return 47;
+    qunsetenv( "VLC_FLUBBER_PANEL_PERCENT" );
+    QSettings manualSettings( temp.filePath( "manual.ini" ), QSettings::IniFormat );
+    FlubberPanel manualPanel( &manualSettings );
+    if( !manualPanel.handleInputKey( &taller ) || manualPanel.height() != 146 ||
+        manualSettings.value( "Flubber/panelHeight" ).toInt() != 146 ) return 48;
+    const auto moved = keysPanel.layoutFor( FlubberPanel::FaceKind );
+    QKeyEvent layoutClaim( QEvent::ShortcutOverride, Qt::Key_Right, Qt::ControlModifier | Qt::AltModifier );
+    if( !keysPanel.handleInputKey( &layoutClaim ) || keysPanel.layoutFor( FlubberPanel::FaceKind ).x != moved.x ) return 49;
+    QKeyEvent wrongModifier( QEvent::KeyPress, Qt::Key_G, Qt::ControlModifier );
+    if( keysPanel.handleInputKey( &wrongModifier ) ) return 50;
+    bool controlsOpened = false;
+    QTimer::singleShot( 0, [&]() {
+        QDialog *dialog = qobject_cast<QDialog *>( QApplication::activeModalWidget() );
+        if( dialog ) { controlsOpened = dialog->windowTitle() == QLatin1String( "Flubber Controls" ); dialog->reject(); }
+    } );
+    QKeyEvent controls( QEvent::KeyPress, Qt::Key_S, Qt::ControlModifier | Qt::ShiftModifier );
+    if( !manualPanel.handleInputKey( &controls ) || !controlsOpened ) return 52;
+    manualPanel.resize( 600, manualPanel.height() );
+    const auto renderedChange = [&]() {
+        manualPanel.setAffect( -1, -1 );
+        QEventLoop first; QTimer::singleShot( 200, &first, &QEventLoop::quit ); first.exec();
+        const QImage low = manualPanel.grab().toImage();
+        manualPanel.setAffect( 1, 1 );
+        QEventLoop second; QTimer::singleShot( 200, &second, &QEventLoop::quit ); second.exec();
+        return low != manualPanel.grab().toImage();
+    };
+    for( auto kind : { FlubberPanel::FlubberKind, FlubberPanel::GridKind, FlubberPanel::FaceKind } )
+    {
+        for( auto other : { FlubberPanel::FlubberKind, FlubberPanel::GridKind, FlubberPanel::FaceKind } )
+            manualPanel.setVisible( other, false );
+        manualPanel.setPrimary( kind );
+        if( kind != FlubberPanel::FaceKind ) { if( !renderedChange() ) return 53; }
+        else for( const QString &id : expectedFaces )
+        {
+            QString loadError;
+            if( !manualPanel.setFaceId( id, &loadError ) || !renderedChange() ) return 54;
+        }
+    }
 #ifndef Q_OS_WIN
     // Exercise Qt's real shortcut map from a video-like sibling widget. The
     // Windows offscreen platform has no native foreground HWND; its dispatch
@@ -160,6 +232,8 @@ int main( int argc, char **argv )
     if( vlcCommands != 1 ) return 29;
     QTest::keyClick( &videoFocus, Qt::Key_F, Qt::AltModifier );
     if( !shortcutPanel.arrowMode() ) return 30;
+    QTest::keyClick( &videoFocus, Qt::Key_G, Qt::AltModifier );
+    if( shortcutPanel.primary() != FlubberPanel::FlubberKind ) return 51;
     inputAllowed = true;
     QTest::keyClick( &videoFocus, Qt::Key_Up );
     QTest::keyClick( &videoFocus, Qt::Key_Right );
@@ -174,6 +248,11 @@ int main( int argc, char **argv )
     QTest::keyClick( &videoFocus, Qt::Key_F, Qt::AltModifier );
     QTest::keyClick( &videoFocus, Qt::Key_Up );
     if( shortcutPanel.arrowMode() || vlcCommands != 2 ) return 33;
+    QLineEdit textEntry( &shortcutHost );
+    shortcutLayout.addWidget( &textEntry ); textEntry.show(); textEntry.setFocus(); app.processEvents();
+    const auto primaryBeforeTyping = shortcutPanel.primary();
+    QTest::keyClick( &textEntry, Qt::Key_G, Qt::AltModifier );
+    if( shortcutPanel.primary() != primaryBeforeTyping ) return 55;
 #endif
     if( settings.value( "Flubber/panelHeight" ).toInt() != 200 ) return 15;
     panel.setLayout( FlubberPanel::GridKind, { true, 45, 18, 50 } );

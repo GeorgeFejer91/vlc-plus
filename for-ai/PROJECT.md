@@ -22,6 +22,27 @@ This compatibility goal stays **open**. Full master execution, questionnaires,
 variant/participant selection and recovery are not implemented in VLC+.
 See [Planner integration](PLANNER-INTEGRATION.md).
 
+## Active milestone: 2026-11-06 keyboard and live recording qualification
+
+- [x] Clone current source into the central GitHub folder and read the unmerged
+  `codex/suite-installed-evidence` handoff before resuming.
+- [x] Install the hash-verified released VLC+ and safe Recorder installers here;
+  verify VLC+'s 701 immutable installed files and source identity.
+- [x] Add Alt+G/Alt+Shift+G cycling through Flubber, grid and every face;
+  verify the missing-handler regression fails before implementation.
+- [x] Add quick layout, panel height, rating-step, face-speed, grid-density
+  and settings-dialog hotkeys; pass native Qt controls/rendering and bridge tests.
+- [ ] Qualify the updated VLC+ payload with the Great Dictator clip and the
+  Recorder's native Record and play button; independently inspect changing
+  valence/arousal and playback markers in XDF.
+- [ ] Finish the existing joint installer shutdown/uninstall gate; keep its
+  hosted/physical evidence boundaries and source/component locks intact.
+- [ ] Leave verified local commits, exact artifact identities, test evidence
+  and remaining publication steps in this state owner.
+
+Local task branches are `codex/hotkeys-recorder-ui` and Recorder's
+`codex/record-and-play`. No push or release was requested in this session.
+
 ## Completed milestone: Alt+F affect arrows and bundled study clip
 
 - [x] Trace existing keyboard routing; reproduce the absent Alt+F toggle with

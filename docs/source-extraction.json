@@ -181,8 +181,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "adaptation": "Alt+F toggles affect arrows and claims ShortcutOverride before VLC; retain the original supported-input gate and test shortcut routing.",
-      "standaloneSha256": "a8cf9280914e475e338a2ddb2aeeae148d8c144704abe2ae902423c710e2fea0"
+      "standaloneSha256": "d91f413b1e10529cf084d11f2639cc1f18d3dcbab476e8ff92ed230f77a31253",
+      "adaptation": "Native feedback/face cycling and bounded quick-setting hotkeys, full atlas/rendered regression coverage; acquisition and source lineage preserved."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -195,14 +195,16 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "adaptation": "Alt+F toggles affect arrows and claims ShortcutOverride before VLC; retain the original supported-input gate and test shortcut routing.",
-      "standaloneSha256": "5d34c22552f82e6c974c35cfd2ffc6c59b6239b8567873472bffd5e4a15c5ae2"
+      "standaloneSha256": "5a64354375eae964ef2b45ec44ee9999641f735aa034e699e8317e6c8ceec0f1",
+      "adaptation": "Native feedback/face cycling and bounded quick-setting hotkeys, full atlas/rendered regression coverage; acquisition and source lineage preserved."
     },
     {
       "path": "vlc-qt/test-panel.ps1",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/test-panel.ps1",
       "upstreamSha256": "3bd594a0aab58187ec71079c011c3f969ceb20f0fa6eae3a09264690daa1ff4b",
-      "adapted": false
+      "adapted": true,
+      "standaloneSha256": "6ba57ca19479e0dcd7cd4695e339875f1c12af876a715729e42ef0b0693af7b0",
+      "adaptation": "Native feedback/face cycling and bounded quick-setting hotkeys, full atlas/rendered regression coverage; acquisition and source lineage preserved."
     },
     {
       "path": "vlc-qt/vlc-3.0.20-flubber.patch",

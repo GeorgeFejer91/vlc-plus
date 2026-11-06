@@ -22,7 +22,7 @@ adapted = {
     "package-stock-vlc.ps1", "installer-stock-vlc.iss", "vlc-qt/README.md",
     "docs/stock-vlc-integration.md", "docs/third-party.md", "assets/face/NOTICE.md",
     "vlc-qt/flubber_bridge.hpp", "vlc-qt/flubber_panel.hpp", "vlc-qt/panel-check.cpp",
-    "vlc-qt/bridge/src/lib.rs",
+    "vlc-qt/bridge/src/lib.rs", "vlc-qt/test-panel.ps1",
 }
 paths = set()
 for entry in manifest["files"]:

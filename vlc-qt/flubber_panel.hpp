@@ -108,6 +108,7 @@ public:
         const int requestedPanel = qEnvironmentVariableIntValue( "VLC_FLUBBER_PANEL_PERCENT", &parsed );
         if( parsed && requestedPanel >= 10 && requestedPanel <= 100 ) panelPercent_ = requestedPanel;
         const int requestedStep = qEnvironmentVariableIntValue( "VLC_FLUBBER_STEP_PERCENT", &parsed );
+        stepPercent_ = qBound( 1, settings_->value( "Flubber/stepPercent", 10 ).toInt(), 100 );
         if( parsed && requestedStep >= 1 && requestedStep <= 100 ) stepPercent_ = requestedStep;
         setFixedHeight( panelHeight_ );
         initializeShape();
@@ -365,6 +366,7 @@ public:
     {
         if( event->type() != QEvent::KeyPress && event->type() != QEvent::ShortcutOverride ) return false;
         const Qt::KeyboardModifiers modifiers = event->modifiers() & ~Qt::KeypadModifier;
+        if( handleSettingsKey( event, modifiers ) ) return true;
         if( event->key() == Qt::Key_F && modifiers == Qt::AltModifier )
         {
             if( event->type() == QEvent::KeyPress && !event->isAutoRepeat() ) setArrowMode( !arrowMode_ );
@@ -389,6 +391,74 @@ public:
             setAffect( affectX_ + x * step, affectY_ + y * step );
         }
         event->accept();
+        return true;
+    }
+    bool handleSettingsKey( QKeyEvent *event, Qt::KeyboardModifiers modifiers )
+    {
+        const int key = event->key();
+        const bool cycle = key == Qt::Key_G && ( modifiers == Qt::AltModifier ||
+            modifiers == ( Qt::AltModifier | Qt::ShiftModifier ) );
+        const bool layout = modifiers == ( Qt::ControlModifier | Qt::AltModifier ) &&
+            ( key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down ||
+              key == Qt::Key_Equal || key == Qt::Key_Minus || key == Qt::Key_BracketLeft ||
+              key == Qt::Key_BracketRight || key == Qt::Key_Comma || key == Qt::Key_Period ||
+              key == Qt::Key_PageUp || key == Qt::Key_PageDown );
+        const bool panel = modifiers == ( Qt::ControlModifier | Qt::ShiftModifier ) &&
+            ( key == Qt::Key_PageUp || key == Qt::Key_PageDown || key == Qt::Key_S );
+        if( !cycle && !layout && !panel ) return false;
+        event->accept();
+        if( event->type() != QEvent::KeyPress || event->isAutoRepeat() ) return true;
+        if( cycle )
+        {
+            const QStringList faces = faceIds();
+            const int current = primary_ == FaceKind ? faces.indexOf( faceId_ ) + 2 : int( primary_ );
+            const int direction = modifiers.testFlag( Qt::ShiftModifier ) ? -1 : 1;
+            const int next = ( current + direction + faces.size() + 2 ) % ( faces.size() + 2 );
+            QString error;
+            if( next >= 2 && !setFaceId( faces[next - 2], &error ) )
+            { appearanceLoadError_ = error; setToolTip( error ); return true; }
+            setPrimary( next < 2 ? static_cast<FeedbackKind>( next ) : FaceKind );
+        }
+        else if( panel && key == Qt::Key_S ) showControls( window() );
+        else if( panel )
+        {
+            if( panelPercent_ < 0 )
+            {
+                panelHeight_ = qBound( 48, panelHeight_ + ( key == Qt::Key_PageUp ? 16 : -16 ), 2160 );
+                settings_->setValue( "Flubber/panelHeight", panelHeight_ );
+                setFixedHeight( panelHeight_ );
+            }
+        }
+        else if( key == Qt::Key_BracketLeft || key == Qt::Key_BracketRight )
+        {
+            stepPercent_ = qBound( 1, stepPercent_ + ( key == Qt::Key_BracketRight ? 1 : -1 ), 100 );
+            settings_->setValue( "Flubber/stepPercent", stepPercent_ );
+        }
+        else if( key == Qt::Key_Comma || key == Qt::Key_Period )
+        {
+            faceRate_ = qBound( .5, faceRate_ + ( key == Qt::Key_Period ? .5 : -.5 ), 20.0 );
+            settings_->setValue( "Flubber/faceRate", faceRate_ );
+        }
+        else if( key == Qt::Key_PageUp || key == Qt::Key_PageDown )
+        {
+            const int delta = key == Qt::Key_PageUp ? 2 : -2;
+            gridColumns_ = qBound( 3, gridColumns_ + delta, 2001 );
+            gridRows_ = qBound( 3, gridRows_ + delta, 2001 );
+            settings_->setValue( "Flubber/gridColumns", gridColumns_ );
+            settings_->setValue( "Flubber/gridRows", gridRows_ );
+        }
+        else
+        {
+            ElementLayout changed = layers_[primary_];
+            if( key == Qt::Key_Left ) changed.x -= 2;
+            if( key == Qt::Key_Right ) changed.x += 2;
+            if( key == Qt::Key_Up ) changed.y -= 2;
+            if( key == Qt::Key_Down ) changed.y += 2;
+            if( key == Qt::Key_Equal ) changed.size += 2;
+            if( key == Qt::Key_Minus ) changed.size -= 2;
+            setLayout( primary_, changed );
+        }
+        update();
         return true;
     }
     void setInterruptHandler( const std::function<void()> &handler ) { interrupted_ = handler; }
@@ -454,7 +524,14 @@ public:
             line->addWidget( new QLabel( tr( "Y" ), row ) ); line->addWidget( y[i] );
             display->addRow( name, row );
         }
-        display->addRow( new QLabel( tr( "Alt+F: toggle affect arrows (Left/Right valence, Up/Down arousal).\nCtrl+Shift+1/2/3: main feedback." ), &dialog ) );
+        QLabel *shortcuts = new QLabel( tr( "Alt+F: affect arrows. Alt+G: next feedback/face; Shift reverses.\n"
+            "Ctrl+Shift+1/2/3: main feedback. Ctrl+Alt+1/2/3: visibility.\n"
+            "Ctrl+Alt+arrows: move main feedback; = / -: resize it.\n"
+            "Ctrl+Shift+PageUp/PageDown: panel height. Ctrl+Shift+S: settings.\n"
+            "Ctrl+Alt+[ / ]: rating step; comma / period: face speed.\n"
+            "Ctrl+Alt+PageUp/PageDown: grid density. Tab navigates all settings." ), &dialog );
+        shortcuts->setWordWrap( true );
+        display->addRow( shortcuts );
         QFormLayout *flubberForm = page( tr( "Flubber" ) );
         QJsonObject visual = pendingPreset.value( "visual" ).toObject();
         QJsonObject shape = visual.value( "flubber" ).toObject();
@@ -736,7 +813,9 @@ protected:
             ratingWindowIsForeground() )
         {
             QWidget *target = qobject_cast<QWidget *>( watched );
-            if( target && target->window() == window() )
+            if( target && target->window() == window() &&
+                !target->inherits( "QLineEdit" ) && !target->inherits( "QTextEdit" ) &&
+                !target->inherits( "QPlainTextEdit" ) )
             {
                 QKeyEvent *key = static_cast<QKeyEvent *>( event );
                 if( handleInputKey( key ) ) return true;
@@ -747,6 +826,7 @@ protected:
                     modifiers == ( Qt::ControlModifier | Qt::ShiftModifier ) )
                 {
                     if( event->type() == QEvent::ShortcutOverride ) { key->accept(); return true; }
+                    if( key->isAutoRepeat() ) { key->accept(); return true; }
                     setPrimary( static_cast<FeedbackKind>( digit ) );
                     key->accept(); return true;
                 }
@@ -754,6 +834,7 @@ protected:
                     modifiers == ( Qt::ControlModifier | Qt::AltModifier ) )
                 {
                     if( event->type() == QEvent::ShortcutOverride ) { key->accept(); return true; }
+                    if( key->isAutoRepeat() ) { key->accept(); return true; }
                     const FeedbackKind kind = static_cast<FeedbackKind>( digit );
                     setVisible( kind, !visible( kind ) );
                     key->accept(); return true;

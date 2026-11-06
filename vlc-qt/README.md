@@ -98,6 +98,25 @@ each element, so all three can appear together. Ctrl+Shift+A and Ctrl+Shift+M
 select arrow and mouse input. **Flubber → Settings…** holds the detailed
 appearance, face preset, and layout controls.
 
+Quick settings work in the player/video window and leave rating values
+unchanged. Dialogs and popups retain normal keyboard behavior.
+
+| Keys | Action |
+| --- | --- |
+| Alt+G / Alt+Shift+G | Next/previous: Flubber → 2D grid → original portrait → synthetic faces 01–08 → Flubber. Held keys do not repeatedly cycle. |
+| Ctrl+Alt+Left/Right/Up/Down | Move the main feedback by two percentage points. |
+| Ctrl+Alt+= / Ctrl+Alt+- | Increase/decrease main feedback size by two percentage points. |
+| Ctrl+Shift+PageUp/PageDown | Increase/decrease panel height by 16 px; an explicit session panel-ratio override stays authoritative. |
+| Ctrl+Alt+[ / Ctrl+Alt+] | Decrease/increase the affect arrow step by one percentage point (1–100). |
+| Ctrl+Alt+, / Ctrl+Alt+. | Decrease/increase face transition speed by 0.5 (0.5–20). |
+| Ctrl+Alt+PageUp/PageDown | Increase/decrease grid rows and columns by two, keeping an odd grid (3–2001). |
+| Ctrl+Shift+S | Open detailed settings. Use Tab/Shift+Tab, arrows and Space to adjust colors, appearance, visibility, and individual layer/grid/face controls. |
+
+The existing Alt+F, Ctrl+Shift+1/2/3 and Ctrl+Alt+1/2/3 remain available.
+Quick changes persist in the VLC-owned profile; the environment's rating-step
+override still takes precedence on the next launch. A missing face atlas leaves
+the active feedback intact and reports the load error in the panel tooltip.
+
 Launch VLC with `--flubber-settings=<absolute JSON path>` to load a settings
 file. `--flubber-primary=flubber|grid|face`, `--flubber-input=arrows|mouse`,
 and `--flubber-face=photo-reference-v3|photo-synthetic-01..08` override their
