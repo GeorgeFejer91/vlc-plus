@@ -31,6 +31,11 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 PR9 (`0d84abc`) and PR10 (`fe35248`) are merged. PR10's full source/UI
 checks pass. The source-built suite still needs a complete passing run and
 publication; its previous failure was the now-corrected NSIS payload hash.
+The publisher now accepts `promote_run_id` so the exact installer files used
+for local native qualification can be published without rebuilding. It only
+accepts a successful main dispatch of the same workflow/repository/commit and
+rechecks the closed artifact inventory, hashes and source receipts. Boundary
+tests reject stale source, foreign branch/workflow/repository and failed runs.
 
 The user also requested exactly one visible representation and all character
 faces. Current source normalizes legacy visibility flags, makes every selector

@@ -6,10 +6,15 @@ on:
         description: Publish the exact tested three installer choices from main
         type: boolean
         default: false
+      promote_run_id:
+        description: Optional successful main run whose exact qualified artifacts should be published
+        type: string
+        default: ''
 permissions:
   contents: read
 jobs:
   suite:
+    if: inputs.promote_run_id == ''
     runs-on: windows-2025
     timeout-minutes: 120
     steps:
@@ -83,7 +88,7 @@ jobs:
           compression-level: 0
   publish:
     needs: suite
-    if: inputs.publish_release && github.ref == 'refs/heads/main'
+    if: always() && !cancelled() && inputs.publish_release && github.ref == 'refs/heads/main' && (needs.suite.result == 'success' || (inputs.promote_run_id != '' && needs.suite.result == 'skipped'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -91,11 +96,19 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+      PROMOTE_RUN_ID: ${{ inputs.promote_run_id }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - run: |
-          gh run download "$GITHUB_RUN_ID" --name self-contained-suite-release --dir release
-          gh run download "$GITHUB_RUN_ID" --name self-contained-suite-evidence --dir evidence
+          candidate_run="$GITHUB_RUN_ID"
+          if [ -n "$PROMOTE_RUN_ID" ]; then
+            [[ "$PROMOTE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+            gh api "repos/$GH_REPO/actions/runs/$PROMOTE_RUN_ID" > candidate-run.json
+            python installer-suite/verify-promotion.py candidate-run.json "$GITHUB_SHA" "$GH_REPO"
+            candidate_run="$PROMOTE_RUN_ID"
+          fi
+          gh run download "$candidate_run" --name self-contained-suite-release --dir release
+          gh run download "$candidate_run" --name self-contained-suite-evidence --dir evidence
           python installer-suite/verify-release.py --release release --evidence evidence --source "$GITHUB_SHA"
           test -z "$(git ls-remote --tags origin refs/tags/v0.3.3-experimental.1)"
           gh release create v0.3.3-experimental.1 release/* --target "$GITHUB_SHA" --prerelease --title "VLC+ 0.3.3 and embedded Remote LSL Recorder 0.1.8" --notes-file installer-suite/release-notes.md

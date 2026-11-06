@@ -78,6 +78,8 @@ jobs:
         run: ./installer-suite/test-launcher.ps1
       - name: Source-built release boundary
         run: python installer-suite/test-source-release.py
+      - name: Exact tested-run promotion
+        run: python installer-suite/test-promotion.py
       - name: Recorder NSIS payload identity
         run: python scripts/test-recorder-payload.py
       - name: Rust bridge
