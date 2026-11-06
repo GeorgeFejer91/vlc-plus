@@ -18,6 +18,13 @@ independent review and exact-source CI before the final installed UI and XDF/
 CSV qualification. The earlier suite at `5b94b16` passed hosted install gates;
 it does not contain this expansion and is not the final candidate.
 
+Installed qualification also owns its test runner's lifecycle. Before any
+native attempt, refuse existing player/Recorder processes; send RC commands
+and cleanup only to the current listener owned by the discovered test PID.
+An interrupted attempt must retain its original workspace backup and recover
+it after all apps close, before capturing the next attempt's baseline. This
+test-only correction leaves the shipped applications unchanged.
+
 ## Earlier layout and snapshot scope
 
 Current task: Alt+W/A/S/D moves the selected feedback by two percentage points;
