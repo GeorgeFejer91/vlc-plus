@@ -265,7 +265,10 @@ subscription proof. The pinned CLI resolves a frozen batch before starting its s
 all resolved streams must acknowledge opening. Prefix counting tolerates
 interleaved names and newlines, including duplicate names. Historical logs
 never satisfy a new recording. The current child must still be running.
-Malformed prelude evidence fails closed with video paused.
+Malformed prelude evidence fails closed with video paused. Control characters
+in metadata/query fields are rejected before engine spawn; queries also bind
+the selected name/hostname to prevent different reused-ID metadata entering
+the readiness log.
 
 Native marker waits explicitly poll awaited snapshots outside page.waitForFunction:
 Playwright1.64.1 resolves an async false predicate immediately. The corrected

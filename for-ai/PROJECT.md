@@ -28,7 +28,7 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 - [x] Include self-contained Recorder source/UI/controller/locks/notices in
   `recorder/`, pinned to upstream `242ad90` with declared local adaptations.
-  Its 22 JavaScript tests, 22 release Rust tests, controller/tab UI checks and
+  Its 22 JavaScript tests, 23 release Rust tests, controller/tab UI checks and
   pinned LabRecorder preparation pass locally without a sibling checkout.
 - [ ] Pass the same-checkout component/standalone/joint build in
   `suite-source.yml`, then publish its exact tested three choices.
@@ -87,7 +87,7 @@ native-script correction and requires positive, current-child LabRecorder
 subscription acknowledgements as well as exact XDF headers before playback.
 The pinned engine can write a header even after an open_stream timeout. Its
 failure regression covers missing, duplicate and stale acknowledgements;
-22 Rust tests and release clippy pass. The explicit native backend check also
+23 Rust tests and release clippy pass. The explicit native backend check also
 passes; independent XDF inspection finds Start/End/Stop and continuous affect.
 
 New component candidate versions are VLC+0.3.3 and Recorder0.1.8; no new

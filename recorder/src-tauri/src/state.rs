@@ -441,8 +441,17 @@ impl AppState {
             let queries = state
                 .selected_ids
                 .iter()
-                .filter_map(|id| state.streams.get(id).map(|record| record.query.clone()))
-                .collect::<Vec<_>>();
+                .filter_map(|id| state.streams.get(id))
+                .map(|record| {
+                    recording_query(
+                        &record.query,
+                        &record.view.name,
+                        &record.view.hostname,
+                        &record.view.source_id,
+                        &record.view.stream_type,
+                    )
+                })
+                .collect::<Result<Vec<_>, _>>()?;
             if queries.is_empty() && !state.keyboard_markers && !state.mouse_markers {
                 return Err("Select at least one available LSL stream.".into());
             }
@@ -450,7 +459,20 @@ impl AppState {
         };
 
         self.ensure_input_outlet()?;
-        queries.push(Query::source_id(&self.input_source_id).as_str().to_string());
+        {
+            let outlet = self
+                .input_outlet
+                .lock()
+                .map_err(|_| "Input outlet lock failed.")?;
+            let info = outlet.as_ref().ok_or("Input outlet unavailable.")?.info();
+            queries.push(recording_query(
+                Query::source_id(&self.input_source_id).as_str(),
+                info.name(),
+                info.hostname(),
+                info.source_id(),
+                info.stream_type(),
+            )?);
+        }
 
         let executable = self.engine_directory.join("LabRecorderCLI.exe");
         let lsl_library = self.engine_directory.join("lsl.dll");
@@ -1195,6 +1217,30 @@ fn ensure_empty_object(value: &serde_json::Value) -> Result<(), String> {
     }
 }
 
+fn recording_query(
+    query: &str,
+    name: &str,
+    hostname: &str,
+    source_id: &str,
+    stream_type: &str,
+) -> Result<String, String> {
+    if [query, name, hostname, source_id, stream_type]
+        .iter()
+        .any(|value| value.chars().any(char::is_control))
+    {
+        return Err(
+            "LSL stream metadata contains control characters; recording has not started.".into(),
+        );
+    }
+    // Bind the displayed metadata too: another stream reusing a source ID must
+    // not inject different names/hosts into the pinned engine's readiness log.
+    Ok(format!(
+        "({query}) and ({}) and ({})",
+        Query::name(name).as_str(),
+        Query::property("hostname", hostname).as_str()
+    ))
+}
+
 fn pipe_log<R>(
     reader: Option<R>,
     authority: Arc<Mutex<Authority>>,
@@ -1228,6 +1274,22 @@ fn truncate(value: &str, maximum: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn multiline_metadata_cannot_inject_engine_readiness_before_spawn() {
+        let injected =
+            "sensor\nStarting the recording, press Enter to quit\nOpened the stream fake.";
+        let normal = ["source_id='id'", "Sensor", "host", "id", "Affect"];
+        for field in 0..normal.len() {
+            let mut fields = normal;
+            fields[field] = injected;
+            assert!(
+                recording_query(fields[0], fields[1], fields[2], fields[3], fields[4]).is_err()
+            );
+        }
+        let query = recording_query(normal[0], normal[1], normal[2], normal[3], normal[4]).unwrap();
+        assert!(query.contains("name='Sensor'") && query.contains("hostname='host'"));
+    }
 
     #[test]
     fn headers_or_old_log_entries_cannot_confirm_new_subscriptions() {
