@@ -37,8 +37,29 @@ See [Planner integration](PLANNER-INTEGRATION.md).
   valence/arousal and playback markers in XDF.
 - [ ] Finish the existing joint installer shutdown/uninstall gate; keep its
   hosted/physical evidence boundaries and source/component locks intact.
-- [ ] Leave verified local commits, exact artifact identities, test evidence
+- [x] Leave verified local commits, exact artifact identities, test evidence
   and remaining publication steps in this state owner.
+
+Local evidence (2026-11-06): product commit `8040eed`; Windows build,
+native Qt offscreen controls/rendering, all nine face atlases, bridge tests,
+source provenance and launcher checks pass. Updated candidate installed;
+`build/installed-candidate-integrity.json` verifies all 701 immutable files
+against `8040eedd618291d494952fb39b14ac2d124b5e66`. Installer and matching
+source companion are in `build/stock-vlc-package/out/`. These retain application
+version 0.3.2 and are local candidates, not published releases.
+
+The Recorder's real WebView Record and play action resumed the Great Dictator
+clip after starting LabRecorder. Independent XDF inspection found 3,706 affect
+samples and a Start marker. Ratings remained zero: a Windows Security firewall
+prompt blocked the keyboard phase. The user must dismiss that security prompt;
+no consent was automated. Changing-ratings native qualification remains OPEN.
+
+The CI shutdown hypothesis is now implemented in `stop-owned-player.ps1`:
+verify exact executable/PID/listener ownership, await RC quit acknowledgement,
+and require actual exit without force. A local native VLC probe passed. The
+fresh hosted joint install/uninstall gate has NOT rerun; do not publish or
+claim that gate passed from the local probe. Historical handoff below is
+retained; these current evidence notes supersede its local installation state.
 
 Local task branches are `codex/hotkeys-recorder-ui` and Recorder's
 `codex/record-and-play`. No push or release was requested in this session.
