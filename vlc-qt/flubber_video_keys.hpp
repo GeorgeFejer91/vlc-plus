@@ -32,6 +32,9 @@ inline bool flubberReservedKey( int key, Qt::KeyboardModifiers mods, bool arrows
     if( key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down )
         return arrows;
     if( mods == Qt::AltModifier && key == Qt::Key_F ) return true;
+    if( mods == Qt::AltModifier && ( key == Qt::Key_W || key == Qt::Key_A || key == Qt::Key_S ||
+        key == Qt::Key_D || key == Qt::Key_J || key == Qt::Key_Equal || key == Qt::Key_Plus || key == Qt::Key_Minus ) ) return true;
+    if( mods == ( Qt::AltModifier | Qt::ShiftModifier ) && key == Qt::Key_Plus ) return true;
     if( ( mods == Qt::AltModifier || mods == ( Qt::AltModifier | Qt::ShiftModifier ) ) &&
         ( key == Qt::Key_G || key == Qt::Key_H ) ) return true;
     if( mods == ( Qt::ControlModifier | Qt::ShiftModifier ) )
@@ -84,7 +87,7 @@ class FlubberVideoKeys
             case VK_LEFT: return Qt::Key_Left; case VK_RIGHT: return Qt::Key_Right;
             case VK_UP: return Qt::Key_Up; case VK_DOWN: return Qt::Key_Down;
             case VK_PRIOR: return Qt::Key_PageUp; case VK_NEXT: return Qt::Key_PageDown;
-            case VK_OEM_PLUS: case VK_ADD: return Qt::Key_Equal;
+            case VK_OEM_PLUS: return Qt::Key_Equal; case VK_ADD: return Qt::Key_Plus;
             case VK_OEM_MINUS: case VK_SUBTRACT: return Qt::Key_Minus;
             case VK_OEM_4: return Qt::Key_BracketLeft; case VK_OEM_6: return Qt::Key_BracketRight;
             case VK_OEM_COMMA: return Qt::Key_Comma; case VK_OEM_PERIOD: return Qt::Key_Period;
@@ -109,11 +112,12 @@ class FlubberVideoKeys
                     GUITHREADINFO state = {}; state.cbSize = sizeof( state );
                     const bool menu = GetGUIThreadInfo( GetCurrentThreadId(), &state ) &&
                         ( state.flags & ( GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE ) );
-                    const int key = qtKey( message.wParam );
+                    int key = qtKey( message.wParam );
                     Qt::KeyboardModifiers mods = Qt::NoModifier;
                     if( GetKeyState( VK_CONTROL ) & 0x8000 ) mods |= Qt::ControlModifier;
                     if( GetKeyState( VK_SHIFT ) & 0x8000 ) mods |= Qt::ShiftModifier;
                     if( ( GetKeyState( VK_MENU ) & 0x8000 ) || ( message.lParam & ( LPARAM( 1 ) << 29 ) ) ) mods |= Qt::AltModifier;
+                    if( key == Qt::Key_Equal && ( mods & Qt::ShiftModifier ) ) key = Qt::Key_Plus;
                     const bool foreground = GetAncestor( GetForegroundWindow(), GA_ROOT ) == GetAncestor( message.hwnd, GA_ROOT );
                     const bool arrow = key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down;
                     bool consume = !menu && arrow && entry.arrows;

@@ -15,6 +15,13 @@ int main( int argc, char **argv )
     if( !flubberReservedKey( Qt::Key_H, Qt::AltModifier | Qt::ShiftModifier, false ) ||
         flubberReservedKey( Qt::Key_H, Qt::NoModifier, true ) ||
         flubberReservedKey( Qt::Key_F, Qt::NoModifier, true ) ) return 2;
+    for( bool arrows : { false, true } )
+    {
+        for( int key : { Qt::Key_W, Qt::Key_A, Qt::Key_S, Qt::Key_D, Qt::Key_J,
+            Qt::Key_Equal, Qt::Key_Plus, Qt::Key_Minus } )
+            if( !flubberReservedKey( key, Qt::AltModifier, arrows ) ) return 10;
+        if( !flubberReservedKey( Qt::Key_Plus, Qt::AltModifier | Qt::ShiftModifier, arrows ) ) return 11;
+    }
 #ifdef Q_OS_WIN
     // Hidden, owned HWNDs: exercise the same separate GetMessage loop as VLC
     // without taking foreground focus or synthesizing input into another app.

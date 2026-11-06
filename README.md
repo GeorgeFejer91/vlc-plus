@@ -44,6 +44,11 @@ control valence/arousal. **Flubber → Settings…** edits appearance, feedback
 layers, input and layout; hotkeys and local RC commands are described in the
 [native player guide](vlc-qt/README.md).
 
+Use **Alt+W/A/S/D** to move the selected feedback, **Alt+plus/minus** to resize
+it, and **Alt+J** to save a JSON snapshot. The last successful snapshot loads
+automatically on the next launch. These layout shortcuts work with mouse or
+arrow input and leave the affect rating unchanged.
+
 In 0.3.2, press **Alt+F** to toggle affect arrows: Left/Right changes valence and Up/Down
 changes arousal. Press Alt+F again to restore normal VLC arrow controls. Affect can still be adjusted while paused, as in the existing player;
 CSV recording remains playback-gated. The existing step size and saved input

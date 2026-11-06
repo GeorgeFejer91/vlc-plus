@@ -14,6 +14,27 @@ Evidence must match its claim. Use `VERIFIED`, `PARTIAL`, `BLOCKED`, or
 
 ## Focused checks
 
+### Alt layout and JSON snapshot update — 2026-11-06
+
+VERIFIED locally: Windows Qt panel regression failed first at exit 61 for the
+missing Alt aliases, then passed. It covers all four directions in both input
+modes, Alt+plus/equal/shifted plus/numpad plus/minus, bounds, unchanged affect,
+ShortcutOverride without mutation, unique JSON snapshots, last-save startup
+restore, missing/invalid-file retention, explicit subsequent loads, and save
+errors retaining the prior bookmark. Independent review found a bookmark sync
+rollback and transient-error retry gap; regressions failed at exits 79 and 80
+before fixes and now pass. Existing native rendering and all nine face presets
+remain covered. Foreground installed keys are a separate pending gate.
+
+VERIFIED locally: four bridge tests, 22 Recorder JS tests, source/provenance,
+context and diff checks. Rendered site and Recorder/controller gates pass at
+320–1920 px, with 200% text/spacing where supported, including all 17 documented
+shortcut entries, panel sharing and external-tab controls. Browser UI fixtures
+do not establish installed native IPC or physical-input qualification.
+
+Exact source CI, installer publication and installed foreground evidence for
+this update remain tracked in the active `PROJECT.md` milestone.
+
 From the repository root, with Python 3.12+, PowerShell 7, Git and MSVC Cargo:
 
 ```powershell

@@ -44,6 +44,10 @@
 #include <QSet>
 #include <QVector>
 #include <QFileInfo>
+#include <QDir>
+#include <QDateTime>
+#include <QUuid>
+#include <QToolTip>
 #include <QSizePolicy>
 #include <QtMath>
 #include <cstdint>
@@ -131,6 +135,13 @@ public:
         }
         QString faceError;
         if( !setFaceId( faceId_, &faceError ) ) appearanceLoadError_ = faceError;
+        const QString lastSettings = settings_->value( "Flubber/lastSettingsPath" ).toString();
+        if( !lastSettings.isEmpty() )
+        {
+            QString error;
+            if( !loadSettingsFile( lastSettings, error ) )
+                appearanceLoadError_ = tr( "Could not restore saved settings from %1: %2" ).arg( lastSettings, error );
+        }
         clock_.start();
         qApp->installEventFilter( this );
         nativeKeys_.reset( new FlubberVideoKeys( this, arrowMode_ ) );
@@ -270,6 +281,30 @@ public:
         if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) ) { error = file.errorString(); return false; }
         if( file.write( QJsonDocument( settingsJson() ).toJson( QJsonDocument::Indented ) ) < 0 || !file.commit() )
         { error = file.errorString(); return false; }
+        return true;
+    }
+    bool saveSettingsSnapshot( QString &error )
+    {
+        const QDir profile( QFileInfo( settings_->fileName() ).absolutePath() );
+        const QString directory = profile.filePath( "flubber-presets" );
+        if( !QDir().mkpath( directory ) )
+        { error = tr( "Could not create settings directory: %1" ).arg( directory ); return false; }
+        const QString filename = QStringLiteral( "flubber-settings-%1-%2.json" )
+            .arg( QDateTime::currentDateTimeUtc().toString( "yyyyMMdd-HHmmsszzz" ),
+                  QUuid::createUuid().toString( QUuid::WithoutBraces ) );
+        const QString path = QDir( directory ).filePath( filename );
+        if( !saveSettingsFile( path, error ) ) return false;
+        QSettings profileSettings( settings_->fileName(), settings_->format() );
+        const QVariant previousPath = profileSettings.value( "Flubber/lastSettingsPath" );
+        profileSettings.setValue( "Flubber/lastSettingsPath", path );
+        profileSettings.sync();
+        if( profileSettings.status() != QSettings::NoError )
+        {
+            if( previousPath.isValid() ) profileSettings.setValue( "Flubber/lastSettingsPath", previousPath );
+            else profileSettings.remove( "Flubber/lastSettingsPath" );
+            error = tr( "Saved %1, but could not remember it in the VLC profile." ).arg( path );
+            return false;
+        }
         return true;
     }
     bool loadSettingsFile( const QString &path, QString &error )
@@ -415,6 +450,11 @@ public:
             modifiers == ( Qt::AltModifier | Qt::ShiftModifier ) );
         const bool faceCycle = key == Qt::Key_H && ( modifiers == Qt::AltModifier ||
             modifiers == ( Qt::AltModifier | Qt::ShiftModifier ) );
+        const bool altLayout = ( modifiers == Qt::AltModifier &&
+            ( key == Qt::Key_W || key == Qt::Key_A || key == Qt::Key_S || key == Qt::Key_D ||
+              key == Qt::Key_Plus || key == Qt::Key_Equal || key == Qt::Key_Minus ) ) ||
+            ( modifiers == ( Qt::AltModifier | Qt::ShiftModifier ) && key == Qt::Key_Plus );
+        const bool snapshot = key == Qt::Key_J && modifiers == Qt::AltModifier;
         const bool layout = modifiers == ( Qt::ControlModifier | Qt::AltModifier ) &&
             ( ( arrowMode_ && arrow ) ||
               key == Qt::Key_Equal || key == Qt::Key_Plus || key == Qt::Key_Minus || key == Qt::Key_BracketLeft ||
@@ -422,10 +462,22 @@ public:
               key == Qt::Key_PageUp || key == Qt::Key_PageDown );
         const bool panel = modifiers == ( Qt::ControlModifier | Qt::ShiftModifier ) &&
             ( key == Qt::Key_PageUp || key == Qt::Key_PageDown || key == Qt::Key_S );
-        if( !cycle && !faceCycle && !layout && !panel ) return false;
+        if( !cycle && !faceCycle && !layout && !panel && !altLayout && !snapshot ) return false;
         event->accept();
         if( event->type() != QEvent::KeyPress || event->isAutoRepeat() ) return true;
-        if( cycle )
+        if( snapshot )
+        {
+            QString error;
+            if( !saveSettingsSnapshot( error ) )
+            {
+                releaseRating();
+                QMessageBox::warning( window(), tr( "Could not save Flubber settings" ), error );
+            }
+            else QToolTip::showText( mapToGlobal( rect().center() ),
+                tr( "Settings saved. Restored automatically next launch.\n%1" )
+                    .arg( settings_->value( "Flubber/lastSettingsPath" ).toString() ), this );
+        }
+        else if( cycle )
         {
             const int direction = modifiers.testFlag( Qt::ShiftModifier ) ? -1 : 1;
             setPrimary( static_cast<FeedbackKind>( ( int( primary_ ) + direction + 3 ) % 3 ) );
@@ -470,10 +522,10 @@ public:
         else
         {
             ElementLayout changed = layers_[primary_];
-            if( key == Qt::Key_Left ) changed.x -= 2;
-            if( key == Qt::Key_Right ) changed.x += 2;
-            if( key == Qt::Key_Up ) changed.y -= 2;
-            if( key == Qt::Key_Down ) changed.y += 2;
+            if( key == Qt::Key_Left || key == Qt::Key_A ) changed.x -= 2;
+            if( key == Qt::Key_Right || key == Qt::Key_D ) changed.x += 2;
+            if( key == Qt::Key_Up || key == Qt::Key_W ) changed.y -= 2;
+            if( key == Qt::Key_Down || key == Qt::Key_S ) changed.y += 2;
             if( key == Qt::Key_Equal || key == Qt::Key_Plus ) changed.size += 2;
             if( key == Qt::Key_Minus ) changed.size -= 2;
             setLayout( primary_, changed );
@@ -547,6 +599,8 @@ public:
         }
         QLabel *shortcuts = new QLabel( tr( "Alt+F: affect arrows. Alt+G: next representation; Shift reverses.\n"
             "Alt+H: next face character; Shift reverses. Selects face morph.\n"
+            "Alt+W/A/S/D: move feedback. Alt+plus/minus: resize.\n"
+            "Alt+J: save a JSON snapshot and restore it next launch.\n"
             "Ctrl+Shift+1/2/3 or Ctrl+Alt+1/2/3: select representation.\n"
             "Ctrl+Alt+arrows (affect arrows on): move main feedback; = / -: resize it.\n"
             "Ctrl+Shift+PageUp/PageDown: panel height. Ctrl+Shift+S: settings.\n"

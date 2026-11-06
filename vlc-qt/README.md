@@ -13,7 +13,7 @@ and position. It is separate from the standard Experiment Runner.
   `adc7285b4d2721cddf40eb5270cada2aaa10a334cb546fd55a06353447ba29b5`.
 - Apply `apply-patch.ps1 -SourceRoot <unmodified VLC 3.0.20 tree>` once. It
   checks the unified patch, modifies five upstream Qt files plus `bin/winvlc.c`, and copies
-  `flubber_panel.hpp` and `flubber_bridge.hpp` into `modules/gui/qt/`.
+  `flubber_panel.hpp`, `flubber_bridge.hpp` and `flubber_video_keys.hpp` into `modules/gui/qt/`.
 - Build a matching Windows x64 VLC Qt module from that tree. Do not mix a Qt
   module with a different VLC core/CRT without installed ABI verification.
 - Rebuild and package `vlc.exe` from the patched `bin/winvlc.c` as well as the
@@ -39,7 +39,7 @@ and position. It is separate from the standard Experiment Runner.
   fill/transparency and manual controls, and render a black idle PNG without
   foregrounding the desktop.
 
-The Qt source modification and its two headers are GPL-2.0-or-later, matching
+The Qt source modification and its three headers are GPL-2.0-or-later, matching
 the host VLC Qt module. The Rust bridge is GPL-2.0-or-later. Packaging the
 modified VLC Qt binary must retain the VideoLAN license notices and provide the
 corresponding source patch and dependency notices.
@@ -105,6 +105,9 @@ unchanged. Dialogs and popups retain normal keyboard behavior.
 
 | Keys | Action |
 | --- | --- |
+| Alt+W / Alt+A / Alt+S / Alt+D | Move the selected feedback up / left / down / right by two percentage points in either input mode. |
+| Alt+plus / Alt+minus | Increase/decrease selected feedback size by two percentage points. Alt+=, shifted plus and numpad plus/minus are supported. |
+| Alt+J | Save a new settings JSON snapshot; automatically restore the last successful snapshot on the next launch. |
 | Alt+G / Alt+Shift+G | Next/previous: Flubber → 2D grid → affective face morph map → Flubber. Retains the selected face preset. Held keys do not repeatedly cycle. |
 | Alt+H / Alt+Shift+H | Next/previous face character across the original portrait and eight synthetic characters, wrapping in both directions. Selects face morph. Held keys do not repeatedly cycle. |
 | Ctrl+Alt+Left/Right/Up/Down | With affect arrows on, move the main feedback by two percentage points. With them off, VLC keeps these keys. |
@@ -122,6 +125,14 @@ The existing Ctrl+Shift+1/2/3 and Ctrl+Alt+1/2/3 remain available.
 Quick changes persist in the VLC-owned profile; the environment's rating-step
 override still takes precedence on the next launch. A missing face atlas leaves
 the active feedback intact and reports the load error in the panel tooltip.
+
+Alt+J writes a timestamped `vlc-feedback-settings/v2` JSON into
+`flubber-presets/` beside VLC+'s portable Qt profile, then shows its full path.
+Earlier snapshots remain available. Startup reloads the remembered file, so
+unsaved adjustments after the last Alt+J are replaced by that snapshot on the
+next launch. A missing or invalid file retains the current profile and reports
+an error. An unsuccessful save keeps the previous snapshot selected. Explicit
+`--flubber-settings` and other command-line overrides are applied after restore.
 
 Launch VLC with `--flubber-settings=<absolute JSON path>` to load a settings
 file. `--flubber-primary=flubber|grid|face`, `--flubber-input=arrows|mouse`,

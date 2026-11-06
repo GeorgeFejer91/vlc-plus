@@ -60,8 +60,23 @@ Computer Use returned `failed to activate captured window` for both apps.
 It timed out and stopped recording safely. The user has been asked to bring
 VLC to the foreground; do not treat this as a passing keyboard test.
 
+PR12 (`554a423`, main merge `1f1e71f`) independently added Alt layout controls
+and JSON startup restore. Both feature sets are now integrated: all 18 shared
+help entries render, and the native video router reserves the added Alt keys
+in both input modes, including shifted/numpad plus. Repeat the combined native
+and exact-source installer qualification before promotion.
+
 The checklist below retains earlier evidence and remains subordinate to this
 latest status until the final installed qualification and publication pass.
+
+- [x] Add Alt+W/A/S/D movement and Alt+plus/minus resizing in both input modes;
+  preserve affect values and normal dialogs. Alt+J saves a settings snapshot;
+  startup restores the last successful snapshot, with safe invalid/missing-file
+  handling and explicit command-line settings retaining precedence. Windows
+  native regressions pass, including failed bookmark persistence and retry.
+- [ ] Pass native regressions, rendered and installed UI checks, independent
+  review, exact source CI and installer gates; publish and install the tested
+  update under the user's 2026-11-06 instruction.
 
 - [x] Include self-contained Recorder source/UI/controller/locks/notices in
   `recorder/`, pinned to upstream `242ad90` with declared local adaptations.

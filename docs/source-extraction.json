@@ -183,8 +183,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "d2a6393056cdcf83b0d72c38ff9844afa2a43fee14a44545acee772e18d56a57",
-      "adaptation": "Exclusive representation selection, legacy visibility normalization, all nine face character cycling, native Windows video-thread keyboard routing and GUI command precedence, existing appearance/input controls."
+      "standaloneSha256": "62e778a34e90fccd4b2688b83f5615f4e5448635b274b18b0d93a44aa8493781",
+      "adaptation": "Exclusive representation and all nine character cycling; native Windows video-thread keyboard routing and GUI precedence; Alt layout aliases and atomic JSON snapshots restored on startup; regression coverage preserves acquisition and source lineage."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -197,8 +197,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "d07a2fa90d7205411e8cebb3afb920d4defcf9bee08a18a34da813bd234b7645",
-      "adaptation": "Exclusive Flubber/grid/face selection, normalized legacy visibility, nine-character face cycling and affect-arrow/quick-setting regression coverage; acquisition and source lineage preserved."
+      "standaloneSha256": "6c83a500ad83b0827408fc7326aeba523935bf8e9bb64cf37bb61f1f8cc5efab",
+      "adaptation": "Exclusive representation and all nine character cycling; native Windows video-thread keyboard routing and GUI precedence; Alt layout aliases and atomic JSON snapshots restored on startup; regression coverage preserves acquisition and source lineage."
     },
     {
       "path": "vlc-qt/test-panel.ps1",
