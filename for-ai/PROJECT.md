@@ -28,6 +28,21 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ### Latest status (2026-11-06)
 
+The expanded feature change is merged as PR14 at `5bc3e7b`; all four source
+checks passed at `ac8fa38`. Pages 42275164404 passes. All 82 actual public
+assets match the audited 64-group build, with rendered 320–1920px and enlarged
+text/controller checks. The full source suite at `5bc3e7b` was dispatched as
+42275167451 with publication disabled.
+
+Review of the native qualification runner then found an unconditional cleanup
+RC quit before player identity was known, plus a workspace backup overwritten
+by interrupted retries. The test runner now refuses existing apps, requires
+the exact current listener PID for commands/cleanup, and restores a pending
+original workspace before retry capture. This changes no shipped app code.
+Review/check this correction and build the final source candidate including it;
+do not promote the earlier build as the completed handoff. Local native tests
+still need disk headroom and a normal-user installation.
+
 The user expanded this milestone to dedicated shortcuts for all 60 detailed
 settings plus rating step, a complete shared hotkey library, and hotkey-saved
 JSON restored at startup. The current worktree is

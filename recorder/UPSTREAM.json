@@ -165,7 +165,7 @@
   "adaptations": {
     "README.md": "Embedded component build and local links; VLC+ companion URL.",
     "src-tauri/src/state.rs": "Use VLC+ hosted companion; require positive current-child subscription acknowledgements as well as exact XDF headers before playback.",
-    "scripts/check-native-vlc-recording.mjs": "Use bundled sample; explicitly poll awaited snapshots for markers; query volume while playing because paused RC refuses it.",
+    "scripts/check-native-vlc-recording.mjs": "Use bundled sample; poll awaited marker snapshots; query volume while playing; refuse existing apps and require exact current listener PID for commands/cleanup; preserve and recover the original workspace across interrupted retries.",
     "scripts/smoke-windows-installer.ps1": "Read current embedded version and verify the exact built executable before hosted installer qualification.",
     "web/vlc-hotkeys.js": "Shared 64-group library for exclusive modes, all characters, layout, appearance, colors, mappings, grid and v3 JSON save/restore; bounded category pagination with measured labels.",
     "companion/vlc-hotkeys.js": "Generated identical copy of the shared hotkey module.",

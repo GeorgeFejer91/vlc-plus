@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createServer, createConnection } from "node:net";
 import { readFile, writeFile, mkdir, stat, unlink } from "node:fs/promises";
 import { resolve, join } from "node:path";
@@ -20,9 +20,24 @@ const video = resolve(process.env.VLC_TEST_MEDIA || "../examples/media/dictator-
 const recorderExe = process.env.RECORDER_TEST_EXE || resolve(root, "src-tauri/target/release/remote-lsl-recorder.exe");
 for (const file of [vlcExe, video, recorderExe]) assert.equal((await stat(file)).isFile(), true);
 const config = join(process.env.APPDATA, "dev.georgefejer.remotelslrecorder/workspace.json");
+const running = execFileSync("powershell.exe", ["-NoProfile", "-Command",
+  "@(Get-Process -Name vlc,remote-lsl-recorder,LabRecorderCLI -ErrorAction SilentlyContinue).Id -join ','"],
+{ encoding: "utf8", windowsHide: true, timeout: 10000 }).trim();
+assert.equal(running, "", "Close existing player/Recorder processes before native qualification");
+const backupPath = join(output, "workspace-backup.json");
+const priorBackup = await readFile(backupPath, "utf8").then(JSON.parse).catch(error => {
+  if (error.code !== "ENOENT") throw error;
+  return null;
+});
+if (priorBackup?.pending) {
+  assert.equal(priorBackup.path, config, "Pending workspace backup belongs to another profile");
+  if (priorBackup.existed) await writeFile(config, Buffer.from(priorBackup.content, "base64"));
+  else await unlink(config).catch(error => { if (error.code !== "ENOENT") throw error; });
+}
 const previous = await readFile(config).catch(error => { if (error.code !== "ENOENT") throw error; return null; });
-await writeFile(join(output, "workspace-backup.json"), JSON.stringify({ path: config,
-  existed: previous !== null, content: previous?.toString("base64") ?? null }, null, 2));
+const workspaceBackup = { path: config, pending: true,
+  existed: previous !== null, content: previous?.toString("base64") ?? null };
+await writeFile(backupPath, JSON.stringify(workspaceBackup, null, 2));
 async function freePort() {
   const server = createServer();
   await new Promise(done => server.listen(0, "127.0.0.1", done));
@@ -33,10 +48,19 @@ async function freePort() {
 const rcPort = await freePort();
 const debugPort = await freePort();
 let vlcPid, affectSource, markerSource;
+function ownsListener() {
+  if (!Number.isSafeInteger(vlcPid) || vlcPid <= 0) return false;
+  try {
+    return execFileSync("powershell.exe", ["-NoProfile", "-Command",
+      `@(Get-NetTCPConnection -LocalPort ${rcPort} -State Listen -ErrorAction SilentlyContinue).OwningProcess -join ','`],
+    { encoding: "utf8", windowsHide: true, timeout: 10000 }).trim() === String(vlcPid);
+  } catch { return false; }
+}
 const recorder = spawn(recorderExe, [], { windowsHide: false, stdio: "ignore",
   env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${debugPort} --remote-debugging-address=127.0.0.1` } });
 await writeFile(join(output, "processes.json"), JSON.stringify({ recorderPid: recorder.pid, rcPort, debugPort, vlcExe, video }, null, 2));
 async function rc(command, acknowledgement = command) {
+  assert.ok(ownsListener(), "RC commands require the exact launched player's current listener");
   return new Promise((done, reject) => {
     const socket = createConnection({ host: "127.0.0.1", port: rcPort });
     const timer = setTimeout(() => { socket.destroy(); reject(new Error(`RC timeout: ${command}`)); }, 5000);
@@ -170,7 +194,7 @@ try {
       }).catch(error => console.error(`Recording cleanup needs attention: ${error.message}`));
     }
   }
-  await new Promise(done => {
+  if (ownsListener()) await new Promise(done => {
     const socket = createConnection({ host: "127.0.0.1", port: rcPort });
     const timer = setTimeout(() => { socket.destroy(); done(); }, 5000);
     let response = "";
@@ -189,5 +213,7 @@ try {
   if (recorder.exitCode !== null) {
     if (previous) await writeFile(config, previous);
     else await unlink(config).catch(error => { if (error.code !== "ENOENT") throw error; });
+    workspaceBackup.pending = false;
+    await writeFile(backupPath, JSON.stringify(workspaceBackup, null, 2));
   } else console.error("Owned Recorder remains open; close it before restoring the saved workspace.");
 }
