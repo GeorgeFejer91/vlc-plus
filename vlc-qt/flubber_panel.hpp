@@ -453,7 +453,7 @@ public:
     }
     bool handleSettingsKey( QKeyEvent *event, Qt::KeyboardModifiers modifiers )
     {
-        const int key = event->key();
+        int key = event->key();
         quint32 windowsVirtualKey = 0;
 #ifdef Q_OS_WIN
         windowsVirtualKey = event->nativeVirtualKey();
@@ -466,6 +466,13 @@ public:
                 applyDedicatedSetting( dedicated, modifiers.testFlag( Qt::ShiftModifier ) ? -1 : 1 );
             return true;
         }
+#ifdef Q_OS_WIN
+        if( modifiers == ( Qt::ControlModifier | Qt::AltModifier ) )
+        {
+            const int physicalKey = flubberQtKey( windowsVirtualKey );
+            if( physicalKey ) key = physicalKey;
+        }
+#endif
         const bool arrow = key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down;
         const bool cycle = key == Qt::Key_G && ( modifiers == Qt::AltModifier ||
             modifiers == ( Qt::AltModifier | Qt::ShiftModifier ) );

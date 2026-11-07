@@ -26,22 +26,59 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ## Active milestone: keyboard, joint handoff and recording qualification
 
-### Latest status (2026-11-06)
+### Latest status (2026-11-07)
 
-The expanded feature change is merged as PR14 at `5bc3e7b`; all four source
-checks passed at `ac8fa38`. Pages 42275164404 passes. All 82 actual public
-assets match the audited 64-group build, with rendered 320–1920px and enlarged
-text/controller checks. The full source suite at `5bc3e7b` was dispatched as
-42275167451 with publication disabled.
+Application source `0edb694` passed all four exact-main source checks
+(42277960432) and full installer suite 42277964086. Its exact joint installer
+was downloaded and SHA-256 verified as
+`6a0d36b342ca898051f27fdc8c760843ff8726e9725e70979a2ed727cc8ab29a`
+(1,029,268,105 bytes), installed through an ordinary-user Explorer broker and
+verified against 701 immutable VLC files plus Recorder/engine/launcher hashes.
+The actual desktop shortcut opened both ordinary-user apps and both LSL streams.
 
-Review of the native qualification runner then found an unconditional cleanup
-RC quit before player identity was known, plus a workspace backup overwritten
-by interrupted retries. The test runner now refuses existing apps, requires
-the exact current listener PID for commands/cleanup, and restores a pending
-original workspace before retry capture. This changes no shipped app code.
-Review/check this correction and build the final source candidate including it;
-do not promote the earlier build as the completed handoff. Local native tests
-still need disk headroom and a normal-user installation.
+The real Recorder button -> Rust -> VLC -> XDF/CSV test passed with Windows
+injected input. Independent pyxdf/CSV inspection found 3,169 affect samples at
+29.999994 Hz, 2,487 CSV rows, positive/negative values on both axes, monotonic
+clocks and Start/Pause/Resume/Stop markers. Paused time and playback volume
+were preserved during affect-arrow input. Busy-port refusal also passed without
+launching a player or sending quit to the foreign listener. Native controls
+observed all nine faces, exclusive modes and exact v3 JSON restoration after
+an unsaved adjustment and restart. These are injected-input checks, not a
+physical-keyboard or scientific display-onset claim.
+
+**Publication hold: Windows GUI OEM shortcuts.** Independent review confirmed
+that Alt+F legitimately moves focus to Qt, where German OEM6 arrives as acute
+and OEM4 as backslash. The native route recognizes the physical bracket keys;
+the GUI legacy settings route does not. The installed check retained step 10
+instead of incrementing to 11. Branch `codex/gui-oem-hotkeys` adds a failing
+Windows GUI regression and makes the existing Windows CI job run the panel.
+Hosted Windows run 42318768072 reproduced the regression at panel exit 151
+before the application fix. The fix reuses native key normalization after
+dedicated matching, retains digit-driver priority and text/modal guards, and
+adds bracket and resize claim/press/repeat/modifier coverage. Independent
+review found no remaining issue. Shared help clarifies German key labels and
+the layout alternative when desktop screenshots reserve Alt+S; rendered
+Recorder/site checks pass at 320–1920px and 200% text. Green Windows/Linux CI,
+exact-main installer CI and repeated installed qualification remain required.
+Do not promote 42277964086.
+
+The earlier disk blocker is cleared. User-authorized housekeeping relocated
+34 inactive/damaged checkouts (119.5 GB) intact to Proton sync, preserved nine
+WIP branches with independently verified recovery bundles, cleaned eleven
+worktrees and recovered about 16 GB from rebuildable caches. Primary repos,
+active shared-index worktrees and recordings were preserved. Cloud upload is
+still pending. Native test profile backups are restored after each closed
+attempt. The screenshot utility's conflicting Alt+S was temporarily isolated
+for QA and restored to On with its window returned to the tray.
+
+The 64-group live guide remains deployed, with prior real HTTPS/82-asset and
+320–1920px/enlarged-text evidence. Public download links intentionally remain
+on the earlier release. Local receipts and the one-way RC command/readiness
+corrections are recorded under ignored `build/`; do not treat a sent Flubber
+variable command as an acknowledged RC reply. Continue from the existing
+normal-user wrappers and `build/ACTIVE-QUALIFICATION.json`.
+
+### Prior expansion evidence
 
 The user expanded this milestone to dedicated shortcuts for all 60 detailed
 settings plus rating step, a complete shared hotkey library, and hotkey-saved

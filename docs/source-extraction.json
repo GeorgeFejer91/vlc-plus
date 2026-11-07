@@ -183,7 +183,7 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "5b367885afb02ee14d1243517d3178c1c82df130b614e0780b7c02c7ac5e0a2f",
+      "standaloneSha256": "f0448bf49e47f8504064cdfa061fa47db4ea457ed06a86a6436eca1cc4728691",
       "adaptation": "Exclusive representation/all nine characters; scoped native Windows video-thread routing; dedicated shortcuts for all detailed settings; atomic v3 JSON snapshots with rating step and legacy v2 import/startup precedence; focused regression coverage preserves acquisition and source lineage."
     },
     {
@@ -197,7 +197,7 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "43eb3ccd9a28419cb5c0bfc783a2abf8958f76b0cb0d139ea194d8877e3ece0a",
+      "standaloneSha256": "170e6b11f3609e74d5042b9e25fa327f2f083884288fe10984e53334f75df99d",
       "adaptation": "Exclusive representation/all nine characters; scoped native Windows video-thread routing; dedicated shortcuts for all detailed settings; atomic v3 JSON snapshots with rating step and legacy v2 import/startup precedence; focused regression coverage preserves acquisition and source lineage."
     },
     {

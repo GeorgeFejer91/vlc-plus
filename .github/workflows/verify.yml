@@ -30,6 +30,9 @@ jobs:
       - name: Own native video message loop and teardown
         shell: pwsh
         run: ./vlc-qt/test-native-keys.ps1 -QtBin '${{ steps.msys.outputs.msys2-location }}/mingw64/bin'
+      - name: Windows Qt panel and translated GUI shortcuts
+        shell: pwsh
+        run: ./vlc-qt/test-panel.ps1 -QtBin '${{ steps.msys.outputs.msys2-location }}/mingw64/bin' -AppearanceJson examples/planner-appearance.v1.json
   recorder:
     runs-on: windows-2025
     timeout-minutes: 30
