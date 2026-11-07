@@ -14,6 +14,41 @@ Evidence must match its claim. Use `VERIFIED`, `PARTIAL`, `BLOCKED`, or
 
 ## Focused checks
 
+### Final 0.3.3 installed qualification — 2026-11-07
+
+VERIFIED: application source `2713d42`, all four main source jobs in
+42320783208 and full same-checkout suite 42320785383. The downloaded joint
+installer SHA-256 is
+`1695bd9b269ceaa530bcddf89acf0ffe93492b1b72e784eb803ed02370b1088f`.
+Ordinary-user installation checks all 701 immutable VLC files, exact Recorder/
+engine/launcher hashes and the actual Explorer desktop shortcut/both streams.
+
+VERIFIED: real installed Recorder button through Rust, VLC, LSL and clean XDF
+stop. Independent pyxdf/CSV inspection finds 1,336 affect samples at 29.999989 Hz,
+987 CSV rows, both axes crossing neutral, finite bounded values, monotonic
+clocks and Start/Pause/Resume/Stop markers. Paused media time and volume remain
+unchanged during affect-arrow input. Busy-port refusal preserves the foreign
+listener and original workspace without launching VLC or sending quit.
+
+VERIFIED: installed exclusive modes/all nine faces, layout/size, dedicated
+appearance/mapping/grid controls, German GUI keys, all eight color Cancel paths,
+full v3 save/unsaved-adjustment/restart equality and restored VLC arrows. The
+three original profile/workspace files are restored byte-for-byte; temporary
+Alt+S screenshot isolation is reverted and Start with Windows stays On.
+
+Windows GUI OEM regression reproduced red exit 151 in 42318768072 before PR16;
+the shared physical-key fix passes Windows and Linux panel gates. Local native
+QA waits for app hydration and actual modal closure, preserves PID/loopback
+ownership checks and all original process-exit/data assertions. No forced kill
+or privacy/security consent is automated. This is synthetic/injected Windows
+input qualification, not physical-keyboard, phone/device or display timing.
+
+Recorder/browser and deployed-guide checks pass all 64 hotkey groups, category
+navigation, visible focus, 320–1920px, 200% text/spacing and bundled controller
+navigation. Final publication state is recorded in `PROJECT.md`. Earlier
+sections below retain historical evidence; their pending gates are superseded
+by this named-source qualification.
+
 ### Dedicated hotkeys and v3 snapshots — 2026-11-06
 
 VERIFIED locally: shared native matcher/hook tests and the offscreen Qt panel
