@@ -1,5 +1,24 @@
 # Session scope — 2026-11-07
 
+Current task: make the desktop Recorder's combined playback/recording action
+read **Play VLC video and start recording**, with a VLC-style traffic cone.
+Reuse the existing Rust sequence that subscribes recording before playback;
+preserve the separate launch-from-file action and its setup. Allowed changes
+are the Recorder button markup/style, local cone asset, rendered regression,
+help copy and this task's handoff. Native commands, acquisition, remote grants,
+saved formats and the recording engine stay unchanged. Initial primary checkout
+is clean at `7cd39a8`; work proceeds on `codex/vlc-record-play-cone`.
+Run the existing JavaScript, rendered Recorder and source/context checks.
+
+Completed: cone buttons and full measured labels, text-scaled default panel
+width, keyboard/rendered regressions and matching help. All 23 JS tests,
+Recorder UI/tab/sharing checks, site build/safety/rendering, source/context
+checks and the locked release application build pass. See `for-ai/PROJECT.md`
+for binary identity and handoff limits. The installed Recorder remains open;
+no installed app or remote publication was changed.
+
+## Earlier qualification scope
+
 Post-qualification documentation is staged locally on
 `codex/qualified-release-docs`, based on application source `2713d42`.
 Allowed changes are release/download prose, native/shared help copy and the

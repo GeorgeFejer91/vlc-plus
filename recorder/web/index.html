@@ -34,8 +34,14 @@
         <div class="record-actions">
           <button id="record-start" type="button" class="primary" data-fit-text="action">Start recording</button>
           <button id="record-stop" type="button" class="danger" data-fit-text="action" disabled>Stop recording</button>
-          <button id="record-play" type="button" class="secondary" data-fit-text="action">Record and play VLC+</button>
-          <button id="vlc-launch-record" type="button" class="secondary" data-fit-text="action">Start VLC+ and record</button>
+          <button id="record-play" type="button" class="secondary vlc-record-action" title="Start recording the selected streams, then play the paused VLC+ video.">
+            <img src="vlc-cone.svg" alt="" width="24" height="24">
+            <span data-fit-text="action">Play VLC video and start recording</span>
+          </button>
+          <button id="vlc-launch-record" type="button" class="secondary vlc-record-action">
+            <img src="vlc-cone.svg" alt="" width="24" height="24">
+            <span data-fit-text="action">Start VLC+ and record</span>
+          </button>
         </div>
         <div class="record-state" role="status">
           <span id="record-indicator" aria-hidden="true"></span>
@@ -120,7 +126,7 @@
         <label for="vlc-video">Video path for Start VLC+ and record</label>
         <input id="vlc-video" type="text" placeholder="C:\Videos\clip.mp4" autocomplete="off" aria-describedby="vlc-help">
       </div>
-      <p id="vlc-help">Use an unused port. Start VLC+ and record opens this video paused and records the selected streams before playback. Record and play resumes an open, paused player. Stop recording finishes the XDF; control playback in VLC+.</p>
+      <p id="vlc-help">Use an unused port. Start VLC+ and record opens this video paused and records the selected streams before playback. Play VLC video and start recording uses an open, paused player. Stop recording finishes the XDF; control playback in VLC+.</p>
     </section>
     <section id="vlc-library" class="vlc-library" aria-label="VLC+ hotkey library" hidden>
       <div class="vlc-library-heading">

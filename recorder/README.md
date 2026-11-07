@@ -39,7 +39,13 @@ marker stream named `Recorder input` and shows the events in the marker table.
 The recorder includes that stream in XDF, including when a toggle is enabled
 after recording starts. Input in other applications is outside this capture.
 
-## Record and play VLC+
+## Play VLC video and start recording
+
+The cone button **Play VLC video and start recording** starts XDF recording
+and playback of an open, paused VLC+ video in one action. It waits until the
+recorder subscribes to the selected streams before playing the video, so its
+start marker is captured. Configure the session and select that player's
+affect and marker streams first; **VLC+ setup** holds its local control port.
 
 For one-button launch, open **VLC+ setup**, enter an absolute local video path
 and unused control port, and apply the participant and recording folder.
@@ -66,8 +72,8 @@ The helper selects English RC responses, which this local integration expects.
 In Recorder, apply the participant and recording folder, then select that
 player's `VLC_Flubber_Affect` and `VLC_Flubber_Markers` streams. Hover a stream
 to check its process-specific source ID. **VLC+ setup** holds the matching
-control port (42123 by default). **Record and play VLC+** checks that a video
-is loaded and paused, starts XDF recording, waits for the selected stream
+control port (42123 by default). **Play VLC video and start recording** checks
+that a video is loaded and paused, starts XDF recording, waits for the selected stream
 headers, and asks VLC+ to play. It confirms VLC's playing state. These are
 ordered operations, not a claim of simultaneous hardware/display onset.
 

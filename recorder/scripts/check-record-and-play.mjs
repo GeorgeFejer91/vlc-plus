@@ -15,7 +15,7 @@ const server = createServer(async (req, res) => {
     const path = resolve(root, `.${new URL(req.url, "http://localhost").pathname}`);
     if (!path.startsWith(root + "/") && !path.startsWith(root + "\\")) throw new Error("Outside root");
     const bytes = await readFile(path);
-    res.setHeader("Content-Type", ({ ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".woff2": "font/woff2" })[extname(path)] || "application/octet-stream");
+    res.setHeader("Content-Type", ({ ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".woff2": "font/woff2", ".svg": "image/svg+xml" })[extname(path)] || "application/octet-stream");
     res.end(bytes);
   } catch { res.writeHead(404); res.end(); }
 });
@@ -43,9 +43,12 @@ try {
   });
   await page.addInitScript(() => { window.__TAURI__ = { core: { invoke: (command, args = {}) => window.fixtureInvoke(command, args) } }; });
   await page.goto(`http://127.0.0.1:${server.address().port}/web/index.html`);
-  const start = page.getByRole("button", { name: "Record and play VLC+", exact: true });
+  const start = page.getByRole("button", { name: "Play VLC video and start recording", exact: true });
   const launch = page.getByRole("button", { name: "Start VLC+ and record", exact: true });
   await start.waitFor();
+  for (const action of [start, launch]) {
+    assert.equal(await action.locator('img[alt=""]').evaluate(icon => icon.complete && icon.naturalWidth > 0), true);
+  }
   await launch.click();
   assert.equal(await page.locator("#vlc-dialog").evaluate(el => el.open), true);
   assert.equal(calls.some(call => call.command === "start_vlc_and_record"), false);
@@ -61,7 +64,11 @@ try {
   await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
   await page.getByLabel("VLC+ control port").fill("42124");
   await page.getByRole("button", { name: "Close VLC+ setup" }).click();
-  await start.click();
+  await start.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  assert.equal(await start.evaluate(el => el.matches(":focus-visible") && getComputedStyle(el).outlineStyle !== "none"), true);
+  await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector("#record-phase").textContent === "Recording").catch(async error => {
     console.error(JSON.stringify({ calls, status: await page.locator("#system-status").textContent(), port: await page.locator("#vlc-port").inputValue() }));
     throw error;
@@ -109,6 +116,18 @@ try {
     await page.evaluate(() => document.fonts.ready);
     assert.equal(await start.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
     assert.equal(await launch.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
+    await page.waitForFunction(() => [...document.querySelectorAll(".vlc-record-action [data-fit-text]")].every(label => ["fit", "no-fit"].includes(label.dataset.fitState)));
+    for (const action of [start, launch]) {
+      assert.equal(await action.evaluate(button => {
+        const icon = button.querySelector("img").getBoundingClientRect();
+        const label = button.querySelector("[data-fit-text]");
+        const text = label.getBoundingClientRect();
+        const bounds = button.getBoundingClientRect();
+        return ["fit", "no-fit"].includes(label.dataset.fitState)
+          && label.scrollWidth <= label.clientWidth + 1 && label.scrollHeight <= label.clientHeight + 1
+          && icon.right < text.left && text.right <= bounds.right && text.bottom <= bounds.bottom;
+      }), true, `Cone and full label must fit at ${width}×${height}`);
+    }
     await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
     assert.equal(await page.locator("#vlc-dialog").evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
     await page.getByRole("button", { name: "Hotkeys", exact: true }).click();
@@ -131,6 +150,7 @@ try {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.addStyleTag({ content: "html {font-size:200% !important} #record-play {line-height:1.5 !important;letter-spacing:.12em !important;word-spacing:.16em !important}" });
   assert.equal(await start.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
+  assert.equal(await page.locator(".setup-panel").evaluate(panel => panel.scrollWidth <= panel.clientWidth + 1 && panel.scrollHeight <= panel.clientHeight + 1), true, "Enlarged controls and the session form must remain visible");
   await page.screenshot({ path: resolve(output, "recorder-large-text.png"), fullPage: true });
   await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
   assert.equal(await page.locator("#vlc-settings").isVisible(), true);
