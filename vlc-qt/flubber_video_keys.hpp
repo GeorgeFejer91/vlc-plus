@@ -17,14 +17,31 @@ struct FlubberNativeKeyEvent : QEvent
         static const int type = QEvent::registerEventType();
         return static_cast<QEvent::Type>( type );
     }
-    FlubberNativeKeyEvent( int value, Qt::KeyboardModifiers mods, bool repeated, int mode, quint64 revision = 0 )
-        : QEvent( eventType() ), key( value ), modifiers( mods ), repeat( repeated ), arrowModeAfter( mode ), guiRevision( revision ) {}
+    FlubberNativeKeyEvent( int value, Qt::KeyboardModifiers mods, bool repeated, int mode,
+                           quint64 revision = 0, bool pressed = true )
+        : QEvent( eventType() ), key( value ), modifiers( mods ), repeat( repeated ),
+          arrowModeAfter( mode ), guiRevision( revision ), down( pressed ) {}
     int key;
     Qt::KeyboardModifiers modifiers;
     bool repeat;
     int arrowModeAfter;
     quint64 guiRevision;
+    bool down;
 };
+
+enum FlubberArrow { FlubberLeft = 1, FlubberRight = 2, FlubberUp = 4, FlubberDown = 8 };
+
+inline unsigned flubberArrow( int key )
+{
+    switch( key )
+    {
+        case Qt::Key_Left: return FlubberLeft;
+        case Qt::Key_Right: return FlubberRight;
+        case Qt::Key_Up: return FlubberUp;
+        case Qt::Key_Down: return FlubberDown;
+        default: return 0;
+    }
+}
 
 inline int flubberWindowsAlphanumericKey( quint32 key )
 {
@@ -87,8 +104,7 @@ inline bool flubberReservedKey( int key, Qt::KeyboardModifiers mods, bool arrows
 {
     mods &= ~Qt::KeypadModifier;
     if( flubberSettingKey( key, mods ).action != NoFlubberSetting ) return true;
-    if( key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down )
-        return arrows;
+    if( flubberArrow( key ) ) return arrows;
     if( mods == Qt::AltModifier && key == Qt::Key_F ) return true;
     if( mods == Qt::AltModifier && ( key == Qt::Key_W || key == Qt::Key_A || key == Qt::Key_S ||
         key == Qt::Key_D || key == Qt::Key_J || key == Qt::Key_Equal || key == Qt::Key_Plus || key == Qt::Key_Minus ) ) return true;
@@ -180,16 +196,16 @@ class FlubberVideoKeys
                     if( ( GetKeyState( VK_MENU ) & 0x8000 ) || ( message.lParam & ( LPARAM( 1 ) << 29 ) ) ) mods |= Qt::AltModifier;
                     if( key == Qt::Key_Equal && ( mods & Qt::ShiftModifier ) ) key = Qt::Key_Plus;
                     const bool foreground = GetAncestor( GetForegroundWindow(), GA_ROOT ) == GetAncestor( message.hwnd, GA_ROOT );
-                    const bool arrow = key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down;
+                    const bool arrow = flubberArrow( key ) != 0;
                     bool consume = !menu && arrow && entry.arrows;
                     if( down && message.wParam == VK_MENU && !( message.lParam & ( LPARAM( 1 ) << 30 ) ) ) entry.altChord = false;
                     if( up && message.wParam == VK_MENU && entry.altChord ) { consume = true; entry.altChord = false; }
                     if( !menu && foreground && flubberReservedKey( key, mods, entry.arrows ) )
                     {
                         consume = true;
-                        if( down )
+                        if( down || arrow )
                         {
-                            const bool repeat = message.lParam & ( LPARAM( 1 ) << 30 );
+                            const bool repeat = down && ( message.lParam & ( LPARAM( 1 ) << 30 ) );
                             int mode = -1;
                             if( key == Qt::Key_F && mods == Qt::AltModifier ) mode = repeat ? int( entry.arrows ) : int( !entry.arrows );
                             if( mods == ( Qt::ControlModifier | Qt::ShiftModifier ) && ( key == Qt::Key_A || key == Qt::Key_M ) )
@@ -202,7 +218,9 @@ class FlubberVideoKeys
                             }
                             if( mods & Qt::AltModifier ) entry.altChord = true;
                             // Only queue to Qt; never block the video thread on GUI work.
-                            QCoreApplication::postEvent( entry.target, new FlubberNativeKeyEvent( key, mods, repeat, mode, entry.owner->guiRevision_ ) );
+                            QCoreApplication::postEvent( entry.target,
+                                new FlubberNativeKeyEvent( key, mods, repeat, mode, entry.owner->guiRevision_, down ),
+                                Qt::HighEventPriority );
                         }
                     }
                     if( down && entry.owner->trace_ && ( consume || key == Qt::Key_F || key == Qt::Key_G || key == Qt::Key_H || arrow ) )

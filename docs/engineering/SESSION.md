@@ -1,21 +1,22 @@
 # Session scope — 2026-11-07
 
-Current task: show received valence/arousal scores in the Recorder signal
-viewer (confirmed by the user), and merge the cone into the orange button's
-SVG silhouette. Allowed changes are Recorder presentation, a narrow score
-view module, focused tests, help and task handoff. Native commands, acquisition,
-remote grants, saved formats and the recording engine stay unchanged.
-Initial checkout is clean at `990ba6d`
-on `codex/vlc-record-play-cone`.
-Run the existing JavaScript, rendered Recorder and source/context checks.
+The VLC+ keyboard feedback and LSL goal starts from `4bf8649` on
+`codex/vlc-record-play-cone`. Restore the four missing Git metadata paths
+from their unambiguous sync-conflict copies before edits. Preserve the copies.
 
-Completed: received score readouts with units and explicit missing/disconnected
-states, and an inline SVG joining the cone and orange button silhouette.
-All 24 JS tests, rendered values/update/deselection/keyboard/320–1920px/200%
-checks, source/context checks and the locked release build pass. See
-`for-ai/PROJECT.md` for exact binary identity. Native player UI and native
-XDF qualification are outside this follow-up. The installed Recorder remains
-open and unchanged; no active recording or remote publication was changed.
+The player applies diagonal held-arrow movement and publishes atomic affect
+pairs at nominal 480 Hz. Playback events and CSV use the 30 Hz schedule.
+The Qt grid reuses its color field between affect changes. Rust, offscreen Qt,
+native key routing, decoded playback and LabRecorder XDF checks passed.
+Timings and scope are in `for-ai/PROJECT.md`. The local Windows stage is
+`build/latency-runtime/`. Its Qt module SHA-256 is
+`ed56173126da9c7347a8b7303341723d8160456181d6e4ad3c43d17b7b10dbdb`
+and its bridge SHA-256 is
+`95806f9f175e093bd3363c7f64d2fb3a69a870b8f16bccd6c16a130d72819e86`.
+The full build hit disk capacity during source extraction. The successful
+stage uses the relinked Qt target with the verified VLC runtime from the
+installed release. Packaging and hardware timing are separate verification
+steps. This pass produced a local candidate.
 
 ## Earlier qualification scope
 

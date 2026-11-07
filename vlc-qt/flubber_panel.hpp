@@ -144,6 +144,18 @@ public:
         }
         if( parsed && requestedStep >= 1 && requestedStep <= 100 ) stepPercent_ = requestedStep;
         clock_.start();
+        faceClock_.start();
+        arrowRepeat_.setTimerType( Qt::PreciseTimer );
+        arrowRepeat_.setInterval( 33 );
+        connect( &arrowRepeat_, &QTimer::timeout, this, [this]() {
+            if( !ratingWindowIsForeground() || QApplication::activeModalWidget() ||
+                QApplication::activePopupWidget() || textEditorOwnsShortcut() ||
+                ( QApplication::queryKeyboardModifiers() & ~Qt::KeypadModifier ) ||
+                ( rateAllowed_ && !rateAllowed_() ) )
+                clearHeldArrows();
+            else
+                stepHeldArrows();
+        } );
         qApp->installEventFilter( this );
         nativeKeys_.reset( new FlubberVideoKeys( this, arrowMode_ ) );
         QTimer *timer = new QTimer( this );
@@ -169,9 +181,6 @@ public:
                 if( height != this->height() ) setFixedHeight( height );
             }
             const qint64 elapsed = clock_.restart();
-            const double faceStep = qMin<qint64>( elapsed, 100 ) * .001 * faceRate_ / 10;
-            faceX_ += qBound( -faceStep, affectX_ - faceX_, faceStep );
-            faceY_ += qBound( -faceStep, affectY_ - faceY_, faceStep );
             const double frequency = mapped( "oscillationFrequency" );
             phase_ = std::fmod( phase_ + qMin<qint64>( elapsed, 100 ) * .001 * 2 * M_PI * frequency, 2 * M_PI );
             update();
@@ -189,8 +198,12 @@ public:
     /* Call only on the Qt GUI thread. Other threads must use a queued call. */
     void setAffect( double valence, double arousal )
     {
-        affectX_ = qBound( -1.0, valence, 1.0 );
-        affectY_ = qBound( -1.0, arousal, 1.0 );
+        const double x = qBound( -1.0, valence, 1.0 );
+        const double y = qBound( -1.0, arousal, 1.0 );
+        if( x == affectX_ && y == affectY_ ) return;
+        affectX_ = x;
+        affectY_ = y;
+        if( affectChanged_ ) affectChanged_( this->valence(), this->arousal() );
         update();
     }
     float valence() const { return float( affectX_ ); }
@@ -402,11 +415,12 @@ public:
     }
     QString appearanceLoadError() const { return appearanceLoadError_; }
     bool ratingActive() const { return ratingActive_; }
-    void stopRating() { releaseRating(); }
+    void stopRating() { clearHeldArrows(); releaseRating(); }
+    void setAffectChangedHandler( const std::function<void(float, float)> &handler ) { affectChanged_ = handler; }
     bool arrowMode() const { return arrowMode_; }
     void setArrowMode( bool enabled, bool syncNative = true )
     {
-        releaseRating();
+        stopRating();
         arrowMode_ = enabled;
         if( syncNative && nativeKeys_ ) nativeKeys_->setArrowMode( enabled );
         settings_->setValue( "Flubber/inputMode", enabled ? "arrows" : "mouse" );
@@ -419,6 +433,14 @@ public:
     }
     bool handleInputKey( QKeyEvent *event )
     {
+        const unsigned arrow = flubberArrow( event->key() );
+        if( event->type() == QEvent::KeyRelease )
+        {
+            if( !arrow || !arrowMode_ ) return false;
+            if( !event->isAutoRepeat() ) releaseArrow( arrow );
+            event->accept();
+            return true;
+        }
         if( event->type() != QEvent::KeyPress && event->type() != QEvent::ShortcutOverride ) return false;
         if( textEditorOwnsShortcut() ) return false;
         Qt::KeyboardModifiers modifiers = event->modifiers() & ~Qt::KeypadModifier;
@@ -431,22 +453,18 @@ public:
             event->accept();
             return true;
         }
-        if( !arrowMode_ ) return false;
-        int x = 0, y = 0;
-        switch( event->key() )
-        {
-            case Qt::Key_Left: x = -1; break;
-            case Qt::Key_Right: x = 1; break;
-            case Qt::Key_Up: y = 1; break;
-            case Qt::Key_Down: y = -1; break;
-            default: return false;
-        }
+        if( !arrowMode_ || !arrow ) return false;
         // Claim arrows before Qt/VLC shortcuts. Keep the existing supported-input
         // gate (including pause); ShortcutOverride never changes affect.
-        if( event->type() == QEvent::KeyPress && !modifiers && ( !rateAllowed_ || rateAllowed_() ) )
+        if( event->type() == QEvent::KeyPress && !event->isAutoRepeat() )
         {
-            const double step = stepPercent_ / 100.0;
-            setAffect( affectX_ + x * step, affectY_ + y * step );
+            if( modifiers || ( rateAllowed_ && !rateAllowed_() ) ) clearHeldArrows();
+            else if( !( heldArrows_ & arrow ) )
+            {
+                heldArrows_ |= arrow;
+                stepHeldArrows();
+                arrowRepeat_.start();
+            }
         }
         event->accept();
         return true;
@@ -911,7 +929,7 @@ protected:
         {
             if( !nativeKeys_ ) { event->accept(); return; }
             if( QApplication::activeModalWidget() || QApplication::activePopupWidget() || textEditorOwnsShortcut() )
-            { nativeKeys_->setArrowMode( arrowMode_ ); event->accept(); return; }
+            { clearHeldArrows(); nativeKeys_->setArrowMode( arrowMode_ ); event->accept(); return; }
             const FlubberNativeKeyEvent *native = static_cast<FlubberNativeKeyEvent *>( event );
             if( native->guiRevision != nativeKeys_->guiRevision() ) { event->accept(); return; }
             if( native->arrowModeAfter >= 0 ) setArrowMode( native->arrowModeAfter != 0, false );
@@ -923,8 +941,10 @@ protected:
             }
             else
             {
-                QKeyEvent key( QEvent::KeyPress, native->key, native->modifiers, QString(), native->repeat );
-                handleInputKey( &key );
+                QKeyEvent key( native->down ? QEvent::KeyPress : QEvent::KeyRelease,
+                               native->key, native->modifiers, QString(), native->repeat );
+                if( !flubberArrow( native->key ) || !native->down || ratingWindowIsForeground() )
+                    handleInputKey( &key );
             }
             event->accept(); return;
         }
@@ -932,6 +952,11 @@ protected:
     }
     bool eventFilter( QObject *watched, QEvent *event ) Q_DECL_OVERRIDE
     {
+        if( event->type() == QEvent::KeyRelease && heldArrows_ )
+        {
+            const auto *key = static_cast<QKeyEvent *>( event );
+            if( !key->isAutoRepeat() ) releaseArrow( flubberArrow( key->key() ) );
+        }
         if( ( event->type() == QEvent::KeyPress || event->type() == QEvent::ShortcutOverride ) &&
             !QApplication::activeModalWidget() && !QApplication::activePopupWidget() &&
             ratingWindowIsForeground() )
@@ -962,9 +987,13 @@ protected:
                 }
             }
         }
-        if( ratingActive_ && ( event->type() == QEvent::ApplicationDeactivate ||
-            ( watched == window() && event->type() == QEvent::WindowDeactivate ) ) )
-            interruptRating();
+        if( event->type() == QEvent::ApplicationDeactivate ||
+            ( watched == window() && event->type() == QEvent::WindowDeactivate ) )
+        {
+            clearHeldArrows();
+            if( nativeKeys_ ) nativeKeys_->setArrowMode( arrowMode_ );
+            if( ratingActive_ ) interruptRating();
+        }
         if( ratingActive_ && watched == window() &&
             ( event->type() == QEvent::Resize || event->type() == QEvent::Move ) )
             releaseRating();
@@ -1029,6 +1058,10 @@ protected:
     }
     void paintEvent( QPaintEvent * ) Q_DECL_OVERRIDE
     {
+        const double faceStep = qMin<qint64>( faceClock_.nsecsElapsed(), 100000000 ) * 1e-9 * faceRate_ / 10;
+        faceClock_.restart();
+        faceX_ += qBound( -faceStep, affectX_ - faceX_, faceStep );
+        faceY_ += qBound( -faceStep, affectY_ - faceY_, faceStep );
         QPainter painter( this );
         painter.fillRect( rect(), Qt::black );
         painter.setRenderHint( QPainter::Antialiasing );
@@ -1036,6 +1069,23 @@ protected:
     }
 
 private:
+    void clearHeldArrows()
+    {
+        heldArrows_ = 0;
+        arrowRepeat_.stop();
+    }
+    void releaseArrow( unsigned arrow )
+    {
+        heldArrows_ &= ~arrow;
+        if( !heldArrows_ ) arrowRepeat_.stop();
+    }
+    void stepHeldArrows()
+    {
+        const int x = bool( heldArrows_ & FlubberRight ) - bool( heldArrows_ & FlubberLeft );
+        const int y = bool( heldArrows_ & FlubberUp ) - bool( heldArrows_ & FlubberDown );
+        const double step = stepPercent_ / ( x && y ? 100.0 * qSqrt( 2.0 ) : 100.0 );
+        setAffect( affectX_ + x * step, affectY_ + y * step );
+    }
     bool textEditorOwnsShortcut( const QWidget *target = NULL ) const
     {
         const QWidget *candidates[] = { target, QApplication::focusWidget() };
@@ -1218,17 +1268,15 @@ private:
         else painter.setPen( Qt::NoPen );
         painter.drawPath( path );
     }
-    void drawGrid( QPainter &painter )
+    const QImage &gridBackground( int size, const QJsonObject &colors, bool corners, double opacity )
     {
-        const double side = qMax( 20.0, elementSide( GridKind ) );
-        const QPointF center = elementCenter( GridKind );
-        const QRectF field( center.x() - side / 2, center.y() - side / 2, side, side );
-        const QJsonObject colors = preset_.value( "visual" ).toObject().value( "colors" ).toObject();
+        if( gridBackground_.width() == size && gridBackgroundColors_ == colors &&
+            gridBackgroundCorners_ == corners && gridBackgroundOpacity_ == opacity )
+            return gridBackground_;
         const QColor up( colors.value( "up" ).toString() ), down( colors.value( "down" ).toString() );
         const QColor left( colors.value( "left" ).toString() ), right( colors.value( "right" ).toString() );
-        QImage fieldImage( qMax( 1, int( side ) ), qMax( 1, int( side ) ), QImage::Format_ARGB32_Premultiplied );
-        const bool corners = preset_.value( "presentation" ).toObject().value( "colorAnchors" ).toString() == QLatin1String( "corners" );
-        const double opacity = 1 - preset_.value( "visual" ).toObject().value( "transparency" ).toDouble();
+        const QColor anchors[4] = { up, down, left, right };
+        QImage fieldImage( size, size, QImage::Format_ARGB32_Premultiplied );
         for( int py = 0; py < fieldImage.height(); ++py )
         {
             QRgb *line = reinterpret_cast<QRgb *>( fieldImage.scanLine( py ) );
@@ -1250,7 +1298,6 @@ private:
                     const double total = w[0] + w[1] + w[2] + w[3];
                     for( double &weight : w ) weight = total > 0 ? weight / total : 0;
                 }
-                const QColor anchors[4] = { up, down, left, right };
                 double rgb[3] = { 183, 183, 183 };
                 for( int a = 0; a < 4; ++a )
                 {
@@ -1263,7 +1310,21 @@ private:
                                   qBound( 0, qRound( rgb[2] * opacity ), 255 ), qRound( opacity * 255 ) );
             }
         }
-        painter.drawImage( field, fieldImage );
+        gridBackground_ = fieldImage;
+        gridBackgroundColors_ = colors;
+        gridBackgroundCorners_ = corners;
+        gridBackgroundOpacity_ = opacity;
+        return gridBackground_;
+    }
+    void drawGrid( QPainter &painter )
+    {
+        const double side = qMax( 20.0, elementSide( GridKind ) );
+        const QPointF center = elementCenter( GridKind );
+        const QRectF field( center.x() - side / 2, center.y() - side / 2, side, side );
+        const QJsonObject visual = preset_.value( "visual" ).toObject();
+        const QJsonObject colors = visual.value( "colors" ).toObject();
+        const bool corners = preset_.value( "presentation" ).toObject().value( "colorAnchors" ).toString() == QLatin1String( "corners" );
+        painter.drawImage( field, gridBackground( int( side ), colors, corners, 1 - visual.value( "transparency" ).toDouble() ) );
         painter.setPen( QPen( QColor( 255, 255, 255, 80 ), grid_.value( "lineThickness" ).toDouble() ) );
         for( int col = 1; col < gridColumns_ - 1; ++col )
         {
@@ -1545,6 +1606,10 @@ private:
     FeedbackKind primary_;
     ElementLayout layers_[3];
     QJsonObject grid_;
+    QImage gridBackground_;
+    QJsonObject gridBackgroundColors_;
+    bool gridBackgroundCorners_ = false;
+    double gridBackgroundOpacity_ = 0.;
     int gridColumns_, gridRows_;
     QString faceId_;
     QImage faceAtlas_;
@@ -1558,8 +1623,11 @@ private:
     bool capturePending_;
     int cursorHideCalls_;
     std::function<void()> interrupted_;
+    std::function<void(float, float)> affectChanged_;
     std::function<bool()> rateAllowed_;
-    QElapsedTimer clock_;
+    unsigned heldArrows_ = 0;
+    QTimer arrowRepeat_;
+    QElapsedTimer clock_, faceClock_;
     double pointy_[192], rounded_[192], phases_[16], amplitudes_[16];
 };
 

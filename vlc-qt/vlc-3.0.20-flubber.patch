@@ -145,7 +145,7 @@ index 6e66afb..7a5f9bd 100644
      playlistWidget       = NULL;
      stackCentralOldWidget= NULL;
      lastWinScreen        = NULL;
-@@ -167,6 +179,33 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
+@@ -167,6 +179,36 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
               THEDP, destroyPopupMenu() );
  
      createMainWidget( settings );
@@ -160,6 +160,9 @@ index 6e66afb..7a5f9bd 100644
 +        free( value );
 +    }
 +    flubberBridge = new FlubberBridge();
++    flubberPanel->setAffectChangedHandler( [this]( float x, float y ) {
++        flubberBridge->setAffect( x, y );
++    } );
 +    if( !flubberBridge->ready() )
 +    {
 +        msg_Err( p_intf, "Flubber LSL/CSV bridge could not start; check flubber_bridge.dll" );
@@ -179,7 +182,7 @@ index 6e66afb..7a5f9bd 100644
  
      /**************
       * Status Bar *
-@@ -248,6 +287,8 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
+@@ -248,6 +290,8 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
  
      /* Register callback for the intf-popupmenu variable */
      var_AddCallback( p_intf->obj.libvlc, "intf-popupmenu", PopupMenuCB, p_intf );
@@ -188,17 +191,18 @@ index 6e66afb..7a5f9bd 100644
  
  
      /* Final Sizing, restoration and placement of the interface */
-@@ -269,6 +310,9 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
+@@ -269,6 +313,10 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
  
  MainInterface::~MainInterface()
  {
 +    if( flubberPanel ) flubberPanel->stopRating();
++    if( flubberPanel ) flubberPanel->setAffectChangedHandler( {} );
 +    flubberSamplingTimer->stop();
 +    delete flubberBridge;
      /* Unsure we hide the videoWidget before destroying it */
      if( stackCentralOldWidget == videoWidget )
          showTab( bgWidget );
-@@ -307,6 +351,8 @@ MainInterface::~MainInterface()
+@@ -307,6 +355,8 @@ MainInterface::~MainInterface()
      var_DelCallback( p_intf->obj.libvlc, "intf-show", IntfRaiseMainCB, p_intf );
      var_DelCallback( p_intf->obj.libvlc, "intf-toggle-fscontrol", IntfShowCB, p_intf );
      var_DelCallback( p_intf->obj.libvlc, "intf-popupmenu", PopupMenuCB, p_intf );
@@ -207,7 +211,7 @@ index 6e66afb..7a5f9bd 100644
  
      p_intf->p_sys->p_mi = NULL;
  }
-@@ -332,8 +378,8 @@ void MainInterface::recreateToolbars()
+@@ -332,8 +382,8 @@ void MainInterface::recreateToolbars()
  
      controls = new ControlsWidget( p_intf, b_adv, this );
      inputC = new InputControlsWidget( p_intf, this );
@@ -218,7 +222,7 @@ index 6e66afb..7a5f9bd 100644
                                controls );
  
      if( fullscreenControls )
-@@ -465,21 +511,10 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
+@@ -465,21 +515,10 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
      stackCentralW = new QVLCStackedWidget( main );
  
      /* Bg Cone */
@@ -242,7 +246,7 @@ index 6e66afb..7a5f9bd 100644
  
      /* And video Outputs */
      if( var_InheritBool( p_intf, "embedded-video" ) )
-@@ -488,6 +523,35 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
+@@ -488,6 +527,35 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
          stackCentralW->addWidget( videoWidget );
      }
      mainLayout->insertWidget( 1, stackCentralW );
@@ -278,7 +282,7 @@ index 6e66afb..7a5f9bd 100644
  
      stackWidgetsSizes[bgWidget] =
          creationSettings->value( "MainWindow/bgSize", QSize( 600, 0 ) ).toSize();
-@@ -499,9 +563,9 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
+@@ -499,9 +567,9 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
          creationSettings->value( "MainWindow/adv-controls", false ).toBool(), this );
      inputC = new InputControlsWidget( p_intf, this );
  
@@ -290,7 +294,7 @@ index 6e66afb..7a5f9bd 100644
          controls );
  
      /* Visualisation, disabled for now, they SUCK */
-@@ -530,6 +594,162 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
+@@ -530,6 +598,162 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
          setWindowFlags( windowFlags() | Qt::WindowStaysOnTopHint );
  }
  
@@ -453,7 +457,7 @@ index 6e66afb..7a5f9bd 100644
  inline void MainInterface::initSystray()
  {
      bool b_systrayAvailable = QSystemTrayIcon::isSystemTrayAvailable();
-@@ -745,6 +965,8 @@ void MainInterface::getVideoSlot( struct vout_window_t *p_wnd,
+@@ -745,6 +969,8 @@ void MainInterface::getVideoSlot( struct vout_window_t *p_wnd,
      {
          videoWidget = new VideoWidget( p_intf, stackCentralW );
          stackCentralW->addWidget( videoWidget );
@@ -462,7 +466,7 @@ index 6e66afb..7a5f9bd 100644
      }
      *res = videoWidget->request( p_wnd );
      if( *res ) /* The videoWidget is available */
-@@ -1766,6 +1988,16 @@ void MainInterface::voutReleaseMouseEvents()
+@@ -1766,6 +1992,16 @@ void MainInterface::voutReleaseMouseEvents()
   *  We don't show the menu directly here because we don't want the
   *  caller to block for a too long time.
   *****************************************************************************/
