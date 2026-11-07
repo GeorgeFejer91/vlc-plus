@@ -49,7 +49,6 @@ const elements = {
   recordDetail: byId("record-detail"),
   recordStart: byId("record-start"),
   recordStop: byId("record-stop"),
-  recordPlay: byId("record-play"),
   vlcPort: byId("vlc-port"),
   vlcVideo: byId("vlc-video"),
   vlcLaunchRecord: byId("vlc-launch-record"),
@@ -474,7 +473,6 @@ function renderRecording(recording) {
   elements.recordIndicator.classList.toggle("active", active);
   elements.recordPhase.textContent = titleCase(recording.phase);
   elements.recordStart.disabled = active || busy;
-  elements.recordPlay.disabled = active || busy;
   elements.vlcPort.disabled = active || busy;
   elements.vlcVideo.disabled = active || busy;
   elements.vlcLaunchRecord.disabled = active || busy;
@@ -513,21 +511,6 @@ elements.recordStart.addEventListener("click", () => {
 
 elements.recordStop.addEventListener("click", () => {
   void run("Finishing the XDF footer…", () => invoke("stop_recording")).catch(() => {});
-});
-
-elements.recordPlay.addEventListener("click", () => {
-  if (!elements.vlcPort.checkValidity()) {
-    showVlcSetup();
-    elements.vlcPort.reportValidity();
-    return;
-  }
-  void run("Starting recording, then VLC+ playback…", async () => {
-    await invoke("configure_session", {
-      participantId: elements.participant.value,
-      outputDirectory: elements.output.value,
-    });
-    return invoke("start_recording_and_play", { port: Number(elements.vlcPort.value) });
-  }).catch(() => {});
 });
 
 function showVlcSetup() {

@@ -26,25 +26,24 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ## Current follow-up: cone playback/recording button
 
-The desktop Recorder now labels its combined action **Play VLC video and start
-recording**, with a local orange-and-white cone. The separate launch-from-file
-action uses the same cone. Both retain their existing Rust commands and the
-subscription-before-playback sequence; no sampling, recording format or remote
-authority changed. The default setup width follows text enlargement, and the
-icon and label have separate geometry so Pretext measures the available label
-width.
+The desktop Recorder has one orange **Start VLC and record** cone button.
+It launches the configured video through the existing Rust command, subscribes
+recording, then starts playback. The separate paused-player button and its
+frontend handler were removed at the user's request. Native commands, sampling,
+recording formats and remote authority remain unchanged. Pretext measures the
+label separately from its cone; the default setup width follows text enlargement.
 
 Verified locally: 23 JavaScript tests, generated-source checks, source/provenance
-and context checks; headless Edge exercises both actions, keyboard activation,
+and context checks; headless Edge exercises the single action, keyboard activation,
 active-state locks, failure recovery, cone loading and label geometry at
-320–1920px, plus 200% text/spacing with the session form visible. External-tab
-and panel-sharing checks pass. Native playback/XDF was not rerun for this UI
+320–1920px, plus 200% text/spacing with the session form visible. The site build
+and rendered checks pass. Native playback/XDF was not rerun for this UI
 change; the prior installed evidence below applies to its named release only.
-Production build `pnpm tauri build --no-bundle -- --locked` passes; the executable
-is `recorder/src-tauri/target/release/remote-lsl-recorder.exe`, SHA-256
-`afda950a8858085f7fbbd5871684aed635cd76d6d7455a738bf773f0cc014bb2`.
-The site build, safety and rendered checks pass. Work is committed locally on
-`codex/vlc-record-play-cone`, based on clean `7cd39a8`. No push, installation or
+Production build `pnpm tauri build --no-bundle -- --locked` passes. Executable:
+`recorder/src-tauri/target/release/remote-lsl-recorder.exe`, SHA-256
+`b88f61d1f527890c31a267d381f5dc7ddd24ccf281bafee7bd1f57f28aded223`.
+Work is committed locally on
+`codex/vlc-record-play-cone`, based on clean `70e83c8`. No push, installation or
 release was performed. The installed Recorder was open and remains untouched;
 applying the rebuilt executable requires a separate handoff after it closes.
 The overall compatibility goal remains open.

@@ -147,8 +147,24 @@ h2 { --fit-preferred-size: 1rem; --fit-min-size: 0.93rem; line-height: 1.3; font
 .setup-panel .record-actions { margin-top: 12px; flex-wrap: wrap; }
 .setup-panel .record-actions button { flex: 1 0 max-content; }
 .setup-panel .record-actions .vlc-record-action { flex: 1 1 100%; }
-.vlc-record-action { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; max-width: 100%; }
-.vlc-record-action img { display: block; flex: none; }
+.vlc-record-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 52px;
+  padding: 8px 14px;
+  color: #301700;
+  background: linear-gradient(#ffa33e, #f1841b);
+  border-color: #ad500a;
+  box-shadow: inset 0 1px 0 #ffffff80, 0 2px 0 #ad500a;
+}
+.vlc-record-action:hover:not(:disabled) { background: linear-gradient(#ffb057, #f79532); border-color: #8e3e05; }
+.vlc-record-action:active:not(:disabled) { background: #ee8018; box-shadow: inset 0 2px 3px #8e3e0540; }
+.vlc-record-action:focus-visible { outline-color: #6b320c; }
+.vlc-record-action img { display: block; flex: none; width: 34px; height: 34px; padding: 4px; border-radius: 5px; background: #fff6e9; }
 .vlc-record-action span { display: block; min-width: 0; }
 .setup-panel .record-state { margin-top: 10px; }
 
