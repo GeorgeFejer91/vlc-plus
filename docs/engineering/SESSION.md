@@ -1,5 +1,13 @@
 # Session scope — 2026-11-07
 
+Post-qualification documentation is staged locally on
+`codex/qualified-release-docs`, based on application source `2713d42`.
+Allowed changes are release/download prose, native/shared help copy and the
+canonical handoff/evidence. Do not publish this documentation or advance main
+until suite 42320785383, its exact installed UI/data tests and exact-byte
+promotion pass. No application logic, schema or acquisition changes belong in
+this follow-up. Preserve the frozen application source during qualification.
+
 Installed qualification exposed Windows GUI OEM punctuation after Alt+F moves
 focus from the native video thread to Qt. On the German layout, OEM6 arrives
 as acute and OEM4 as backslash; the native route already recognizes the physical

@@ -113,10 +113,13 @@ unchanged. Dialogs and popups retain normal keyboard behavior.
 | Ctrl+Alt+Left/Right/Up/Down | With affect arrows on, move the main feedback by two percentage points. With them off, VLC keeps these keys. |
 | Ctrl+Alt+= / Ctrl+Alt+- | Increase/decrease main feedback size by two percentage points. |
 | Ctrl+Shift+PageUp/PageDown | Increase/decrease panel height by 16 px; an explicit session panel-ratio override stays authoritative. |
-| Ctrl+Alt+[ / Ctrl+Alt+] | Decrease/increase the affect arrow step by one percentage point (1–100). |
+| Ctrl+Alt+[ / Ctrl+Alt+] | Decrease/increase the affect arrow step by one percentage point (1–100). German key labels: Ctrl+Alt+ß / Ctrl+Alt+´. |
 | Ctrl+Alt+, / Ctrl+Alt+. | Decrease/increase face transition speed by 0.5 (0.5–20). |
 | Ctrl+Alt+PageUp/PageDown | Increase/decrease grid rows and columns by two, keeping an odd grid (3–2001). |
 | Ctrl+Shift+S | Open detailed settings. **Visible representation** selects one mode. Use Tab/Shift+Tab, arrows and Space to adjust colors, appearance, and individual layer/grid/face controls. |
+
+If a desktop screenshot utility reserves Alt+S, hold Ctrl+Alt and use arrows
+with affect arrows on to move the feedback instead.
 
 The [full hotkey library](https://georgefejer91.github.io/vlc-plus/remote/vlc.html)
 also lists dedicated Ctrl+Alt controls for every appearance, mapping, color and

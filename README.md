@@ -13,7 +13,7 @@ hotkey list and [remote LSL controller](https://georgefejer91.github.io/vlc-plus
 
 The player was extracted from Affect Research commit
 `16106a70b57136c7243e85a5a05d83b0789bdd2c`. The standalone Windows
-installer is version 0.3.2 (experimental). This repository has its own source, build inputs and agent guidance.
+installer is version 0.3.3 (experimental). This repository has its own source, build inputs and agent guidance.
 Installer readiness and exact tested scope are recorded in
 [verification](for-ai/VERIFICATION.md). This is experimental software; no
 research qualification or physical display-onset guarantee is claimed.
@@ -22,9 +22,9 @@ research qualification or physical display-onset guarantee is claimed.
 
 Windows x64 installer choices:
 
-1. **VLC+ and Remote LSL Recorder together — in validation.** The joint installer and desktop shortcut are implemented; the joint release is not yet published. Current status and the remaining gate are in [the project handoff](for-ai/PROJECT.md#active-milestone-keyboard-joint-handoff-and-recording-qualification).
-2. [VLC+ only (0.3.2)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.2-experimental.1/VLC_Plus_Setup_0.3.2_x64.exe).
-3. [Remote LSL Recorder only (0.1.7)](https://github.com/GeorgeFejer91/Remote-LSL-Recorder/releases/download/v0.1.7-experimental.1/Remote-LSL-Recorder_0.1.7_x64-setup.exe).
+1. [VLC+ and Remote LSL Recorder together (0.3.3 / 0.1.8)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/01_VLCPlus_and_LSL_Recorder_Setup_0.3.3_x64.exe), with one desktop shortcut that opens both apps.
+2. [VLC+ only (0.3.3)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/02_VLCPlus_0.3.3_Setup_x64.exe).
+3. [Remote LSL Recorder only (0.1.8)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/03_Remote_LSL_Recorder_0.1.8_Setup_x64.exe).
 
 Stop/save recordings and close both apps before installing or updating. Run
 the installer for your own account. The joint shortcut opens both apps;
@@ -49,7 +49,7 @@ it, and **Alt+J** to save a JSON snapshot. The last successful snapshot loads
 automatically on the next launch. These layout shortcuts work with mouse or
 arrow input and leave the affect rating unchanged.
 
-The current source adds dedicated shortcuts for all 60 detailed settings and
+VLC+ 0.3.3 includes dedicated shortcuts for all 60 detailed settings and
 the affect step. Use Ctrl+Alt controls for appearance, grid and colors; add
 Shift to decrease numeric values. Animation bounds, drivers and direction
 have dedicated function/number keys. The [64-group hotkey library](https://georgefejer91.github.io/vlc-plus/remote/vlc.html)
@@ -57,9 +57,9 @@ and Recorder's **VLC+ setup → Hotkeys** list every key. Alt+J saves
 `vlc-feedback-settings/v3`, including rating step, appearance, colors, mappings,
 all three layouts, grid and selected face; v2 imports remain supported. An
 explicit session environment or command-line override keeps its documented
-precedence. This expansion still requires final installer qualification.
+precedence.
 
-In 0.3.2, press **Alt+F** to toggle affect arrows: Left/Right changes valence and Up/Down
+Press **Alt+F** to toggle affect arrows: Left/Right changes valence and Up/Down
 changes arousal. Press Alt+F again to restore normal VLC arrow controls. Affect can still be adjusted while paused, as in the existing player;
 CSV recording remains playback-gated. The existing step size and saved input
 mode are retained.
@@ -89,7 +89,7 @@ JSON and assets → Experiment Runner or VLC+**, with explicit capability checks
 That complete-recipe workflow remains to be implemented in VLC+.
 
 Today VLC+ imports Planner's standalone `vlc-flubber-appearance/v1` JSON and
-reads/writes its own `vlc-feedback-settings/v2` settings. A complete Planner
+reads/writes its own `vlc-feedback-settings/v3` settings, with v2 imports supported. A complete Planner
 master JSON, language route, questionnaire protocol or experiment schedule
 cannot yet be executed here. The formats are distinct and must not be renamed
 or silently converted. See [JSON formats](docs/experiment-formats.md) and
