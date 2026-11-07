@@ -163,6 +163,10 @@
     "web/vlc-hotkeys.js": "38baa2c557082fd6a3efeb7966bd0d01dadc339132bc8d770fb8015555a95149"
   },
   "adaptations": {
+    "package.json": "Version the Recorder build embedded in the VLC+ suite.",
+    "src-tauri/Cargo.lock": "Match the embedded Recorder package version.",
+    "src-tauri/Cargo.toml": "Version the Recorder build embedded in the VLC+ suite.",
+    "src-tauri/tauri.conf.json": "Set the embedded Recorder Windows installer version.",
     "README.md": "Embedded component build and local links; VLC+ companion URL.",
     "src-tauri/src/state.rs": "Use VLC+ hosted companion; require positive current-child subscription acknowledgements as well as exact XDF headers before playback.",
     "scripts/check-native-vlc-recording.mjs": "Use bundled sample; poll awaited marker snapshots; query volume while playing; refuse existing apps and require exact current listener PID for commands/cleanup; preserve and recover the original workspace across interrupted retries.",

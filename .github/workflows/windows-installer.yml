@@ -32,7 +32,7 @@ jobs:
         run: ./build-windows.ps1 -MsysRoot '${{ steps.msys.outputs.msys2-location }}' -Jobs 2
       - name: Fresh installed-player check
         shell: pwsh
-        run: ./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.3_x64.exe
+        run: ./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.4_x64.exe
       - name: Preserve native build diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

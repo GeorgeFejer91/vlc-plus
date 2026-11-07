@@ -28,7 +28,7 @@ if ($BuiltFromSource) {
     Copy-Item "$root/build/stock-vlc-package/out/$playerFile" (Join-Path $ComponentDirectory $playerFile) -Force
     Copy-Item "$root/build/recorder-release/$($recorderBuild.file)" (Join-Path $ComponentDirectory $recorderBuild.file) -Force
     $lock = [pscustomobject]@{
-        schema='vlc-recorder-suite-components/v1'; sourceMode='same-checkout'; bundleVersion='0.3.3'
+        schema='vlc-recorder-suite-components/v1'; sourceMode='same-checkout'; bundleVersion=$playerVersion
         vlc=@{ name='VLC+'; version=$playerVersion; repository='GeorgeFejer91/vlc-plus'; sourceCommit=$commit; file=$playerFile; sha256=$playerBuild.installerSha256; downloadName="02_VLCPlus_$($playerVersion)_Setup_x64.exe" }
         recorder=@{ name='Remote LSL Recorder'; version=$recorderBuild.version; repository='GeorgeFejer91/vlc-plus'; sourceCommit=$commit; file=$recorderBuild.file; sha256=$recorderBuild.installerSha256; applicationSha256=$recorderBuild.applicationSha256; downloadName="03_Remote_LSL_Recorder_$($recorderBuild.version)_Setup_x64.exe" }
     }

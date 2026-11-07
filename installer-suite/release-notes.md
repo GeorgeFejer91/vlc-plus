@@ -1,8 +1,8 @@
-Three Windows x64 installer choices, built and tested from this repository:
+Three Windows x64 installers built and tested from this repository.
 
-1. **01 — VLC+ and Remote LSL Recorder together**: installs VLC+0.3.3 and the embedded Recorder0.1.8, with one desktop shortcut that opens both.
-2. **02 — VLC+0.3.3 only**: Alt+F affect arrows, Alt+G exclusive Flubber/grid/face cycling, Alt+H for all nine face characters, Alt+W/A/S/D movement, Alt+plus/minus resizing, Alt+J JSON snapshots restored on next launch, and the authorized Great Dictator study clip.
-3. **03 — Remote LSL Recorder0.1.8 only**: Start VLC+ and record opens a local video paused, records the selected streams before playback and retains partial XDF on failure.
+1. **01 — VLC+ 0.3.4 and Remote LSL Recorder 0.1.9.** Installs both apps and adds one desktop shortcut that opens them together.
+2. **02 — VLC+ 0.3.4.** Hold arrow keys for continuous affect rating. Combine perpendicular arrows for diagonal movement and opposite arrows to cancel that axis. The grid and face respond to key changes immediately. The affect LSL stream samples at 480 Hz while the CSV log stays at 30 Hz. Press Alt+F to enable the arrows.
+3. **03 — Remote LSL Recorder 0.1.9.** Use the orange **Start VLC+ and record** button with the integrated cone to record and play the selected local video. Recorder confirms subscriptions before playback and retains partial XDF on failure. The Recorder signal viewer shows live valence and arousal scores.
 
 The Recorder source, UI, browser controller, locks and notices are included in this repository. Its per-launch session ID identifies the intended VLC LSL streams even when different computers have matching PIDs. Sampling and XDF recording remain in the native applications, independently of browser rendering.
 
