@@ -24,26 +24,35 @@ This compatibility goal stays **open**. Full master execution, questionnaires,
 variant/participant selection and recovery are not implemented in VLC+.
 See [Planner integration](PLANNER-INTEGRATION.md).
 
-## Current follow-up: cone playback/recording button
+## Current follow-up: Recorder scores and integrated cone
 
-The desktop Recorder has one orange **Start VLC and record** cone button.
+The desktop Recorder has one orange **Start VLC and record** button whose SVG
+cone merges into the button silhouette; there is no separate icon tile.
 It launches the configured video through the existing Rust command, subscribes
 recording, then starts playback. The separate paused-player button and its
 frontend handler were removed at the user's request. Native commands, sampling,
 recording formats and remote authority remain unchanged. Pretext measures the
 label separately from its cone; the default setup width follows text enlargement.
 
-Verified locally: 23 JavaScript tests, generated-source checks, source/provenance
+At the user's confirmed target, the Recorder signal viewer now displays the
+latest received numeric valence and arousal scores for selected streams with
+those channel labels. Label-based lookup preserves swapped channel order;
+each stream keeps its own readout and supplied units. Display rounding is two
+decimal places. Missing/non-finite values and disconnected streams show dashes;
+deselection removes the readout. Hiding individual plots does not hide scores.
+No sampling, XDF data, remote payload or native player UI changed.
+
+Verified locally: 24 JavaScript tests, generated-source checks, source/provenance
 and context checks; headless Edge exercises the single action, keyboard activation,
-active-state locks, failure recovery, cone loading and label geometry at
-320–1920px, plus 200% text/spacing with the session form visible. The site build
-and rendered checks pass. Native playback/XDF was not rerun for this UI
+active-state locks, failure recovery, SVG geometry, received score updates,
+waiting/disconnected/deselection states and label geometry at 320–1920px, plus
+200% text/spacing with the session form visible. Native playback/XDF was not rerun for this UI
 change; the prior installed evidence below applies to its named release only.
 Production build `pnpm tauri build --no-bundle -- --locked` passes. Executable:
 `recorder/src-tauri/target/release/remote-lsl-recorder.exe`, SHA-256
-`b88f61d1f527890c31a267d381f5dc7ddd24ccf281bafee7bd1f57f28aded223`.
+`3c34f9af9c9be46fe7a80668dccebd28fe93ed26b77062991cff07562f34dc99`.
 Work is committed locally on
-`codex/vlc-record-play-cone`, based on clean `70e83c8`. No push, installation or
+`codex/vlc-record-play-cone`, based on clean `990ba6d`. No push, installation or
 release was performed. The installed Recorder was open and remains untouched;
 applying the rebuilt executable requires a separate handoff after it closes.
 The overall compatibility goal remains open.

@@ -29,6 +29,7 @@ try {
   const calls = [];
   let fail = false;
   let phase = "idle";
+  let streams = [];
   await page.exposeFunction("fixtureInvoke", async (command, args) => {
     calls.push({ command, args });
     if (command === "start_vlc_and_record") {
@@ -38,7 +39,7 @@ try {
     if (command === "stop_recording") phase = "idle";
     return { revision: 0, controlRevision: 0, participantId: "UITest", outputDirectory: "C:\\Recordings",
       selectAllStreams: true, keyboardMarkers: false, mouseMarkers: false, externalPages: [],
-      externalPagesInitialized: true, externalPagesRevision: 0, viewer: {}, streams: [], markers: [],
+      externalPagesInitialized: true, externalPagesRevision: 0, viewer: {}, streams, markers: [],
       recording: { phase, bytesWritten: 0 }, remote: { phase: "idle", active: false, route: "unknown", approval: "waiting" } };
   });
   await page.addInitScript(() => { window.__TAURI__ = { core: { invoke: (command, args = {}) => window.fixtureInvoke(command, args) } }; });
@@ -47,7 +48,8 @@ try {
   await launch.waitFor();
   assert.equal(await page.locator(".vlc-record-action").count(), 1);
   assert.equal(await page.locator("#record-play").count(), 0);
-  assert.equal(await launch.locator('img[alt=""]').evaluate(icon => icon.complete && icon.naturalWidth > 0), true);
+  assert.equal(await launch.locator('svg[aria-hidden="true"]').count(), 1);
+  assert.equal(await launch.locator("img").count(), 0);
   await launch.click();
   assert.equal(await page.locator("#vlc-dialog").evaluate(el => el.open), true);
   assert.equal(calls.some(call => call.command === "start_vlc_and_record"), false);
@@ -83,6 +85,28 @@ try {
   await launch.click();
   await page.waitForFunction(() => document.querySelector("#system-status").textContent.includes("not listening"));
   assert.equal(await launch.isEnabled(), true);
+  streams = [{ id: "vlc-affect", name: "VLC_Flubber_Affect", streamType: "Affect", hostname: "Test PC",
+    sourceId: "vlc-flubber-fixture-affect", channelCount: 2, nominalRate: 30, selected: true,
+    connected: true, isMarker: false, channels: [{ label: "valence", unit: "normalized" }, { label: "arousal", unit: "normalized" }],
+    preview: [{ timestamp: 1, values: [0, 0] }, { timestamp: 2, values: [0.25, -0.5] }] }];
+  const scores = page.locator(".affect-score-number");
+  await page.waitForFunction(() => document.querySelector(".affect-score-number")?.textContent === "+0.25");
+  assert.deepEqual(await scores.allTextContents(), ["+0.25", "-0.50"]);
+  streams[0].preview.push({ timestamp: 3, values: [-1, 0.75] });
+  await page.waitForFunction(() => document.querySelector(".affect-score-number")?.textContent === "-1.00");
+  assert.deepEqual(await scores.allTextContents(), ["-1.00", "+0.75"]);
+  streams[0].connected = false;
+  await page.waitForFunction(() => document.querySelector(".affect-score-status")?.textContent === "Disconnected");
+  assert.deepEqual(await scores.allTextContents(), ["—", "—"]);
+  streams[0].connected = true;
+  streams[0].preview = [];
+  await page.waitForFunction(() => document.querySelector(".affect-score-status")?.textContent === "Waiting for samples…");
+  assert.deepEqual(await scores.allTextContents(), ["—", "—"]);
+  streams[0].selected = false;
+  await page.waitForFunction(() => document.querySelector("#affect-score-list").hidden);
+  streams[0].selected = true;
+  streams[0].preview = [{ timestamp: 4, values: [0, 0.5] }, { timestamp: 5, values: [-0.25, 0.75] }];
+  await page.waitForFunction(() => document.querySelector(".affect-score-number")?.textContent === "-0.25");
   async function checkLibrary() {
     const seen = new Map();
     const category = page.getByLabel("Category", { exact: true });
@@ -116,14 +140,19 @@ try {
     assert.equal(await launch.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
     await page.waitForFunction(() => [...document.querySelectorAll(".vlc-record-action [data-fit-text]")].every(label => ["fit", "no-fit"].includes(label.dataset.fitState)));
     assert.equal(await launch.evaluate(button => {
-        const icon = button.querySelector("img").getBoundingClientRect();
+        const art = button.querySelector("svg").getBoundingClientRect();
+        const cone = button.querySelector("path").getBBox();
+        const body = button.querySelector("rect").getBBox();
         const label = button.querySelector("[data-fit-text]");
         const text = label.getBoundingClientRect();
         const bounds = button.getBoundingClientRect();
         return ["fit", "no-fit"].includes(label.dataset.fitState)
           && label.scrollWidth <= label.clientWidth + 1 && label.scrollHeight <= label.clientHeight + 1
-          && icon.right < text.left && text.right <= bounds.right && text.bottom <= bounds.bottom;
+          && body.width > 0 && body.height > 0
+          && art.left + cone.x + cone.width < text.left && text.right <= bounds.right && text.bottom <= bounds.bottom;
     }), true, `Cone and full label must fit at ${width}×${height}`);
+    assert.equal(await page.locator("#affect-score-list").evaluate(region => region.scrollWidth <= region.clientWidth + 1), true);
+    assert.deepEqual(await scores.allTextContents(), ["-0.25", "+0.75"]);
     await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
     assert.equal(await page.locator("#vlc-dialog").evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
     await page.getByRole("button", { name: "Hotkeys", exact: true }).click();
@@ -185,5 +214,5 @@ try {
     }
   });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
-  console.log("PASS: single orange cone button, launch/record/play, session ordering, video path/port, active lock, failure recovery, 64 hotkey groups, bounded category/page navigation, Pretext, keyboard focus and 200% text (mock native IPC).");
+  console.log("PASS: integrated SVG cone button, received valence/arousal values, missing/disconnected/selection states, launch/record/play, keyboard, 320–1920px, 200% text and bounded hotkey library (mock native IPC).");
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

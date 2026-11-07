@@ -1,21 +1,21 @@
 # Session scope — 2026-11-07
 
-Current task: simplify the Recorder to one orange **Start VLC and record**
-cone button. Keep the launch-from-file sequence and remove the separate
-paused-player button and its frontend handler. Allowed changes are Recorder
-markup/style/handler, rendered and native test selectors, matching help and
-task handoff. Native commands, acquisition, remote grants, saved formats and
-the recording engine stay unchanged. Initial checkout is clean at `70e83c8`
+Current task: show received valence/arousal scores in the Recorder signal
+viewer (confirmed by the user), and merge the cone into the orange button's
+SVG silhouette. Allowed changes are Recorder presentation, a narrow score
+view module, focused tests, help and task handoff. Native commands, acquisition,
+remote grants, saved formats and the recording engine stay unchanged.
+Initial checkout is clean at `990ba6d`
 on `codex/vlc-record-play-cone`.
 Run the existing JavaScript, rendered Recorder and source/context checks.
 
-Completed: one orange cone button with hover/pressed/focus states, removed
-duplicate action/handler, and matching help/test selectors. All 23 JavaScript
-tests, rendered single-action/keyboard/layout/200% checks, source/context/site
-checks and locked release application build pass. Dark label contrast exceeds
-6:1 against each normal/hover/pressed orange. See `for-ai/PROJECT.md` for binary
-identity and handoff state. The installed Recorder remains open and unchanged;
-no push or release was performed.
+Completed: received score readouts with units and explicit missing/disconnected
+states, and an inline SVG joining the cone and orange button silhouette.
+All 24 JS tests, rendered values/update/deselection/keyboard/320–1920px/200%
+checks, source/context checks and the locked release build pass. See
+`for-ai/PROJECT.md` for exact binary identity. Native player UI and native
+XDF qualification are outside this follow-up. The installed Recorder remains
+open and unchanged; no active recording or remote publication was changed.
 
 ## Earlier qualification scope
 

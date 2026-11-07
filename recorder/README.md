@@ -31,6 +31,13 @@ automatically. **Record all available streams** selects new arrivals when on;
 turning it off clears the selection. Stream selection is locked during a
 recording, so a stream arriving mid-recording is available for the next XDF.
 
+Selected streams with channels labelled `valence` and `arousal` also show
+numeric scores above the plots. Each readout uses the latest received sample,
+preserves the channel order from its labels, and shows the supplied units.
+Values are rounded to two decimal places for display; recorded data is unchanged.
+Waiting or disconnected streams show dashes. These readouts remain available
+when individual plot channels are hidden.
+
 Keyboard and mouse marker checkboxes capture input delivered to the recorder
 window. Keyboard markers contain key down/up, key, code, repeat, and modifiers;
 mouse markers contain the button and window/screen coordinates at button press.
@@ -43,7 +50,8 @@ after recording starts. Input in other applications is outside this capture.
 
 Open **VLC+ setup**, enter an absolute local video path
 and unused control port, and apply the participant and recording folder.
-Select any additional streams, then choose the single orange cone button,
+Select any additional streams, then choose the single orange button with its
+integrated SVG cone,
 **Start VLC and record**. Recorder
 opens the default current-user VLC+ installation paused, selects that local
 process's affect and marker streams, starts XDF capture of all selected streams,

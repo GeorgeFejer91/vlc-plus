@@ -6,11 +6,13 @@ import {
 import { timeToX } from "./chart-time.js";
 import { channelRanges, displayChannels } from "./chart-scale.js";
 import { mountTextFitting } from "./text-fit.js";
+import { mountAffectScores } from "./affect-scores.js";
 import { mountVlcHotkeyLibrary } from "./vlc-hotkeys.js";
 import { mountExternalTabs, readLocalTabs } from "./external-tabs.js?v=0.1.8";
 
 const invoke = (command, args = {}) => window.__TAURI__.core.invoke(command, args);
 const byId = (id) => document.getElementById(id);
+const renderAffectScores = mountAffectScores(byId("affect-score-list"));
 mountVlcHotkeyLibrary(byId("vlc-hotkeys"), {
   category: byId("vlc-hotkey-category"), previous: byId("vlc-hotkey-previous"),
   next: byId("vlc-hotkey-next"), status: byId("vlc-hotkey-page"),
@@ -122,6 +124,7 @@ function render(snapshot) {
   }
   renderStreams(snapshot);
   renderChannelMap(snapshot);
+  renderAffectScores(snapshot.streams);
   renderCharts(snapshot);
   renderMarkers(snapshot.markers);
   if (!inputMarkersPending) {
