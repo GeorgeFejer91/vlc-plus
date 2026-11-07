@@ -88,6 +88,23 @@ static int checkTranslatedDedicatedKeys( const QString &directory )
     if( !panel.handleInputKey( &at ) || !opened ||
         settingAt( panel.settingsJson(), { "appearance", "visual", "colors", "halo" } ).toString() != QLatin1String( "#654321" ) ||
         panel.settingsJson().value( "stepPercent" ).toInt() != 37 || panel.primary() != FlubberPanel::FlubberKind ) return 133;
+    struct StepProbe { int symbol, virtualKey, delta; };
+    const StepProbe brackets[] = { { 0x00b4, 0xdd, 1 }, { '\\', 0xdb, -1 } };
+    for( const StepProbe &probe : brackets )
+    {
+        if( !reset() ) return 150;
+        const QJsonObject before = panel.settingsJson();
+        QKeyEvent claim( QEvent::ShortcutOverride, probe.symbol, chord, 0, probe.virtualKey, 0 );
+        claim.ignore();
+        if( !panel.handleInputKey( &claim ) || !claim.isAccepted() || panel.settingsJson() != before ) return 151;
+        QKeyEvent press( QEvent::KeyPress, probe.symbol, chord, 0, probe.virtualKey, 0 );
+        QJsonObject expected = before; expected.insert( "stepPercent", 37 + probe.delta );
+        if( !panel.handleInputKey( &press ) || panel.settingsJson() != expected ) return 152;
+        QKeyEvent repeat( QEvent::KeyPress, probe.symbol, chord, 0, probe.virtualKey, 0, QString(), true );
+        if( !panel.handleInputKey( &repeat ) || panel.settingsJson() != expected ) return 153;
+        QKeyEvent other( QEvent::KeyPress, probe.symbol, Qt::ControlModifier, 0, probe.virtualKey, 0 );
+        if( panel.handleInputKey( &other ) || panel.settingsJson() != expected ) return 154;
+    }
     return 0;
 }
 #endif

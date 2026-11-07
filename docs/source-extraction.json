@@ -197,7 +197,7 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "43eb3ccd9a28419cb5c0bfc783a2abf8958f76b0cb0d139ea194d8877e3ece0a",
+      "standaloneSha256": "3748ca21daeca41496cc8e2033bd53825221b43709b750f518caa9254179c5cb",
       "adaptation": "Exclusive representation/all nine characters; scoped native Windows video-thread routing; dedicated shortcuts for all detailed settings; atomic v3 JSON snapshots with rating step and legacy v2 import/startup precedence; focused regression coverage preserves acquisition and source lineage."
     },
     {

@@ -1,4 +1,19 @@
-# Session scope — 2026-11-06
+# Session scope — 2026-11-07
+
+Installed qualification exposed Windows GUI OEM punctuation after Alt+F moves
+focus from the native video thread to Qt. On the German layout, OEM6 arrives
+as acute and OEM4 as backslash; the native route already recognizes the physical
+bracket keys. Scope is the existing legacy settings matcher, its Windows Qt
+regression, the Windows panel CI gate, and current handoff. Preserve dedicated
+digit-driver priority, other modifiers, text/modal guards, non-Windows behavior,
+schemas and the independent 30 Hz LSL/CSV bridge. Initial Git was clean at
+f097c95 (documentation only above application source 0edb694). The installed
+0edb694 recording test and independent data inspection pass; it must not be
+published while this supported GUI input path fails. Local SDK compilation is
+unavailable after user-authorized cache cleanup; hosted Windows Qt must prove
+the new regression red before the application fix and green afterward.
+
+## Earlier expansion scope — 2026-11-06
 
 The active follow-up expands dedicated hotkeys to the native dialog's 60
 settings plus rating step. Reuse the Qt/native video-thread matcher, preserve

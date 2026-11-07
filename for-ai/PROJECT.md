@@ -26,62 +26,54 @@ See [Planner integration](PLANNER-INTEGRATION.md).
 
 ## Active milestone: keyboard, joint handoff and recording qualification
 
-### Latest status (2026-11-06)
+### Latest status (2026-11-07)
 
-The final application/runner source is merged on main at `0edb694` (PR14 and
-PR15). All four exact-main source checks pass (42277960432), and full suite
-[42277964086](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42277964086)
-completed successfully with publication disabled. Both exact standalone
-installers and the joint shortcut/reuse/refusal/preservation/uninstall checks
-pass. The installed VLC probe verified 701 immutable files, decoded 204 frames,
-observed 265 affect samples at 30.0014 Hz, verified both CSV sessions and transport
-markers, and shut down in 152 ms. These are hosted/offscreen checks; Recorder's
-smoke explicitly records `recordingStarted=false`.
+Application source `0edb694` passed all four exact-main source checks
+(42277960432) and full installer suite 42277964086. Its exact joint installer
+was downloaded and SHA-256 verified as
+`6a0d36b342ca898051f27fdc8c760843ff8726e9725e70979a2ed727cc8ab29a`
+(1,029,268,105 bytes), installed through an ordinary-user Explorer broker and
+verified against 701 immutable VLC files plus Recorder/engine/launcher hashes.
+The actual desktop shortcut opened both ordinary-user apps and both LSL streams.
 
-The exact joint candidate is `01_VLCPlus_and_LSL_Recorder_Setup_0.3.3_x64.exe`,
-1,029,268,105 bytes, expected SHA-256
-`6a0d36b342ca898051f27fdc8c760843ff8726e9725e70979a2ed727cc8ab29a`.
-Authenticated run/artifact receipts and small evidence were downloaded; the
-installer bytes have NOT been downloaded or locally hash-verified. Metadata
-and proof are under ignored `build/qualified-suite-42277964086/` in the existing
-controls worktree. Older 5b94b16 proof is explicitly superseded and cannot
-qualify this candidate.
+The real Recorder button -> Rust -> VLC -> XDF/CSV test passed with Windows
+injected input. Independent pyxdf/CSV inspection found 3,169 affect samples at
+29.999994 Hz, 2,487 CSV rows, positive/negative values on both axes, monotonic
+clocks and Start/Pause/Resume/Stop markers. Paused time and playback volume
+were preserved during affect-arrow input. Busy-port refusal also passed without
+launching a player or sending quit to the foreign listener. Native controls
+observed all nine faces, exclusive modes and exact v3 JSON restoration after
+an unsaved adjustment and restart. These are injected-input checks, not a
+physical-keyboard or scientific display-onset claim.
 
-The 64-group live guide is deployed. All 82 actual public assets matched the
-audited build, and real HTTPS rendering at 320–1920px, enlarged text and the
-bundled controller passed. PR15 changed only the runner and handoff, so those
-public asset bytes are unchanged.
+**Publication hold: Windows GUI OEM shortcuts.** Independent review confirmed
+that Alt+F legitimately moves focus to Qt, where German OEM6 arrives as acute
+and OEM4 as backslash. The native route recognizes the physical bracket keys;
+the GUI legacy settings route does not. The installed check retained step 10
+instead of incrementing to 11. Branch `codex/gui-oem-hotkeys` adds a failing
+Windows GUI regression and makes the existing Windows CI job run the panel.
+The next change must reuse native key normalization after dedicated matching,
+retain digit-driver priority and all text/modal guards, then pass review and
+exact-main source/installer CI. Do not promote 42277964086: a corrected
+same-source installer and repeated installed qualification are required.
 
-**BLOCKER: local disk space.** The system drive repeatedly has only about
-0.7 GB free. Download plus the install helper's 2 GB post-download preflight
-needs at least 3.18 GB free; the user was asked to free 5 GB or identify another
-writable drive. Verified task-generated duplicate assets, superseded installer
-and cached dependency-source downloads were removed with hash/remote-retention
-receipts. Remaining bridge caches total only about 142 MB; unrelated files and
-participant data are untouched.
+The earlier disk blocker is cleared. User-authorized housekeeping relocated
+34 inactive/damaged checkouts (119.5 GB) intact to Proton sync, preserved nine
+WIP branches with independently verified recovery bundles, cleaned eleven
+worktrees and recovered about 16 GB from rebuildable caches. Primary repos,
+active shared-index worktrees and recordings were preserved. Cloud upload is
+still pending. Native test profile backups are restored after each closed
+attempt. The screenshot utility's conflicting Alt+S was temporarily isolated
+for QA and restored to On with its window returned to the tray.
 
-The required local gates remain NOT RUN for this candidate: ordinary-user
-installation and actual shortcut; native video-thread arrow ownership and
-unchanged paused time/volume; all nine faces/exclusive modes and dedicated
-controls; Alt+J JSON save, unsaved adjustment, restart and exact restoration;
-Recorder's actual Start VLC+ and record, injected positive/negative affect,
-and independent final XDF/CSV inspection. Existing source/unit/mocked-IPC and
-hosted standalone evidence do not replace these gates. The installed local
-baseline is older 5b94b16, with Recorder redirected into Codex LocalCache; the
-ordinary Explorer launcher cannot find that Recorder registration.
+The 64-group live guide remains deployed, with prior real HTTPS/82-asset and
+320–1920px/enlarged-text evidence. Public download links intentionally remain
+on the earlier release. Local receipts and the one-way RC command/readiness
+corrections are recorded under ignored `build/`; do not treat a sent Flubber
+variable command as an acknowledged RC reply. Continue from the existing
+normal-user wrappers and `build/ACTIVE-QUALIFICATION.json`.
 
-Resume by checking free space and the still-retained successful artifact.
-Use the existing ignored download/normal-user installer wrappers and native
-qualification helpers listed in `build/ACTIVE-QUALIFICATION.json`. The Explorer
-broker probe already confirmed ordinary-user execution; do not repeat prior
-security/privacy choices. Stop only on a real new permission dialog. Verify
-actual task-owned native video focus, preserve workspace backups across retries,
-run the prepared busy-port refusal and positive recording tests, inspect XDF/
-CSV independently, then run native controls/save/restart and restore profiles.
-Only after all pass, dispatch promotion for 42277964086 at identical main
-`0edb694`; main must stay there until promotion. Update public downloads and
-final handoff afterward. This local handoff branch must not advance main before
-that promotion; it changes documentation only.
+### Prior expansion evidence
 
 The user expanded this milestone to dedicated shortcuts for all 60 detailed
 settings plus rating step, a complete shared hotkey library, and hotkey-saved
