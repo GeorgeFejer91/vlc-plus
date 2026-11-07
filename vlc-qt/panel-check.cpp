@@ -500,6 +500,32 @@ int main( int argc, char **argv )
             !legacy.value( "Flubber/layers/grid/visible" ).toBool() ||
             legacy.value( "Flubber/layers/face/visible" ).toBool() ) return 61;
     }
+    {
+        QSettings chordSettings( temp.filePath( "chord.ini" ), QSettings::IniFormat );
+        FlubberPanel chord( &chordSettings );
+        chord.setArrowMode( true );
+        QKeyEvent left( QEvent::KeyPress, Qt::Key_Left, Qt::NoModifier );
+        QKeyEvent up( QEvent::KeyPress, Qt::Key_Up, Qt::NoModifier );
+        QKeyEvent leftUp( QEvent::KeyRelease, Qt::Key_Left, Qt::NoModifier );
+        if( !chord.handleInputKey( &left ) || chord.valence() >= 0 || chord.arousal() != 0 ) return 158;
+        const float first = chord.valence();
+        if( !chord.handleInputKey( &up ) || chord.valence() >= first || chord.arousal() <= 0 ||
+            qAbs( chord.valence() - first + chord.arousal() ) > .00001f ||
+            qAbs( chord.arousal() * qSqrt( 2.0 ) + first ) > .00001 ) return 159;
+        const float diagonal = chord.valence(), arousal = chord.arousal();
+        QKeyEvent repeat( QEvent::KeyPress, Qt::Key_Up, Qt::NoModifier, QString(), true );
+        if( !chord.handleInputKey( &repeat ) || chord.valence() != diagonal || chord.arousal() != arousal ) return 160;
+        QKeyEvent right( QEvent::KeyPress, Qt::Key_Right, Qt::NoModifier );
+        if( !chord.handleInputKey( &right ) || chord.valence() != diagonal || chord.arousal() <= arousal ) return 161;
+        QKeyEvent upUp( QEvent::KeyRelease, Qt::Key_Up, Qt::NoModifier );
+        QKeyEvent down( QEvent::KeyPress, Qt::Key_Down, Qt::NoModifier );
+        const float beforeRelease = chord.arousal();
+        if( !chord.handleInputKey( &leftUp ) || !chord.handleInputKey( &upUp ) ||
+            !chord.handleInputKey( &down ) || chord.valence() <= diagonal || chord.arousal() >= beforeRelease ) return 162;
+        chord.stopRating();
+        chord.setAffect( 0, 0 );
+        if( !chord.handleInputKey( &up ) || chord.valence() != 0 || chord.arousal() <= 0 ) return 163;
+    }
     QSettings keySettings( temp.filePath( "keys.ini" ), QSettings::IniFormat );
     FlubberPanel keysPanel( &keySettings );
     bool inputAllowed = true;

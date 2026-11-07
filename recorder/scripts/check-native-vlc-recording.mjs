@@ -112,9 +112,9 @@ try {
   await recordAll.uncheck();
   await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
   await page.getByLabel("VLC+ control port").fill(String(rcPort));
-  await page.getByLabel("Video path for Start VLC+ and record", { exact: true }).fill(video);
+  await page.getByLabel("Video path", { exact: true }).fill(video);
   await page.getByRole("button", { name: "Close VLC+ setup" }).click();
-  await page.getByRole("button", { name: "Start VLC+ and record", exact: true }).click();
+  await page.getByRole("button", { name: "Start VLC and record", exact: true }).click();
   await page.waitForFunction(() => document.querySelector("#record-phase").textContent === "Recording"
     && document.querySelector("#system-status").textContent === "Ready").catch(async error => {
       console.error(JSON.stringify({ status: await page.locator("#system-status").textContent(),

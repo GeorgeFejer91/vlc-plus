@@ -15,7 +15,7 @@ const server = createServer(async (req, res) => {
     const path = resolve(root, `.${new URL(req.url, "http://localhost").pathname}`);
     if (!path.startsWith(root + "/") && !path.startsWith(root + "\\")) throw new Error("Outside root");
     const bytes = await readFile(path);
-    res.setHeader("Content-Type", ({ ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".woff2": "font/woff2" })[extname(path)] || "application/octet-stream");
+    res.setHeader("Content-Type", ({ ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".woff2": "font/woff2", ".svg": "image/svg+xml" })[extname(path)] || "application/octet-stream");
     res.end(bytes);
   } catch { res.writeHead(404); res.end(); }
 });
@@ -29,27 +29,31 @@ try {
   const calls = [];
   let fail = false;
   let phase = "idle";
+  let streams = [];
   await page.exposeFunction("fixtureInvoke", async (command, args) => {
     calls.push({ command, args });
-    if (command === "start_recording_and_play" || command === "start_vlc_and_record") {
+    if (command === "start_vlc_and_record") {
       if (fail) throw new Error("VLC+ is not listening on the selected port.");
       phase = "recording";
     }
     if (command === "stop_recording") phase = "idle";
     return { revision: 0, controlRevision: 0, participantId: "UITest", outputDirectory: "C:\\Recordings",
       selectAllStreams: true, keyboardMarkers: false, mouseMarkers: false, externalPages: [],
-      externalPagesInitialized: true, externalPagesRevision: 0, viewer: {}, streams: [], markers: [],
+      externalPagesInitialized: true, externalPagesRevision: 0, viewer: {}, streams, markers: [],
       recording: { phase, bytesWritten: 0 }, remote: { phase: "idle", active: false, route: "unknown", approval: "waiting" } };
   });
   await page.addInitScript(() => { window.__TAURI__ = { core: { invoke: (command, args = {}) => window.fixtureInvoke(command, args) } }; });
   await page.goto(`http://127.0.0.1:${server.address().port}/web/index.html`);
-  const start = page.getByRole("button", { name: "Record and play VLC+", exact: true });
-  const launch = page.getByRole("button", { name: "Start VLC+ and record", exact: true });
-  await start.waitFor();
+  const launch = page.getByRole("button", { name: "Start VLC and record", exact: true });
+  await launch.waitFor();
+  assert.equal(await page.locator(".vlc-record-action").count(), 1);
+  assert.equal(await page.locator("#record-play").count(), 0);
+  assert.equal(await launch.locator('svg[aria-hidden="true"]').count(), 1);
+  assert.equal(await launch.locator("img").count(), 0);
   await launch.click();
   assert.equal(await page.locator("#vlc-dialog").evaluate(el => el.open), true);
   assert.equal(calls.some(call => call.command === "start_vlc_and_record"), false);
-  await page.getByLabel("Video path for Start VLC+ and record", { exact: true }).fill("C:\\Videos\\clip with spaces.mp4");
+  await page.getByLabel("Video path", { exact: true }).fill("C:\\Videos\\clip with spaces.mp4");
   await page.getByRole("button", { name: "Close VLC+ setup" }).click();
   await launch.click();
   await page.waitForFunction(() => document.querySelector("#record-phase").textContent === "Recording");
@@ -61,22 +65,48 @@ try {
   await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
   await page.getByLabel("VLC+ control port").fill("42124");
   await page.getByRole("button", { name: "Close VLC+ setup" }).click();
-  await start.click();
+  await launch.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  assert.equal(await launch.evaluate(el => el.matches(":focus-visible") && getComputedStyle(el).outlineStyle !== "none"), true);
+  await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector("#record-phase").textContent === "Recording").catch(async error => {
     console.error(JSON.stringify({ calls, status: await page.locator("#system-status").textContent(), port: await page.locator("#vlc-port").inputValue() }));
     throw error;
   });
-  assert.equal(await start.isDisabled(), true);
-  const startIndex = calls.findIndex(call => call.command === "start_recording_and_play");
+  assert.equal(await launch.isDisabled(), true);
+  const startIndex = calls.findLastIndex(call => call.command === "start_vlc_and_record");
   assert.equal(calls[startIndex].args.port, 42124);
   assert.equal(calls[startIndex - 1].command, "configure_session");
   await page.getByRole("button", { name: "Stop recording", exact: true }).click();
-  await start.waitFor({ state: "visible" });
-  await page.waitForFunction(() => !document.querySelector("#record-play").disabled);
+  await launch.waitFor({ state: "visible" });
+  await page.waitForFunction(() => !document.querySelector("#vlc-launch-record").disabled);
   fail = true;
-  await start.click();
+  await launch.click();
   await page.waitForFunction(() => document.querySelector("#system-status").textContent.includes("not listening"));
-  assert.equal(await start.isEnabled(), true);
+  assert.equal(await launch.isEnabled(), true);
+  streams = [{ id: "vlc-affect", name: "VLC_Flubber_Affect", streamType: "Affect", hostname: "Test PC",
+    sourceId: "vlc-flubber-fixture-affect", channelCount: 2, nominalRate: 30, selected: true,
+    connected: true, isMarker: false, channels: [{ label: "valence", unit: "normalized" }, { label: "arousal", unit: "normalized" }],
+    preview: [{ timestamp: 1, values: [0, 0] }, { timestamp: 2, values: [0.25, -0.5] }] }];
+  const scores = page.locator(".affect-score-number");
+  await page.waitForFunction(() => document.querySelector(".affect-score-number")?.textContent === "+0.25");
+  assert.deepEqual(await scores.allTextContents(), ["+0.25", "-0.50"]);
+  streams[0].preview.push({ timestamp: 3, values: [-1, 0.75] });
+  await page.waitForFunction(() => document.querySelector(".affect-score-number")?.textContent === "-1.00");
+  assert.deepEqual(await scores.allTextContents(), ["-1.00", "+0.75"]);
+  streams[0].connected = false;
+  await page.waitForFunction(() => document.querySelector(".affect-score-status")?.textContent === "Disconnected");
+  assert.deepEqual(await scores.allTextContents(), ["—", "—"]);
+  streams[0].connected = true;
+  streams[0].preview = [];
+  await page.waitForFunction(() => document.querySelector(".affect-score-status")?.textContent === "Waiting for samples…");
+  assert.deepEqual(await scores.allTextContents(), ["—", "—"]);
+  streams[0].selected = false;
+  await page.waitForFunction(() => document.querySelector("#affect-score-list").hidden);
+  streams[0].selected = true;
+  streams[0].preview = [{ timestamp: 4, values: [0, 0.5] }, { timestamp: 5, values: [-0.25, 0.75] }];
+  await page.waitForFunction(() => document.querySelector(".affect-score-number")?.textContent === "-0.25");
   async function checkLibrary() {
     const seen = new Map();
     const category = page.getByLabel("Category", { exact: true });
@@ -107,8 +137,22 @@ try {
   for (const [width, height] of [[320, 600], [320, 900], [720, 600], [1280, 600], [1280, 900], [1920, 1080]]) {
     await page.setViewportSize({ width, height });
     await page.evaluate(() => document.fonts.ready);
-    assert.equal(await start.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
     assert.equal(await launch.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
+    await page.waitForFunction(() => [...document.querySelectorAll(".vlc-record-action [data-fit-text]")].every(label => ["fit", "no-fit"].includes(label.dataset.fitState)));
+    assert.equal(await launch.evaluate(button => {
+        const art = button.querySelector("svg").getBoundingClientRect();
+        const cone = button.querySelector("path").getBBox();
+        const body = button.querySelector("rect").getBBox();
+        const label = button.querySelector("[data-fit-text]");
+        const text = label.getBoundingClientRect();
+        const bounds = button.getBoundingClientRect();
+        return ["fit", "no-fit"].includes(label.dataset.fitState)
+          && label.scrollWidth <= label.clientWidth + 1 && label.scrollHeight <= label.clientHeight + 1
+          && body.width > 0 && body.height > 0
+          && art.left + cone.x + cone.width < text.left && text.right <= bounds.right && text.bottom <= bounds.bottom;
+    }), true, `Cone and full label must fit at ${width}×${height}`);
+    assert.equal(await page.locator("#affect-score-list").evaluate(region => region.scrollWidth <= region.clientWidth + 1), true);
+    assert.deepEqual(await scores.allTextContents(), ["-0.25", "+0.75"]);
     await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
     assert.equal(await page.locator("#vlc-dialog").evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
     await page.getByRole("button", { name: "Hotkeys", exact: true }).click();
@@ -129,8 +173,9 @@ try {
     await page.screenshot({ path: resolve(output, `recorder-${width}.png`), fullPage: true });
   }
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.addStyleTag({ content: "html {font-size:200% !important} #record-play {line-height:1.5 !important;letter-spacing:.12em !important;word-spacing:.16em !important}" });
-  assert.equal(await start.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
+  await page.addStyleTag({ content: "html {font-size:200% !important} #vlc-launch-record {line-height:1.5 !important;letter-spacing:.12em !important;word-spacing:.16em !important}" });
+  assert.equal(await launch.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
+  assert.equal(await page.locator(".setup-panel").evaluate(panel => panel.scrollWidth <= panel.clientWidth + 1 && panel.scrollHeight <= panel.clientHeight + 1), true, "Enlarged controls and the session form must remain visible");
   await page.screenshot({ path: resolve(output, "recorder-large-text.png"), fullPage: true });
   await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
   assert.equal(await page.locator("#vlc-settings").isVisible(), true);
@@ -145,7 +190,7 @@ try {
   await page.locator("#vlc-video").evaluate(input => { input.value = ""; });
   await launch.click();
   assert.equal(await page.locator("#vlc-settings").isVisible(), true);
-  assert.equal(await page.getByLabel("Video path for Start VLC+ and record", { exact: true }).evaluate(input => input === document.activeElement), true);
+  assert.equal(await page.getByLabel("Video path", { exact: true }).evaluate(input => input === document.activeElement), true);
   await page.getByRole("button", { name: "Close VLC+ setup" }).click();
   await page.goto(`http://127.0.0.1:${server.address().port}/companion/vlc.html`);
   await page.locator("#vlc-hotkeys dt").first().waitFor();
@@ -169,5 +214,5 @@ try {
     }
   });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
-  console.log("PASS: launch/record/play, session ordering, video path/port, active lock, failure recovery, 64 hotkey groups, bounded category/page navigation, Pretext, keyboard focus and 200% text (mock native IPC).");
+  console.log("PASS: integrated SVG cone button, received valence/arousal values, missing/disconnected/selection states, launch/record/play, keyboard, 320–1920px, 200% text and bounded hotkey library (mock native IPC).");
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

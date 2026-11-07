@@ -6,11 +6,13 @@ import {
 import { timeToX } from "./chart-time.js";
 import { channelRanges, displayChannels } from "./chart-scale.js";
 import { mountTextFitting } from "./text-fit.js";
+import { mountAffectScores } from "./affect-scores.js";
 import { mountVlcHotkeyLibrary } from "./vlc-hotkeys.js";
 import { mountExternalTabs, readLocalTabs } from "./external-tabs.js?v=0.1.8";
 
 const invoke = (command, args = {}) => window.__TAURI__.core.invoke(command, args);
 const byId = (id) => document.getElementById(id);
+const renderAffectScores = mountAffectScores(byId("affect-score-list"));
 mountVlcHotkeyLibrary(byId("vlc-hotkeys"), {
   category: byId("vlc-hotkey-category"), previous: byId("vlc-hotkey-previous"),
   next: byId("vlc-hotkey-next"), status: byId("vlc-hotkey-page"),
@@ -49,7 +51,6 @@ const elements = {
   recordDetail: byId("record-detail"),
   recordStart: byId("record-start"),
   recordStop: byId("record-stop"),
-  recordPlay: byId("record-play"),
   vlcPort: byId("vlc-port"),
   vlcVideo: byId("vlc-video"),
   vlcLaunchRecord: byId("vlc-launch-record"),
@@ -123,6 +124,7 @@ function render(snapshot) {
   }
   renderStreams(snapshot);
   renderChannelMap(snapshot);
+  renderAffectScores(snapshot.streams);
   renderCharts(snapshot);
   renderMarkers(snapshot.markers);
   if (!inputMarkersPending) {
@@ -474,7 +476,6 @@ function renderRecording(recording) {
   elements.recordIndicator.classList.toggle("active", active);
   elements.recordPhase.textContent = titleCase(recording.phase);
   elements.recordStart.disabled = active || busy;
-  elements.recordPlay.disabled = active || busy;
   elements.vlcPort.disabled = active || busy;
   elements.vlcVideo.disabled = active || busy;
   elements.vlcLaunchRecord.disabled = active || busy;
@@ -513,21 +514,6 @@ elements.recordStart.addEventListener("click", () => {
 
 elements.recordStop.addEventListener("click", () => {
   void run("Finishing the XDF footer…", () => invoke("stop_recording")).catch(() => {});
-});
-
-elements.recordPlay.addEventListener("click", () => {
-  if (!elements.vlcPort.checkValidity()) {
-    showVlcSetup();
-    elements.vlcPort.reportValidity();
-    return;
-  }
-  void run("Starting recording, then VLC+ playback…", async () => {
-    await invoke("configure_session", {
-      participantId: elements.participant.value,
-      outputDirectory: elements.output.value,
-    });
-    return invoke("start_recording_and_play", { port: Number(elements.vlcPort.value) });
-  }).catch(() => {});
 });
 
 function showVlcSetup() {

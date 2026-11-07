@@ -65,9 +65,13 @@ the affect coordinates. Click and release on the panel during playback to
 activate relative mouse rating. The pointer is confined to the player client
 area and hidden; horizontal and vertical movement map to the two normalized
 axes with the previous player's 60% height travel and 150 px per-event cap.
-Alt+F toggles affect arrow control. Left/Right changes valence; Up/Down
-changes arousal by the existing session step when the current input allows
-affect adjustment (including pause). The player claims
+Alt+F toggles affect arrow control. Left/Right changes valence and Up/Down
+changes arousal when the current input allows affect adjustment, including
+pause. Each new press immediately steps in the combined held direction.
+Orthogonal arrows produce a diagonal of the same length as a single-axis step.
+Opposite keys cancel on their axis. The player repeats the held direction
+every 33 ms and clears held movement on release, focus loss or mode change.
+The player claims
 plain-arrow ShortcutOverride events before VLC volume/seek shortcuts, even
 while paused. With no supported input, keys are reserved without changing
 affect; the existing playback gate still owns CSV recording. Alt+F again restores VLC
@@ -194,8 +198,8 @@ error in the player.
   undo it. On Windows, `SetCapture`, `ClipCursor`, and balanced `ShowCursor`
   calls are confined to the foreground player and reversed on every exit path.
 - Qt loads the Rust DLL from its own executable directory with `QLibrary` and
-  resolves six fixed C ABI functions: `new`, `update`, `interrupt`, `status`,
-  `error`, and `free`. It passes copied UTF-8 bytes and plain numeric values only; no Qt,
+  resolves seven fixed C ABI functions: `new`, `update`, `set_affect`, `interrupt`,
+  `status`, `error`, and `free`. It passes copied UTF-8 bytes and plain numeric values only; no Qt,
   VLC, or HWND pointer crosses the boundary. The bridge does not call back into
   Qt. A failed load/worker shows a one-time visible warning.
 - `flubber_bridge_new()` returns an owned handle while the LSL worker starts
@@ -207,8 +211,10 @@ error in the player.
   Rust/LSL may retain process-lifetime threads or TLS destructors. Unloading
   immediately after join caused an observed shutdown access violation.
 - The Rust worker owns a high-resolution waitable timer and balanced Windows
-  timer period, and publishes 30 Hz LSL samples even while VLC is idle. Its
-  separate bounded CSV writer opens a fresh file on video Start and closes on
+  timer period. It publishes a nominal 480 Hz affect stream even while VLC is
+  idle. The GUI hands off each changed pair atomically through `set_affect`.
+  A separate 30 Hz deadline retains playback marker and CSV timing. The
+  bounded CSV writer opens a fresh file on video Start and closes on
   Stop. Disk errors and queue overload set terminal status for a visible Qt
   warning; they are not silently ignored. Worker failure closes outlets.
 - Qt maps live VLC input states to the bridge and briefly latches a real
@@ -220,10 +226,10 @@ error in the player.
   future completion-reason contract needs an authoritative source and version.
 - The Qt boundary casts the live panel/main `winId()` to HWND for foreground,
   capture and client-rectangle checks; no HWND crosses into Rust. The bridge
-  also converts six `QLibrary` symbols to fixed C ABI function pointers.
-  Rust FFI pointer dereference is limited to the six
-  exported functions, with a unique owner, stop-before-free order, and
-  `catch_unwind` around each entry. Windows timer handle and period have RAII
+  also converts seven `QLibrary` symbols to fixed C ABI function pointers.
+  The GUI thread owns the bridge handle and disconnects its affect callback
+  before freeing it. The affect setter validates the pair and performs a
+  single atomic store. Windows timer handle and period have RAII
   cleanup. A blocked native outlet startup can delay final worker join at
   process exit; this is an outstanding shutdown bound to test in the installed
   player.

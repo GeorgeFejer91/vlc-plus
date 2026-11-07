@@ -59,18 +59,21 @@ all three layouts, grid and selected face; v2 imports remain supported. An
 explicit session environment or command-line override keeps its documented
 precedence.
 
-Press **Alt+F** to toggle affect arrows: Left/Right changes valence and Up/Down
-changes arousal. Press Alt+F again to restore normal VLC arrow controls. Affect can still be adjusted while paused, as in the existing player;
-CSV recording remains playback-gated. The existing step size and saved input
-mode are retained.
+Press **Alt+F** to toggle affect arrows. Left/Right changes valence and Up/Down
+changes arousal. Hold Left and Up together to move diagonally. The first step
+happens on key press, and VLC+ repeats the combined direction while the keys
+are held. Opposite directions cancel. Press Alt+F again to restore normal
+VLC arrow controls. Affect can still be adjusted while paused.
 
 The included [Great Dictator study clip](examples/media/dictator-3-study.mp4)
 is in `examples/media/` in the repository and installed application. Its
 [media notice](examples/media/NOTICE.md) records provenance, exact identity and
 redistribution permission separately from the software license.
 
-The Rust bridge publishes `VLC_Flubber_Affect` and `VLC_Flubber_Markers` LSL
-outlets on a nominal independent 30 Hz schedule. Each played video receives a
+The Rust bridge publishes `VLC_Flubber_Affect` at a nominal 480 Hz. It receives
+each changed affect pair directly from Qt and publishes independently of
+rendering. The `VLC_Flubber_Markers` outlet continues to carry playback events.
+CSV sampling stays at 30 Hz while the video plays. Each played video receives a
 unique `time_s,valence,arousal` CSV in its writable source folder. CSV time is
 not a measured display-onset or decoded-frame timestamp. Acquisition starts
 after VLC reports its first positive media time; the first CSV row can be

@@ -4,8 +4,8 @@
 
 VLC+ is a standalone Windows VLC player for continuous affect input, native
 feedback, outbound LSL and video-local CSV backup. The Qt panel owns
-presentation/input/settings; the Rust bridge owns its independent 30 Hz LSL
-worker and CSV writer. Sampling is not owned by a rendering callback.
+presentation/input/settings. The Rust bridge owns an independent 480 Hz
+affect outlet, a 30 Hz playback and CSV schedule, and the CSV writer.
 
 Planner authors studies; Runner executes full protocols; VLC+ is an independent
 playback target. Under the user's 2026-11-06 instruction, this repository now
@@ -23,6 +23,67 @@ one authored JSON plus assets can be used on either capable execution target.
 This compatibility goal stays **open**. Full master execution, questionnaires,
 variant/participant selection and recovery are not implemented in VLC+.
 See [Planner integration](PLANNER-INTEGRATION.md).
+
+## Goal: keyboard feedback and LSL responsiveness
+
+- [x] Apply the first arrow step on press and repeat held directions on one
+  clock. Orthogonal keys produce normalized diagonal movement. Opposite
+  directions cancel and release, focus loss and mode changes clear holds.
+- [x] Remove the GUI polling delay from affect publication with a direct
+  atomic pair handoff. Publish at nominal 480 Hz and keep the video CSV
+  schedule at 30 Hz.
+- [x] Measure software latency and verify playback and independent recording.
+  The bridge loopback p95 fell from 33.81 to 2.90 ms over 48 changes.
+  In the large offscreen panel benchmark, caching the grid field reduced
+  dispatch-to-paint p95 from 20.82 to 1.84 ms. The final face and Flubber
+  results were 0.95 and 13.41 ms respectively in the same 48-trial benchmark.
+  The staged Windows player decoded 207 frames and passed pause, resume,
+  replay, markers and 30 Hz CSV. LabRecorder XDF contained 3,119 affect samples
+  at 478.33 Hz and Start, End and Stop. CSV measured 30.00 Hz.
+
+One initial 480 Hz trial observed 451.43 Hz. The final clock skips elapsed
+slots while preserving the next deadline phase, avoiding an extra full-period
+wait after a stall. Its final focused run measured 479.07 Hz.
+
+The Windows stage combines manifest-verified runtime files with the rebuilt
+Qt module and Rust bridge. The timed endpoints are software dispatch and paint
+return or localhost sample receipt. Physical keyboard and display latency
+require hardware measurement. Local receipts are under `build/latency-playback-final/`
+and `build/latency-xdf-final/`. The next release step is packaging and installer
+verification when requested.
+
+## Previous follow-up: Recorder scores and integrated cone
+
+The desktop Recorder has one orange **Start VLC and record** button whose SVG
+cone merges into the button silhouette; there is no separate icon tile.
+It launches the configured video through the existing Rust command, subscribes
+recording, then starts playback. The separate paused-player button and its
+frontend handler were removed at the user's request. Native commands, sampling,
+recording formats and remote authority remain unchanged. Pretext measures the
+label separately from its cone; the default setup width follows text enlargement.
+
+At the user's confirmed target, the Recorder signal viewer now displays the
+latest received numeric valence and arousal scores for selected streams with
+those channel labels. Label-based lookup preserves swapped channel order;
+each stream keeps its own readout and supplied units. Display rounding is two
+decimal places. Missing/non-finite values and disconnected streams show dashes;
+deselection removes the readout. Hiding individual plots does not hide scores.
+No sampling, XDF data, remote payload or native player UI changed.
+
+Verified locally: 24 JavaScript tests, generated-source checks, source/provenance
+and context checks; headless Edge exercises the single action, keyboard activation,
+active-state locks, failure recovery, SVG geometry, received score updates,
+waiting/disconnected/deselection states and label geometry at 320–1920px, plus
+200% text/spacing with the session form visible. Native playback/XDF was not rerun for this UI
+change; the prior installed evidence below applies to its named release only.
+Production build `pnpm tauri build --no-bundle -- --locked` passes. Executable:
+`recorder/src-tauri/target/release/remote-lsl-recorder.exe`, SHA-256
+`3c34f9af9c9be46fe7a80668dccebd28fe93ed26b77062991cff07562f34dc99`.
+Work is committed locally on
+`codex/vlc-record-play-cone`, based on clean `990ba6d`. No push, installation or
+release was performed. The installed Recorder was open and remains untouched;
+applying the rebuilt executable requires a separate handoff after it closes.
+The overall compatibility goal remains open.
 
 ## Milestone: keyboard, joint handoff and recording qualification
 

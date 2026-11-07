@@ -1,4 +1,4 @@
-//! C ABI between VLC's Qt GUI thread and Flubber's independent 30 Hz LSL worker.
+//! C ABI between VLC's Qt GUI thread and Flubber's independent LSL and CSV clocks.
 //! All caller strings are copied before return; no VLC, Qt, or HWND pointer is retained.
 
 use labstream::{Channel, Format, Outlet, StreamInfo};
@@ -7,7 +7,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{
-    atomic::{AtomicU8, Ordering},
+    atomic::{AtomicU64, AtomicU8, Ordering},
     mpsc, Arc, Mutex,
 };
 use std::thread::{self, JoinHandle};
@@ -19,7 +19,29 @@ use windows_sys::Win32::System::Threading::{
     CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS,
 };
 
-const RATE: Duration = Duration::from_nanos(33_333_333);
+const AFFECT_HZ: u32 = 480;
+const AFFECT_PERIOD: Duration = Duration::from_nanos(1_000_000_000 / AFFECT_HZ as u64);
+const RECORD_PERIOD: Duration = Duration::from_nanos(33_333_333);
+
+#[derive(Default)]
+struct AffectPair(AtomicU64);
+
+impl AffectPair {
+    fn store(&self, x: f32, y: f32) {
+        let x = x.clamp(-1., 1.).to_bits();
+        let y = y.clamp(-1., 1.).to_bits();
+        self.0
+            .store((u64::from(x) << 32) | u64::from(y), Ordering::Relaxed);
+    }
+
+    fn load(&self) -> [f32; 2] {
+        let bits = self.0.load(Ordering::Relaxed);
+        [
+            f32::from_bits((bits >> 32) as u32),
+            f32::from_bits(bits as u32),
+        ]
+    }
+}
 
 fn stream_source(process_id: u32, session: Option<&str>) -> Result<String, String> {
     let base = format!("vlc-flubber-{process_id}");
@@ -40,8 +62,6 @@ fn stream_source(process_id: u32, session: Option<&str>) -> Result<String, Strin
 
 #[derive(Clone)]
 struct Snapshot {
-    x: f32,
-    y: f32,
     state: i32,
     media_ms: i64,
     name: String,
@@ -51,8 +71,6 @@ struct Snapshot {
 impl Default for Snapshot {
     fn default() -> Self {
         Self {
-            x: 0.,
-            y: 0.,
             state: 0,
             media_ms: 0,
             name: String::new(),
@@ -163,6 +181,7 @@ impl Session {
     fn sample(
         &mut self,
         snapshot: &Snapshot,
+        pair: [f32; 2],
         stamp: f64,
         markers: &Outlet,
         csv: &mpsc::SyncSender<CsvCommand>,
@@ -187,8 +206,8 @@ impl Session {
         if self.path.is_some() {
             csv.try_send(CsvCommand::Row(
                 (stamp - self.origin).max(0.),
-                snapshot.x,
-                snapshot.y,
+                pair[0],
+                pair[1],
             ))
             .map_err(|e| e.to_string())?;
         }
@@ -319,6 +338,7 @@ fn open_csv(path: &Path) -> Result<BufWriter<File>, String> {
 
 fn worker(
     shared: Arc<Mutex<Snapshot>>,
+    pair: Arc<AffectPair>,
     stop: mpsc::Receiver<()>,
     status: Arc<AtomicU8>,
 ) -> Result<(), String> {
@@ -330,7 +350,7 @@ fn worker(
     let source = stream_source(std::process::id(), session.as_deref())?;
     let result: Result<(Outlet, Outlet, WorkerTimer, TimerPeriod), String> = (|| {
         let info = StreamInfo::builder("VLC_Flubber_Affect", "Affect", Format::Float32)
-            .rate(30.)
+            .rate(f64::from(AFFECT_HZ))
             .source_id(&format!("{source}-affect"))
             .channels([
                 Channel::new("valence").unit("normalized").kind("Affect"),
@@ -375,53 +395,66 @@ fn worker(
     let run = (|| -> Result<(), String> {
         let mut session: Option<Session> = None;
         let mut last_interrupts = 0;
-        let mut next = Instant::now();
+        let mut next_affect = Instant::now();
+        let mut next_record = next_affect;
         loop {
             if stop.try_recv().is_ok() {
                 break;
             }
-            if let Ok(failure) = csv_failure.lock() {
-                if let Some(message) = failure.as_ref() {
-                    return Err(format!("CSV writer: {message}"));
-                }
-            }
-            let snapshot = shared.lock().map_err(|_| "affect lock poisoned")?.clone();
+            let now = Instant::now();
+            let coordinates = pair.load();
             let stamp = labstream::clock();
-            if snapshot.interrupts != last_interrupts {
+            if now >= next_record {
+                if let Ok(failure) = csv_failure.lock() {
+                    if let Some(message) = failure.as_ref() {
+                        return Err(format!("CSV writer: {message}"));
+                    }
+                }
+                let snapshot = shared.lock().map_err(|_| "playback lock poisoned")?.clone();
+                if snapshot.interrupts != last_interrupts {
+                    if let Some(active) = &session {
+                        active.marker(&markers, "Interrupt", stamp)?;
+                    }
+                    last_interrupts = snapshot.interrupts;
+                }
                 if let Some(active) = &session {
-                    active.marker(&markers, "Interrupt", stamp)?;
+                    if matches!(snapshot.state, 5..=7)
+                        || snapshot.name != active.name
+                        || snapshot.path != active.path
+                    {
+                        let active = session.take().unwrap();
+                        let suffix = match snapshot.state {
+                            6 => Some("End"),
+                            7 => Some("Error"),
+                            _ => None,
+                        };
+                        active.stop(&markers, stamp, suffix, &csv_tx)?;
+                    }
                 }
-                last_interrupts = snapshot.interrupts;
-            }
-            if let Some(active) = &session {
-                if matches!(snapshot.state, 5..=7)
-                    || snapshot.name != active.name
-                    || snapshot.path != active.path
-                {
-                    let active = session.take().unwrap();
-                    let suffix = match snapshot.state {
-                        6 => Some("End"),
-                        7 => Some("Error"),
-                        _ => None,
-                    };
-                    active.stop(&markers, stamp, suffix, &csv_tx)?;
+                if session.is_none() && snapshot.state == 3 && snapshot.media_ms > 0 {
+                    session = Some(Session::start(&snapshot, stamp, &markers, &csv_tx)?);
                 }
-            }
-            if session.is_none() && snapshot.state == 3 && snapshot.media_ms > 0 {
-                session = Some(Session::start(&snapshot, stamp, &markers, &csv_tx)?);
-            }
-            if let Some(active) = &mut session {
-                active.sample(&snapshot, stamp, &markers, &csv_tx)?;
+                if let Some(active) = &mut session {
+                    active.sample(&snapshot, coordinates, stamp, &markers, &csv_tx)?;
+                }
+                next_record += RECORD_PERIOD;
+                if next_record <= now {
+                    next_record = now + RECORD_PERIOD;
+                }
             }
             affect
-                .push_at(&[snapshot.x, snapshot.y], stamp)
+                .push_at(&coordinates, stamp)
                 .map_err(|e| e.to_string())?;
-            next += RATE;
-            if next > Instant::now() {
-                timer.wait_until(next).map_err(str::to_owned)?;
-            } else {
-                next = Instant::now();
+            next_affect += AFFECT_PERIOD;
+            let now = Instant::now();
+            if next_affect <= now {
+                // Keep the next deadline on the same grid after a scheduling
+                // stall. Skip expired slots and never publish catch-up bursts.
+                let period_ns = AFFECT_PERIOD.as_nanos();
+                let late_ns = now.duration_since(next_affect).as_nanos();
+                next_affect = now + Duration::from_nanos((period_ns - late_ns % period_ns) as u64);
             }
+            timer.wait_until(next_affect).map_err(str::to_owned)?;
         }
         if let Some(active) = session {
             active.stop(&markers, labstream::clock(), None, &csv_tx)?;
@@ -437,6 +470,7 @@ fn worker(
 
 pub struct Bridge {
     shared: Arc<Mutex<Snapshot>>,
+    pair: Arc<AffectPair>,
     stop: mpsc::Sender<()>,
     worker: Option<JoinHandle<Result<(), String>>>,
     status: Arc<AtomicU8>,
@@ -448,14 +482,21 @@ pub struct Bridge {
 pub extern "C" fn flubber_bridge_new() -> *mut c_void {
     std::panic::catch_unwind(|| {
         let shared = Arc::new(Mutex::new(Snapshot::default()));
+        let pair = Arc::new(AffectPair::default());
         let (stop_tx, stop_rx) = mpsc::channel();
         let status = Arc::new(AtomicU8::new(0));
         let error = Arc::new(Mutex::new(String::new()));
         let worker_shared = Arc::clone(&shared);
+        let worker_pair = Arc::clone(&pair);
         let worker_status = Arc::clone(&status);
         let worker_error = Arc::clone(&error);
         let thread = thread::spawn(move || {
-            let result = worker(worker_shared, stop_rx, Arc::clone(&worker_status));
+            let result = worker(
+                worker_shared,
+                worker_pair,
+                stop_rx,
+                Arc::clone(&worker_status),
+            );
             if let Err(message) = &result {
                 if let Ok(mut error) = worker_error.lock() {
                     *error = message.clone();
@@ -466,6 +507,7 @@ pub extern "C" fn flubber_bridge_new() -> *mut c_void {
         });
         Box::into_raw(Box::new(Bridge {
             shared,
+            pair,
             stop: stop_tx,
             worker: Some(thread),
             status,
@@ -474,6 +516,23 @@ pub extern "C" fn flubber_bridge_new() -> *mut c_void {
         .cast()
     })
     .unwrap_or(std::ptr::null_mut())
+}
+
+/// Publish both axes together from the Qt input handler without a playback lock.
+///
+/// # Safety
+/// `bridge` must be a live handle owned by the calling GUI thread.
+#[no_mangle]
+pub unsafe extern "C" fn flubber_bridge_set_affect(bridge: *mut c_void, x: f32, y: f32) -> c_int {
+    if bridge.is_null() || !x.is_finite() || !y.is_finite() {
+        return -1;
+    }
+    let bridge = unsafe { &*(bridge as *const Bridge) };
+    if bridge.status.load(Ordering::Acquire) == 2 {
+        return -4;
+    }
+    bridge.pair.store(x, y);
+    0
 }
 
 /// All caller-owned UTF-8 buffers are copied during this call.
@@ -505,9 +564,8 @@ pub unsafe extern "C" fn flubber_bridge_update(
             .into_owned();
         if let Ok(mut shared) = bridge.shared.lock() {
             let interrupts = shared.interrupts;
+            bridge.pair.store(x, y);
             *shared = Snapshot {
-                x: x.clamp(-1., 1.),
-                y: y.clamp(-1., 1.),
                 state,
                 media_ms,
                 name,
@@ -703,6 +761,30 @@ mod tests {
             .postprocess(Post::NONE)
             .open(timeout)
             .unwrap();
+        assert!(affect.pull::<f32>(timeout).unwrap().is_some());
+        let mut response_ms = Vec::new();
+        for index in 0..48 {
+            let x = if index % 2 == 0 { -0.25 } else { 0.25 };
+            let sent = Instant::now();
+            assert_eq!(unsafe { flubber_bridge_set_affect(bridge, x, 0.5) }, 0);
+            loop {
+                let (_, sample) = affect.pull::<f32>(timeout).unwrap().unwrap();
+                if sample == [x, 0.5] {
+                    response_ms.push(sent.elapsed().as_secs_f64() * 1000.);
+                    break;
+                }
+                assert!(sent.elapsed() < timeout, "updated pair never arrived");
+            }
+        }
+        response_ms.sort_by(f64::total_cmp);
+        let p95 = response_ms[45];
+        eprintln!(
+            "Affect update to loopback receipt: p50 {:.2} ms, p95 {p95:.2} ms, max {:.2} ms (n={})",
+            response_ms[23],
+            response_ms[47],
+            response_ms.len()
+        );
+        assert!(p95 < 15., "loopback p95 was {p95:.2} ms");
         let folder = std::env::temp_dir().join(format!("flubber-live-{}", std::process::id()));
         std::fs::create_dir_all(&folder).unwrap();
         let video = folder.join("clip.mp4");
@@ -737,11 +819,16 @@ mod tests {
                 }
             }
         }
-        assert!(stamps.len() >= 50, "only {} affect samples", stamps.len());
+        assert_eq!(affect_info.rate(), f64::from(AFFECT_HZ));
+        assert!(
+            stamps.len() >= AFFECT_HZ as usize,
+            "only {} affect samples",
+            stamps.len()
+        );
         let span = stamps.last().unwrap() - stamps.first().unwrap();
         let rate = (stamps.len() - 1) as f64 / span;
         assert!(
-            (28.0..32.0).contains(&rate),
+            (0.95..1.05).contains(&(rate / f64::from(AFFECT_HZ))),
             "LSL sampling rate {rate:.2} Hz"
         );
         assert_eq!(
@@ -779,7 +866,18 @@ mod tests {
             .path();
         let data = std::fs::read_to_string(&csv).unwrap();
         assert!(data.starts_with("time_s,valence,arousal\n"));
-        assert!(data.lines().count() >= 40);
+        let csv_times: Vec<f64> = data
+            .lines()
+            .skip(1)
+            .map(|line| line.split(',').next().unwrap().parse().unwrap())
+            .collect();
+        assert!(csv_times.len() >= 50);
+        let csv_hz = (csv_times.len() - 1) as f64 / (csv_times.last().unwrap() - csv_times[0]);
+        assert!(
+            (28.0..32.0).contains(&csv_hz),
+            "CSV sampling rate {csv_hz:.2} Hz"
+        );
+        eprintln!("Measured cadence: LSL {rate:.2} Hz, CSV {csv_hz:.2} Hz");
         std::fs::remove_file(csv).unwrap();
         std::fs::remove_dir(folder).unwrap();
     }

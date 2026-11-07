@@ -431,7 +431,7 @@ fn main() -> Result<()> {
         return Err("too few independent affect samples".into());
     }
     let rate = (stamps.len() - 1) as f64 / (stamps.last().unwrap() - stamps[0]);
-    if !(28.0..=32.0).contains(&rate) {
+    if affect_info.rate() <= 0.0 || !(0.95..=1.05).contains(&(rate / affect_info.rate())) {
         return Err(format!("observed LSL rate {rate:.2} Hz").into());
     }
     let receipt = format!(

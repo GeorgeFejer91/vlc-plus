@@ -161,8 +161,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/bridge/src/lib.rs",
       "upstreamSha256": "d1f34eb4902ea8245cffdfce9113fc9beaf7d2cca32273fbfc3e769acebd04cd",
       "adapted": true,
-      "adaptation": "Preserve default PID source IDs; optionally append a validated Recorder session ID for collision-free launched-stream selection. Existing acquisition, CSV and marker formats unchanged; tests isolate source IDs.",
-      "standaloneSha256": "2f942f632a6c5bc330cfcd3f3e5746702a249e35e1faadeee846fe62b70bee6b"
+      "adaptation": "Retain PID and optional validated Recorder session IDs. Accept atomic affect updates and publish at 480 Hz while preserving the separate 30 Hz CSV and marker schedule.",
+      "standaloneSha256": "e19f2024e433399b68f092f521a2b963cf4d091647d7d205cfc7e479eca4ec84"
     },
     {
       "path": "vlc-qt/build-bridge.ps1",
@@ -175,16 +175,16 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_bridge.hpp",
       "upstreamSha256": "806f20ff8e7b3f08103035bba7dc9d6c958c5829a7b9308b54aad661dd91cf88",
       "adapted": true,
-      "adaptation": "Retain Rust/LSL DLL mapping through process exit with QLibrary PreventUnloadHint; join owned worker and close CSV/outlets before release.",
-      "standaloneSha256": "59dad41d70922f195175c6443a6171c7fcd7fd74058b3366cdf1f3711dfa7a6b"
+      "adaptation": "Resolve the atomic affect update ABI and retain Rust/LSL DLL mapping through process exit with QLibrary PreventUnloadHint. Join the worker and close CSV and outlets before release.",
+      "standaloneSha256": "a7e6e16285dc23be20d81ced66c290e7e066a0066e505d408183a88ab686f00b"
     },
     {
       "path": "vlc-qt/flubber_panel.hpp",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "f0448bf49e47f8504064cdfa061fa47db4ea457ed06a86a6436eca1cc4728691",
-      "adaptation": "Exclusive representation/all nine characters; scoped native Windows video-thread routing; dedicated shortcuts for all detailed settings; atomic v3 JSON snapshots with rating step and legacy v2 import/startup precedence; focused regression coverage preserves acquisition and source lineage."
+      "standaloneSha256": "c965e99aa95497acc09e72d57b689cded038e8fda74d1a03c355597da95342ed",
+      "adaptation": "Retain exclusive representations, nine faces, detailed shortcuts, v3 settings and v2 import. Track held arrows as one direction, publish affect changes directly and reuse the painted grid field."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -197,8 +197,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "170e6b11f3609e74d5042b9e25fa327f2f083884288fe10984e53334f75df99d",
-      "adaptation": "Exclusive representation/all nine characters; scoped native Windows video-thread routing; dedicated shortcuts for all detailed settings; atomic v3 JSON snapshots with rating step and legacy v2 import/startup precedence; focused regression coverage preserves acquisition and source lineage."
+      "standaloneSha256": "eb411c95c93a3033850237607bfac7cd0826c3d2114aa6c8a89b9ecb910e237b",
+      "adaptation": "Cover representations, faces, shortcuts, v3 settings and v2 import. Check diagonal movement, release, opposing keys and typematic suppression."
     },
     {
       "path": "vlc-qt/test-panel.ps1",
@@ -213,8 +213,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/vlc-3.0.20-flubber.patch",
       "upstreamSha256": "c12c4e801db760e702dbd5170b2038d33e82a1e4017570a4bda642e5fc5a9c6e",
       "adapted": true,
-      "adaptation": "Copy the native video keyboard helper with the Qt patch; expose a single exclusive representation menu and preserve the integrated controls.",
-      "standaloneSha256": "8f43865c25e56895c5923dad680eb57d1b8f5092e4739485c88139398e94ffd0"
+      "adaptation": "Integrate native input and exclusive feedback. Connect Qt affect changes directly to the Rust bridge and clear the callback before teardown.",
+      "standaloneSha256": "df679c3a515d9f77a8aea5a1c96d6250c297ef18b32b41148f978288a63630a5"
     },
     {
       "path": "licenses/AFFECT-RESEARCH-BSD-3-Clause.txt",

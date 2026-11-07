@@ -34,8 +34,8 @@ def main():
         raise ValueError("Expected exact source commit")
     receipt_path = one(args.candidate, "build-receipt.json")
     receipt = read(receipt_path)
-    installer = one(args.candidate, "VLC_Plus_Setup_0.3.3_x64.exe")
-    source = one(args.candidate, "VLC_Plus_Source_0.3.3.zip")
+    installer = one(args.candidate, "VLC_Plus_Setup_0.3.4_x64.exe")
+    source = one(args.candidate, "VLC_Plus_Source_0.3.4.zip")
     packages = one(args.candidate, "toolchain-packages.txt")
     manifest_path = one(args.candidate, "manifest.json")
     manifest = read(manifest_path)
@@ -58,7 +58,8 @@ def main():
             raise ValueError("Installed integrity proof mismatch")
     probe_path = one(args.diagnostics, "installed-probe.json")
     probe = read(probe_path)
-    if probe["result"] != "VERIFIED" or probe["decodedVideoFrames"] <= 0 or not 28 <= probe["observedLslHz"] <= 32 or probe["shutdownMs"] > 10000:
+    if (probe["result"] != "VERIFIED" or probe["decodedVideoFrames"] <= 0
+            or not 456 <= probe["observedLslHz"] <= 504 or probe["shutdownMs"] > 10000):
         raise ValueError("Installed playback/LSL/shutdown proof failed")
     if manifest["files"].get("examples/media/dictator-3-study.mp4") != "b5327e7465ec92a4c93f3236a1ebab4556cdf508e24eafe6c593eac1e13afd49":
         raise ValueError("The permission-scoped sample is missing or changed")

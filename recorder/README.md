@@ -31,6 +31,13 @@ automatically. **Record all available streams** selects new arrivals when on;
 turning it off clears the selection. Stream selection is locked during a
 recording, so a stream arriving mid-recording is available for the next XDF.
 
+Selected streams with channels labelled `valence` and `arousal` also show
+numeric scores above the plots. Each readout uses the latest received sample,
+preserves the channel order from its labels, and shows the supplied units.
+Values are rounded to two decimal places for display; recorded data is unchanged.
+Waiting or disconnected streams show dashes. These readouts remain available
+when individual plot channels are hidden.
+
 Keyboard and mouse marker checkboxes capture input delivered to the recorder
 window. Keyboard markers contain key down/up, key, code, repeat, and modifiers;
 mouse markers contain the button and window/screen coordinates at button press.
@@ -39,11 +46,13 @@ marker stream named `Recorder input` and shows the events in the marker table.
 The recorder includes that stream in XDF, including when a toggle is enabled
 after recording starts. Input in other applications is outside this capture.
 
-## Record and play VLC+
+## Start VLC and record
 
-For one-button launch, open **VLC+ setup**, enter an absolute local video path
+Open **VLC+ setup**, enter an absolute local video path
 and unused control port, and apply the participant and recording folder.
-Select any additional streams, then choose **Start VLC+ and record**. Recorder
+Select any additional streams, then choose the single orange button with its
+integrated SVG cone,
+**Start VLC and record**. Recorder
 opens the default current-user VLC+ installation paused, selects that local
 process's affect and marker streams, starts XDF capture of all selected streams,
 and waits for subscriptions before playback. It verifies RC listener ownership.
@@ -55,28 +64,12 @@ The setup dialog and [online hotkey guide](https://georgefejer91.github.io/vlc-p
 list Alt+F for affect arrows, Alt+G for representation selection, Alt+H for
 cycling all nine face characters, direct selection, layout and quick settings.
 
-With VLC+ installed, open a local video paused with its loopback control enabled:
-
-The helper selects English RC responses, which this local integration expects.
-
-```powershell
-./scripts/start-vlc-session.ps1 -VideoPath 'C:\path\to\dictator-3-study.mp4'
-```
-
-In Recorder, apply the participant and recording folder, then select that
-player's `VLC_Flubber_Affect` and `VLC_Flubber_Markers` streams. Hover a stream
-to check its process-specific source ID. **VLC+ setup** holds the matching
-control port (42123 by default). **Record and play VLC+** checks that a video
-is loaded and paused, starts XDF recording, waits for the selected stream
-headers, and asks VLC+ to play. It confirms VLC's playing state. These are
-ordered operations, not a claim of simultaneous hardware/display onset.
-
 Errors remain visible. If playback fails after recording starts, Recorder
 finishes the partial XDF and retains its path. **Stop recording** finishes XDF
-without changing VLC playback. The button controls only the explicitly chosen
-loopback RC endpoint and does not enable phone access. Keep the port local and
-choose the same player's streams; RC itself does not authenticate other local
-programs. Runtime qualification uses `scripts/check-native-vlc-recording.mjs`;
+without changing VLC playback. Recording subscribes before video playback;
+this is not a claim of simultaneous hardware/display onset. The button uses
+the configured loopback control port (42123 by default) and does not enable
+phone access. Runtime qualification uses `scripts/check-native-vlc-recording.mjs`;
 `scripts/check-record-and-play.mjs` tests rendered controls with mocked native
 IPC and does not establish real recording.
 

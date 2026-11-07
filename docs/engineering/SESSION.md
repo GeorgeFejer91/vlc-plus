@@ -1,5 +1,25 @@
 # Session scope — 2026-11-07
 
+The VLC+ keyboard feedback and LSL goal starts from `4bf8649` on
+`codex/vlc-record-play-cone`. Restore the four missing Git metadata paths
+from their unambiguous sync-conflict copies before edits. Preserve the copies.
+
+The player applies diagonal held-arrow movement and publishes atomic affect
+pairs at nominal 480 Hz. Playback events and CSV use the 30 Hz schedule.
+The Qt grid reuses its color field between affect changes. Rust, offscreen Qt,
+native key routing, decoded playback and LabRecorder XDF checks passed.
+Timings and scope are in `for-ai/PROJECT.md`. The local Windows stage is
+`build/latency-runtime/`. Its Qt module SHA-256 is
+`ed56173126da9c7347a8b7303341723d8160456181d6e4ad3c43d17b7b10dbdb`
+and its bridge SHA-256 is
+`95806f9f175e093bd3363c7f64d2fb3a69a870b8f16bccd6c16a130d72819e86`.
+The full build hit disk capacity during source extraction. The successful
+stage uses the relinked Qt target with the verified VLC runtime from the
+installed release. Packaging and hardware timing are separate verification
+steps. This pass produced a local candidate.
+
+## Earlier qualification scope
+
 Post-qualification documentation is staged locally on
 `codex/qualified-release-docs`, based on application source `2713d42`.
 Allowed changes are release/download prose, native/shared help copy and the
