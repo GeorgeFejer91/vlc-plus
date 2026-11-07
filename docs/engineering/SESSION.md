@@ -12,6 +12,9 @@ f097c95 (documentation only above application source 0edb694). The installed
 published while this supported GUI input path fails. Local SDK compilation is
 unavailable after user-authorized cache cleanup; hosted Windows Qt must prove
 the new regression red before the application fix and green afterward.
+Shared hotkey help may clarify German OEM key labels and the existing layout
+arrow alternative when a desktop utility reserves Alt+S; retain all 64 groups
+and the bounded, measured library layout.
 
 ## Earlier expansion scope — 2026-11-06
 

@@ -52,10 +52,15 @@ and OEM4 as backslash. The native route recognizes the physical bracket keys;
 the GUI legacy settings route does not. The installed check retained step 10
 instead of incrementing to 11. Branch `codex/gui-oem-hotkeys` adds a failing
 Windows GUI regression and makes the existing Windows CI job run the panel.
-The next change must reuse native key normalization after dedicated matching,
-retain digit-driver priority and all text/modal guards, then pass review and
-exact-main source/installer CI. Do not promote 42277964086: a corrected
-same-source installer and repeated installed qualification are required.
+Hosted Windows run 42318768072 reproduced the regression at panel exit 151
+before the application fix. The fix reuses native key normalization after
+dedicated matching, retains digit-driver priority and text/modal guards, and
+adds bracket and resize claim/press/repeat/modifier coverage. Independent
+review found no remaining issue. Shared help clarifies German key labels and
+the layout alternative when desktop screenshots reserve Alt+S; rendered
+Recorder/site checks pass at 320–1920px and 200% text. Green Windows/Linux CI,
+exact-main installer CI and repeated installed qualification remain required.
+Do not promote 42277964086.
 
 The earlier disk blocker is cleared. User-authorized housekeeping relocated
 34 inactive/damaged checkouts (119.5 GB) intact to Proton sync, preserved nine

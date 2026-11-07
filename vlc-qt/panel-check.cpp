@@ -38,6 +38,7 @@ static int checkTranslatedDedicatedKeys( const QString &directory )
     QSettings settings( directory + "/translated.ini", QSettings::IniFormat );
     FlubberPanel panel( &settings );
     QJsonObject baseline = panel.settingsJson(); baseline.insert( "stepPercent", 37 ); baseline.insert( "primary", "face" );
+    replaceSetting( baseline, { "layers", "face", "size" }, 40 );
     const QStringList names{ "oscillationFrequency", "edgeSmoothness", "projectionAmplitude", "pulseSynchrony", "waveSizeVariation", "saturation" };
     for( const QString &name : names ) replaceSetting( baseline, { "appearance", "mappings", name, "drivenBy" }, "x-axis" );
     replaceSetting( baseline, { "appearance", "presentation", "halo", "steepness" }, 1 );
@@ -105,6 +106,13 @@ static int checkTranslatedDedicatedKeys( const QString &directory )
         QKeyEvent other( QEvent::KeyPress, probe.symbol, Qt::ControlModifier, 0, probe.virtualKey, 0 );
         if( panel.handleInputKey( &other ) || panel.settingsJson() != expected ) return 154;
     }
+    if( !reset() ) return 155;
+    QJsonObject resized = panel.settingsJson(); replaceSetting( resized, { "layers", "face", "size" }, 42 );
+    QKeyEvent resizeClaim( QEvent::ShortcutOverride, '~', chord, 0, 0xbb, 0 );
+    const QJsonObject beforeResize = panel.settingsJson(); resizeClaim.ignore();
+    if( !panel.handleInputKey( &resizeClaim ) || !resizeClaim.isAccepted() || panel.settingsJson() != beforeResize ) return 156;
+    QKeyEvent resizePress( QEvent::KeyPress, '~', chord, 0, 0xbb, 0 );
+    if( !panel.handleInputKey( &resizePress ) || panel.settingsJson() != resized ) return 157;
     return 0;
 }
 #endif
