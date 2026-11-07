@@ -13,7 +13,7 @@ hotkey list and [remote LSL controller](https://georgefejer91.github.io/vlc-plus
 
 The player was extracted from Affect Research commit
 `16106a70b57136c7243e85a5a05d83b0789bdd2c`. The standalone Windows
-installer is version 0.3.3 (experimental). This repository has its own source, build inputs and agent guidance.
+installer is version 0.3.4 (experimental). This repository has its own source, build inputs and agent guidance.
 Installer readiness and exact tested scope are recorded in
 [verification](for-ai/VERIFICATION.md). This is experimental software; no
 research qualification or physical display-onset guarantee is claimed.
@@ -22,9 +22,9 @@ research qualification or physical display-onset guarantee is claimed.
 
 Windows x64 installer choices:
 
-1. [VLC+ and Remote LSL Recorder together (0.3.3 / 0.1.8)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/01_VLCPlus_and_LSL_Recorder_Setup_0.3.3_x64.exe), with one desktop shortcut that opens both apps.
-2. [VLC+ only (0.3.3)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/02_VLCPlus_0.3.3_Setup_x64.exe).
-3. [Remote LSL Recorder only (0.1.8)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.3-experimental.1/03_Remote_LSL_Recorder_0.1.8_Setup_x64.exe).
+1. [VLC+ and Remote LSL Recorder together (0.3.4 / 0.1.9)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.4-experimental.1/01_VLCPlus_and_LSL_Recorder_Setup_0.3.4_x64.exe), with one desktop shortcut that opens both apps.
+2. [VLC+ only (0.3.4)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.4-experimental.1/02_VLCPlus_0.3.4_Setup_x64.exe).
+3. [Remote LSL Recorder only (0.1.9)](https://github.com/GeorgeFejer91/vlc-plus/releases/download/v0.3.4-experimental.1/03_Remote_LSL_Recorder_0.1.9_Setup_x64.exe).
 
 Stop/save recordings and close both apps before installing or updating. Run
 the installer for your own account. The joint shortcut opens both apps;

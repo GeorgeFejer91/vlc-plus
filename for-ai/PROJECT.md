@@ -171,6 +171,17 @@ from rebuildable caches. Primary repositories, active shared-index trees and
 recordings were preserved. **Cloud upload remains pending**; moving within C:
 did not itself free the archived payload's physical bytes.
 
+## VLC+ 0.3.4 and Recorder 0.1.9
+
+The [published experimental release](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.4-experimental.1)
+contains the held arrow chords, the 480 Hz affect LSL outlet and 30 Hz CSV,
+the orange combined playback and recording control, and the live valence and
+arousal readouts. Source `3264b0919244e2f3590b63073c9fbdfbb38363f5` passed
+[main checks](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42422838245)
+and [Windows standalone and joint installer gates](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42422840156).
+The hosted player probe observed 473.53 Hz and decoded 188 video frames.
+Public GitHub asset digests match the tested receipts and checksum inventory.
+
 ## Architecture
 
 | Path | Responsibility |
