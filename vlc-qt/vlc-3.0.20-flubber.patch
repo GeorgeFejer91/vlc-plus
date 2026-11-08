@@ -697,16 +697,18 @@ index c567c5b..addea02 100644
      void toggleMinimalView( bool );
      void togglePlaylist();
 diff --git a/modules/gui/qt/menus.cpp b/modules/gui/qt/menus.cpp
-index b3ec20c..51f19ac 100644
+index b3ec20c..9c43dd7 100644
 --- a/modules/gui/qt/menus.cpp
 +++ b/modules/gui/qt/menus.cpp
-@@ -341,6 +341,50 @@ void VLCMenuBar::createMenuBar( MainInterface *mi,
+@@ -341,6 +341,48 @@ void VLCMenuBar::createMenuBar( MainInterface *mi,
      /* View menu, a bit different */
      BAR_DADD( ViewMenu( p_intf, NULL, mi ), qtr( "V&iew" ), 4 );
  
 +    QMenu *flubberMenu = new QMenu( bar );
 +    QAction *flubberSettings = flubberMenu->addAction( qtr( "&Settings…" ), mi,
 +                            SLOT( showFlubberControls() ) );
++    flubberSettings->setShortcut( QKeySequence( "Ctrl+Shift+S" ) );
++    flubberSettings->setShortcutContext( Qt::WidgetShortcut );
 +    flubberMenu->addSeparator();
 +    QAction *mainLabel = flubberMenu->addAction( qtr( "Visible representation" ) );
 +    mainLabel->setEnabled( false );
@@ -717,8 +719,6 @@ index b3ec20c..51f19ac 100644
 +    {
 +        feedbackActions[i] = flubberMenu->addAction( qtr( feedbackNames[i] ) );
 +        feedbackActions[i]->setCheckable( true );
-+        feedbackActions[i]->setShortcut( QKeySequence( QString( "Ctrl+Shift+%1" ).arg( i + 1 ) ) );
-+        feedbackActions[i]->setShortcutContext( Qt::WidgetShortcut );
 +        feedbackGroup->addAction( feedbackActions[i] );
 +        QObject::connect( feedbackActions[i], &QAction::triggered, mi,
 +                          [mi, i]() { mi->setFlubberPrimary( i ); } );
@@ -734,12 +734,10 @@ index b3ec20c..51f19ac 100644
 +    QActionGroup *flubberInput = new QActionGroup( flubberMenu );
 +    QAction *arrowInput = flubberMenu->addAction( qtr( "&Arrow-key control" ), mi,
 +                                                 SLOT( useFlubberArrows() ) );
-+    arrowInput->setShortcut( QKeySequence( "Ctrl+Shift+A" ) );
 +    arrowInput->setCheckable( true );
 +    flubberInput->addAction( arrowInput );
 +    QAction *mouseInput = flubberMenu->addAction( qtr( "&Mouse control" ), mi,
 +                                                 SLOT( useFlubberMouse() ) );
-+    mouseInput->setShortcut( QKeySequence( "Ctrl+Shift+M" ) );
 +    mouseInput->setCheckable( true );
 +    flubberInput->addAction( mouseInput );
 +    QObject::connect( flubberMenu, &QMenu::aboutToShow, mi,

@@ -28,7 +28,7 @@ try {
   page.on("pageerror", error => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.waitForFunction(() => [...document.querySelectorAll("[data-fit-text]")].every(label => label.dataset.fitState));
-  assert.equal(await page.locator("#vlc-hotkeys dt").count(), 64);
+  assert.equal(await page.locator("#vlc-hotkeys dt").count(), vlcHotkeys.length);
   assert.deepEqual(await page.locator("#vlc-hotkeys dt").allTextContents(), vlcHotkeys.map(([keys]) => keys));
   assert.deepEqual(await page.locator("#vlc-hotkeys dd").allTextContents(), vlcHotkeys.map(([, action]) => action));
   assert.match(await page.locator("#vlc-hotkeys").textContent(), /Alt\+H \/ Alt\+Shift\+H.*9 total/s);
@@ -56,6 +56,6 @@ try {
   assert.equal(await page.evaluate(() => window.__TAURI__ === undefined), true);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, "Controller at phone width");
   assert.deepEqual(errors, []);
-  await writeFile(resolve(evidence, "receipt.json"), JSON.stringify({ widths: [320,390,720,1280,1920], shortcuts: 64, textResize: "200% plus text spacing", controllerLoaded: true, browserNativePrivileges: false, pageErrors: errors }, null, 2));
-  console.log("PASS: VLC+ page, actual Pretext, all 64 hotkey groups, 320–1920 px, enlarged text and bundled controller without native privileges.");
+  await writeFile(resolve(evidence, "receipt.json"), JSON.stringify({ widths: [320,390,720,1280,1920], shortcuts: vlcHotkeys.length, textResize: "200% plus text spacing", controllerLoaded: true, browserNativePrivileges: false, pageErrors: errors }, null, 2));
+  console.log("PASS: VLC+ page, actual Pretext, all hotkey groups, 320–1920 px, enlarged text and bundled controller without native privileges.");
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

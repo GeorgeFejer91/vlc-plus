@@ -183,8 +183,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "b06695f4fe3b774bc4e004dffaa02925699848226a2a79df8d7b2e3a226f66f0",
-      "adaptation": "Retain held arrows, exclusive feedback and settings. Record player input events and reject appearance and layout edits during controlled recording."
+      "standaloneSha256": "83c944be182ffc04ef4abdbb0513b3b585b8300bac354ad99e0741a742dc52cf",
+      "adaptation": "Native Flubber settings consolidate tuning shortcuts, add target arrow hold duration and grid style, and respect the Recorder appearance lock."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -197,8 +197,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "1c845ef66358b500ea7cf72a2a38970ba7fb4457634aa397a6ae42167fffa4f0",
-      "adaptation": "Cover representations, settings, native shortcut and arrow behavior, and blocked appearance changes with live ratings during a recording lock."
+      "standaloneSha256": "ed9a08e8bd169c91b641beaa6d622df9f3e86a5d1a693e27f18994a90d766ad5",
+      "adaptation": "Checks native dialog edits and cancellation, tiled and continuous grid rendering, legacy imports and v4 snapshots, alongside playback input and appearance-lock regressions."
     },
     {
       "path": "vlc-qt/test-panel.ps1",
@@ -213,8 +213,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/vlc-3.0.20-flubber.patch",
       "upstreamSha256": "c12c4e801db760e702dbd5170b2038d33e82a1e4017570a4bda642e5fc5a9c6e",
       "adapted": true,
-      "adaptation": "Connect Qt affect and VLC interaction events to LSL, and acknowledge the Recorder's Windows appearance lock before playback.",
-      "standaloneSha256": "ab83e9d92b6a7d1877effabb58c289607b0c00ecb170687d88ac2289f84c60db"
+      "adaptation": "Connect Qt affect and VLC interaction events to LSL, acknowledge the Recorder appearance lock, and expose the settings shortcut in the Flubber menu.",
+      "standaloneSha256": "a654b51c290aa9a50925309b8c1b7923ce420733d912533126d5d3d9a4756b7e"
     },
     {
       "path": "licenses/AFFECT-RESEARCH-BSD-3-Clause.txt",

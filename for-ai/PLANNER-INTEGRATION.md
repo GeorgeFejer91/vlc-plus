@@ -47,7 +47,8 @@ infer support from an older README or overwrite historical schema meanings.
 | P6 | Optional XR layout | Unsupported |
 | P7 | Complete master, policy, integrity and save/reopen | Complete master intake unsupported |
 
-`vlc-feedback-settings/v2` is VLC-local settings, not a replacement P7 master.
+`vlc-feedback-settings/v4` and earlier versions are VLC-local settings. They do
+not replace a P7 master or import the Planner response policy.
 Flubbercorder's `flubbercorder-experiment/v1` belongs to that companion and is
 not the common Planner experiment format.
 

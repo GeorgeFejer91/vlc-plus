@@ -1,3 +1,10 @@
+# Unreleased
+
+Ctrl+Shift+S opens Flubber Settings for color, transparency, grid style and
+arrow hold time. Detailed settings use the dialog, alongside the remaining
+playback and layout shortcuts. Alt+J saves a v4 snapshot; v2 and v3 imports
+remain supported.
+
 # VLC+ 0.3.3 experimental
 
 Alt+F reserves arrows for valence/arousal and restores VLC arrows on the next

@@ -115,7 +115,7 @@ try {
     const seen = new Map();
     const category = page.getByLabel("Category", { exact: true });
     const names = await category.locator("option").evaluateAll(options => options.map(option => option.value));
-    assert.equal(names.length, 8);
+    assert.deepEqual(names, ["Player", "Layout"]);
     for (const name of names) {
       await category.selectOption(name);
       for (;;) {
@@ -180,7 +180,7 @@ try {
     await page.getByRole("button", { name: "Hotkeys", exact: true }).click();
     await checkLibrary();
     await page.screenshot({ path: resolve(output, `library-${width}-${height}.png`), fullPage: true });
-    await page.getByLabel("Category", { exact: true }).selectOption("Flubber");
+    await page.getByLabel("Category", { exact: true }).selectOption("Player");
     await page.waitForFunction(() => document.querySelector("#vlc-hotkeys").dataset.layout === "fit");
     await page.getByRole("button", { name: "Next", exact: true }).focus();
     await page.keyboard.press("Enter");
@@ -220,7 +220,7 @@ try {
   await page.getByRole("button", { name: "Close VLC+ setup" }).click();
   await page.goto(`http://127.0.0.1:${server.address().port}/companion/vlc.html`);
   await page.locator("#vlc-hotkeys dt").first().waitFor();
-  assert.equal(await page.locator("#vlc-hotkeys dt").count(), 64);
+  assert.equal(await page.locator("#vlc-hotkeys dt").count(), vlcHotkeys.length);
   assert.deepEqual(await page.locator("#vlc-hotkeys dt").allTextContents(), vlcHotkeys.map(([keys]) => keys));
   assert.match(await page.locator("#vlc-hotkeys").textContent(), /Alt\+H \/ Alt\+Shift\+H.*9 total/s);
   assert.match(await page.locator("#vlc-hotkeys").textContent(), /Alt\+W.*Alt\+J.*snapshot/s);
