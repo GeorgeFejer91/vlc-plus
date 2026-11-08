@@ -15,27 +15,7 @@ pub fn launch_paused(video: &str, port: u16, session: &str) -> Result<(Child, Vl
         .map_err(|_| format!("Local port {port} is already in use. Choose another VLC+ port."))?;
     let player = installed_player()?;
     drop(probe);
-    let mut command = Command::new(player);
-    command
-        .args([
-            "--no-one-instance",
-            "--language=en",
-            "--extraintf=rc",
-            &format!("--rc-host=127.0.0.1:{port}"),
-            "--rc-quiet",
-            "--start-paused",
-        ])
-        .arg(video)
-        .env("VLC_FLUBBER_SESSION_ID", session)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(0x0800_0000);
-    }
-    let mut child = command
+    let mut child = paused_command(player, video, port, session)
         .spawn()
         .map_err(|error| format!("Could not launch VLC+: {error}"))?;
     let deadline = Instant::now() + Duration::from_secs(15);
@@ -50,6 +30,8 @@ pub fn launch_paused(video: &str, port: u16, session: &str) -> Result<(Child, Vl
                 if !listener_owned(port, child.id())? {
                     return Err("The VLC+ control port belongs to another process. Recording has not started.".into());
                 }
+                #[cfg(windows)]
+                foreground_player(child.id());
                 return Ok((child, control));
             }
             Err(error) if Instant::now() >= deadline => {
@@ -60,6 +42,67 @@ pub fn launch_paused(video: &str, port: u16, session: &str) -> Result<(Child, Vl
             Err(_) => std::thread::sleep(Duration::from_millis(100)),
         }
     }
+}
+
+fn paused_command(player: PathBuf, video: PathBuf, port: u16, session: &str) -> Command {
+    let mut command = Command::new(player);
+    command
+        .args([
+            "--no-one-instance",
+            "--language=en",
+            "--extraintf=rc",
+            &format!("--rc-host=127.0.0.1:{port}"),
+            "--rc-quiet",
+            "--start-paused",
+            "--fullscreen",
+            "--no-qt-start-minimized",
+        ])
+        .arg(video)
+        .env("VLC_FLUBBER_SESSION_ID", session)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x0800_0000);
+    }
+    command
+}
+
+#[cfg(windows)]
+fn foreground_player(process_id: u32) {
+    use windows_sys::Win32::{
+        Foundation::{HWND, LPARAM},
+        UI::WindowsAndMessaging::{
+            EnumWindows, GW_OWNER, GetForegroundWindow, GetWindow, GetWindowThreadProcessId,
+            IsWindowVisible, SetForegroundWindow,
+        },
+    };
+    use windows_sys::core::BOOL;
+
+    unsafe extern "system" fn activate(window: HWND, target: LPARAM) -> BOOL {
+        let mut owner = 0;
+        // SAFETY: EnumWindows supplies the HWND and both PID buffers live for each call.
+        unsafe {
+            GetWindowThreadProcessId(window, &mut owner);
+            if owner != target as u32
+                || IsWindowVisible(window) == 0
+                || !GetWindow(window, GW_OWNER).is_null()
+            {
+                return 1;
+            }
+            let mut foreground_owner = 0;
+            GetWindowThreadProcessId(GetForegroundWindow(), &mut foreground_owner);
+            if foreground_owner == std::process::id() {
+                SetForegroundWindow(window);
+            }
+        }
+        0
+    }
+
+    // SAFETY: The synchronous callback receives a numeric PID and retains no HWND.
+    unsafe { EnumWindows(Some(activate), process_id as LPARAM) };
 }
 
 #[cfg(windows)]
@@ -250,6 +293,21 @@ mod tests {
     use super::*;
     use std::io::{BufRead, BufReader};
     use std::net::TcpListener;
+
+    #[test]
+    fn button_launches_video_in_fullscreen_while_waiting_for_recording() {
+        let command = paused_command(
+            "vlc.exe".into(),
+            "C:/Videos/test clip.mp4".into(),
+            42123,
+            "test",
+        );
+        let args: Vec<_> = command.get_args().collect();
+        assert!(args.contains(&std::ffi::OsStr::new("--fullscreen")));
+        assert!(args.contains(&std::ffi::OsStr::new("--start-paused")));
+        assert!(args.contains(&std::ffi::OsStr::new("--no-qt-start-minimized")));
+        assert_eq!(args.last().unwrap(), &"C:/Videos/test clip.mp4");
+    }
 
     #[test]
     #[cfg(windows)]

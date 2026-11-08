@@ -163,6 +163,7 @@
     "web/vlc-hotkeys.js": "38baa2c557082fd6a3efeb7966bd0d01dadc339132bc8d770fb8015555a95149"
   },
   "adaptations": {
+    "src-tauri/src/vlc.rs": "Start the verified VLC+ child fullscreen and hand off Windows focus after paused readiness.",
     "package.json": "Version the Recorder build embedded in the VLC+ suite.",
     "src-tauri/Cargo.lock": "Match the embedded Recorder package version.",
     "src-tauri/Cargo.toml": "Version the Recorder build embedded in the VLC+ suite.",
