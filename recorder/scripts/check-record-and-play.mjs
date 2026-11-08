@@ -50,6 +50,10 @@ try {
   assert.equal(await page.locator("#record-play").count(), 0);
   assert.equal(await launch.locator('svg[aria-hidden="true"]').count(), 1);
   assert.equal(await launch.locator("img").count(), 0);
+  const outlineColors = await launch.locator(".vlc-cone-outlines use")
+    .evaluateAll(outlines => outlines.map(outline => getComputedStyle(outline).stroke));
+  assert.deepEqual(outlineColors, ["rgb(255, 255, 255)", "rgb(255, 255, 255)"],
+    "Each inward-facing cone edge has a white outline");
   await launch.click();
   assert.equal(await page.locator("#vlc-dialog").evaluate(el => el.open), true);
   assert.equal(calls.some(call => call.command === "start_vlc_and_record"), false);
