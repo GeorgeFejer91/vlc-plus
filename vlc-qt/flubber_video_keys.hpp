@@ -49,6 +49,18 @@ inline double flubberHoldDistance( int tapPercent, int holdMs, qint64 elapsedNs 
     return holdMs ? ( 2.0 - tap ) * ( elapsedNs / 1e6 ) / holdMs : tap;
 }
 
+inline int flubberSettingsTarget( int key, Qt::KeyboardModifiers mods )
+{
+    if( ( mods & ~Qt::KeypadModifier ) != ( Qt::ControlModifier | Qt::ShiftModifier ) ) return -1;
+    switch( key )
+    {
+        case Qt::Key_1: case Qt::Key_Exclam: return 0;
+        case Qt::Key_2: case Qt::Key_At: case Qt::Key_QuoteDbl: return 1;
+        case Qt::Key_3: case Qt::Key_NumberSign: case Qt::Key_section: return 2;
+        default: return -1;
+    }
+}
+
 inline bool flubberReservedKey( int key, Qt::KeyboardModifiers mods, bool arrows )
 {
     mods &= ~Qt::KeypadModifier;
@@ -59,7 +71,8 @@ inline bool flubberReservedKey( int key, Qt::KeyboardModifiers mods, bool arrows
     if( mods == ( Qt::AltModifier | Qt::ShiftModifier ) && key == Qt::Key_Plus ) return true;
     if( ( mods == Qt::AltModifier || mods == ( Qt::AltModifier | Qt::ShiftModifier ) ) &&
         ( key == Qt::Key_G || key == Qt::Key_H ) ) return true;
-    return mods == ( Qt::ControlModifier | Qt::ShiftModifier ) && key == Qt::Key_S;
+    return flubberSettingsTarget( key, mods ) >= 0 ||
+        ( mods == ( Qt::ControlModifier | Qt::ShiftModifier ) && key == Qt::Key_S );
 }
 
 #ifdef Q_OS_WIN
@@ -70,6 +83,8 @@ inline bool flubberReservedKey( int key, Qt::KeyboardModifiers mods, bool arrows
 
 inline int flubberQtKey( WPARAM key )
 {
+    if( key >= '1' && key <= '3' ) return Qt::Key_1 + int( key - '1' );
+    if( key >= VK_NUMPAD1 && key <= VK_NUMPAD3 ) return Qt::Key_1 + int( key - VK_NUMPAD1 );
     if( key >= 'A' && key <= 'Z' ) return Qt::Key_A + int( key - 'A' );
     switch( key )
     {

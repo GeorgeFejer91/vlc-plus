@@ -9,7 +9,8 @@ export const vlcHotkeys = [
   ["Alt+W / A / S / D", "Move feedback up / left / down / right in either input mode. If Alt+S is reserved for screenshots, hold Ctrl+Alt and use arrows with affect input on.", "Layout"],
   ["Alt+plus / minus", "Increase / decrease selected feedback size. Alt+= and numpad keys also work.", "Layout"],
   ["Alt+J", "Save a settings snapshot. VLC+ restores the last successful snapshot on launch.", "Player"],
-  ["Ctrl+Shift+S", "Open Flubber Settings: colors, transparency, tiles or continuous grid, and full-axis arrow hold time.", "Player"],
+  ["Ctrl+Shift+S", "Open all settings, including shared arrow hold time and JSON import/export.", "Player"],
+  ["Ctrl+Shift+1 / 2 / 3", "Open the Flubber, 2D grid or Face morph popup. Edits preview in VLC+; OK keeps them.", "Player"],
   ["Escape", "Release mouse rating capture.", "Player"],
 ];
 

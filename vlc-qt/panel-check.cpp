@@ -116,6 +116,89 @@ static int checkEditorShortcutOwnership( const QString &directory )
     return 0;
 }
 
+static int checkRepresentationPopups( const QString &directory, const QDir &evidence )
+{
+    QSettings settings( directory + "/representation-popups.ini", QSettings::IniFormat );
+    FlubberPanel panel( &settings );
+    panel.resize( 720, panel.height() );
+    panel.setPrimary( FlubberPanel::GridKind );
+    panel.setAffect( .25, .4 );
+    panel.show(); QApplication::setActiveWindow( &panel );
+    const Qt::KeyboardModifiers modifiers = Qt::ControlModifier | Qt::ShiftModifier;
+    const auto popup = [&]( int digit, bool keep ) {
+        const QJsonObject before = panel.settingsJson();
+        const QImage original = panel.grab().toImage();
+        bool verified = false;
+        bool visited = false;
+        QTimer::singleShot( 0, &panel, [&]() {
+            visited = true;
+            auto *dialog = qobject_cast<QDialog *>( QApplication::activeModalWidget() );
+            if( !dialog ) return;
+            auto *tabs = dialog->findChild<QTabWidget *>();
+            const QStringList titles{ "Flubber appearance", "2D grid settings", "Face morph settings" };
+            const int expectedTabs[] = { 3, 2, 1 };
+            if( tabs && tabs->count() == expectedTabs[digit] && dialog->windowTitle() == titles[digit] )
+            {
+                const QImage initial = panel.grab().toImage();
+                auto *size = dialog->findChild<QSpinBox *>( QStringLiteral( "flubber-layer-%1-size" ).arg( digit ) );
+                if( size && size->isVisible() )
+                {
+                    size->setValue( 100 );
+                    const QImage resized = panel.grab().toImage();
+                    verified = resized != initial && panel.settingsJson() == before &&
+                        !dialog->findChild<QSpinBox *>( "flubber-hold-duration" )->isVisible() &&
+                        tabs->currentWidget()->rect().contains( QRect( size->mapTo( tabs->currentWidget(), QPoint() ), size->size() ) );
+                    if( digit == 0 ) dialog->findChild<QSlider *>( "flubber-transparency" )->setValue( 100 );
+                    if( digit == 1 ) dialog->findChild<QComboBox *>( "flubber-grid-style" )->setCurrentIndex( 1 );
+                    if( digit == 2 ) tabs->currentWidget()->findChild<QComboBox *>()->setCurrentIndex( 1 );
+                    verified = verified && panel.grab().toImage() != resized && panel.settingsJson() == before;
+                    const auto fits = []( QWidget *control ) {
+                        return !control->isVisible() || ( control->width() >= control->minimumSizeHint().width() &&
+                            control->height() >= control->minimumSizeHint().height() );
+                    };
+                    for( int i = 0; i < tabs->count(); ++i )
+                    {
+                        tabs->setCurrentIndex( i );
+                        QApplication::processEvents();
+                        for( auto *control : tabs->currentWidget()->findChildren<QWidget *>() )
+                            if( qobject_cast<QLabel *>( control ) || qobject_cast<QAbstractSpinBox *>( control ) ||
+                                qobject_cast<QComboBox *>( control ) || qobject_cast<QPushButton *>( control ) )
+                                if( !fits( control ) )
+                                {
+                                    std::fprintf( stderr, "Popup %d tab %d: %s %dx%d, minimum %dx%d\n",
+                                        digit, i, control->metaObject()->className(), control->width(), control->height(),
+                                        control->minimumSizeHint().width(), control->minimumSizeHint().height() );
+                                    verified = false;
+                                }
+                    }
+                    tabs->setCurrentIndex( 0 );
+                    dialog->grab().save( evidence.filePath( QStringLiteral( "representation-popup-%1.png" ).arg( digit ) ) );
+                }
+            }
+            if( keep && verified ) dialog->accept();
+            else
+            {
+                QKeyEvent escape( QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier );
+                QApplication::sendEvent( dialog, &escape );
+            }
+        } );
+        QKeyEvent press( QEvent::KeyPress, Qt::Key_1 + digit, modifiers );
+        if( !panel.handleInputKey( &press ) )
+        {
+            QApplication::processEvents();
+            return false;
+        }
+        if( !visited || !verified ) return false;
+        if( !keep ) return panel.settingsJson() == before && panel.grab().toImage() == original;
+        QJsonObject expected = before;
+        expected.insert( "gridStyle", "continuous" );
+        replaceSetting( expected, { "layers", "grid", "size" }, 100 );
+        return panel.settingsJson() == expected;
+    };
+    if( !popup( 0, false ) || !popup( 1, false ) || !popup( 2, false ) || !popup( 1, true ) ) return 212;
+    return 0;
+}
+
 static int checkFeedbackSettingsDialog( const QString &directory, const QDir &evidence )
 {
     QSettings settings( directory + "/feedback-settings.ini", QSettings::IniFormat );
@@ -291,6 +374,7 @@ int main( int argc, char **argv )
     QTemporaryDir temp;
     const QDir evidence = QFileInfo( QString::fromLocal8Bit( argv[2] ) ).dir();
     if( const int result = checkFeedbackSettingsDialog( temp.path(), evidence ) ) return result;
+    if( const int result = checkRepresentationPopups( temp.path(), evidence ) ) return result;
     const int editorShortcuts = checkEditorShortcutOwnership( temp.path() );
     if( editorShortcuts ) return editorShortcuts;
     if( const int result = checkRecordingLock( temp.path() ) ) return result;

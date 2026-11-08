@@ -1,9 +1,11 @@
 # Unreleased
 
-Ctrl+Shift+S opens Flubber Settings for color, transparency, grid style and
-arrow hold time. Detailed settings use the dialog, alongside the remaining
-playback and layout shortcuts. Alt+J saves a v4 snapshot; v2 and v3 imports
-remain supported.
+Ctrl+Shift+1, Ctrl+Shift+2 and Ctrl+Shift+3 open the Flubber, 2D grid and
+Face morph popups, with live preview in VLC+. OK keeps the settings; Cancel
+restores the prior display.
+
+Ctrl+Shift+S opens all settings, including shared arrow hold time and JSON
+import/export. Alt+J saves a v4 snapshot; v2 and v3 imports remain supported.
 
 # VLC+ 0.3.3 experimental
 

@@ -221,6 +221,25 @@ foregrounding the user desktop. Physical key timing, a fresh installer and
 publication are outside this pass. The broader Planner/Runner compatibility
 goal stays open.
 
+## Representation settings popups — 2026-11-08
+
+- [x] Ctrl+Shift+1/2/3 and three Flubber menu actions open separate native
+  settings for Flubber, 2D grid and Face morph. Ctrl+Shift+S still opens
+  all settings, including shared input, panel height and JSON.
+- [x] Render each draft in the current VLC+ window before committing.
+  Cancel restores the previous display; OK saves and keeps the selected
+  representation. Shared Flubber/grid colors and transparency are labelled.
+  The Recorder lock, stored v4 format and acquisition path are preserved.
+- [x] Windows Qt and native key checks, rendered popup size checks, source
+  checks and rendered Recorder/site guides passed. The final local runtime
+  decoded 207 synthetic frames, observed 479.89 Hz affect LSL, recorded
+  169/31 CSV rows and emitted 24 interaction markers and the expected
+  playback markers. Evidence: `build/representation-popups-final/`.
+
+Local portable stage: `build/representation-popups-runtime/`. Branch
+`codex/vlc-feedback-settings` continues from `59cf17d`. No foreground
+physical input test, installation or publication was performed.
+
 ## Architecture
 
 | Path | Responsibility |

@@ -1,3 +1,13 @@
+# Session scope — Representation popups
+
+From clean local VLC+ source `59cf17d`, add Ctrl+Shift+1/2/3 and three
+Flubber menu actions for representation-specific native settings. Preview edits
+in the playing window; OK keeps the settings and Cancel reverts the display.
+Keep shared input and JSON controls under Ctrl+Shift+S. The preview must not
+change saved settings, recorded affect or the Recorder lock. Scope: Qt
+settings, rendering and key routing; their regressions, hotkey guide and docs.
+Build and verify a local portable candidate. No installation or publication.
+
 # Session scope — 2026-11-08
 
 Consolidate VLC+ tuning shortcuts into the existing native Settings dialog,

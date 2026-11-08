@@ -33,7 +33,12 @@ int main( int argc, char **argv )
                          Qt::Key_Equal, Qt::Key_BracketRight, Qt::Key_Period } )
             if( flubberReservedKey( key, retired, arrows ) ||
                 flubberReservedKey( key, retired | Qt::ShiftModifier, arrows ) ) return 13;
-        for( int key : { Qt::Key_F1, Qt::Key_PageUp, Qt::Key_1, Qt::Key_A, Qt::Key_M } )
+        for( int key = Qt::Key_1; key <= Qt::Key_3; ++key )
+            if( !flubberReservedKey( key, settings, arrows ) ||
+                flubberReservedKey( key, Qt::ControlModifier, arrows ) ) return 14;
+        if( flubberSettingsTarget( Qt::Key_QuoteDbl, settings ) != 1 ||
+            flubberSettingsTarget( Qt::Key_section, settings ) != 2 ) return 14;
+        for( int key : { Qt::Key_F1, Qt::Key_PageUp, Qt::Key_A, Qt::Key_M } )
             if( flubberReservedKey( key, settings, arrows ) ) return 14;
     }
     for( int duration : { 250, 600, 15000 } )
@@ -46,7 +51,8 @@ int main( int argc, char **argv )
     }
     if( flubberHoldDistance( 37, 0, 33000000 ) != .37 ) return 16;
 #ifdef Q_OS_WIN
-    if( flubberQtKey( 'S' ) != Qt::Key_S || flubberQtKey( VK_ADD ) != Qt::Key_Plus ||
+    if( flubberQtKey( '1' ) != Qt::Key_1 || flubberQtKey( VK_NUMPAD3 ) != Qt::Key_3 ||
+        flubberQtKey( 'S' ) != Qt::Key_S || flubberQtKey( VK_ADD ) != Qt::Key_Plus ||
         flubberQtKey( VK_SUBTRACT ) != Qt::Key_Minus ) return 17;
     // Hidden, owned HWNDs: exercise the same separate GetMessage loop as VLC
     // without taking foreground focus or synthesizing input into another app.

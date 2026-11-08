@@ -49,7 +49,11 @@ it, and **Alt+J** to save a JSON snapshot. The last successful snapshot loads
 automatically on the next launch. These layout shortcuts work with mouse or
 arrow input and leave the affect rating unchanged.
 
-In this build, **Ctrl+Shift+S** opens **Flubber Settings** from the player or
+**Ctrl+Shift+1**, **Ctrl+Shift+2** and **Ctrl+Shift+3** open dedicated popups
+for Flubber, 2D grid and Face morph. Changes preview in the open VLC+ window.
+Choose OK to keep them or Cancel to restore the previous display.
+
+**Ctrl+Shift+S** opens all settings, including shared input and JSON, from the player or
 video. Use **Flubber** and **Colors** for transparency and colors, **2D grid**
 to choose Tiles or Continuous, and **Input & display** to set how many
 milliseconds a held arrow takes to cross an affect axis. Settings keep the

@@ -117,7 +117,9 @@ or closing Recorder releases the lock. Playback and affect input remain active.
 The Flubber menu selects Flubber, 2D grid, or face morph and switches between
 mouse and arrow input. Exactly one representation is visible at a time. Each
 retains its own layout. **Flubber → Settings…** and **Ctrl+Shift+S** open the
-same dialog.
+same dialog. The three representation popups also have separate entries in
+the Flubber menu. Opening one previews that representation without committing
+changes to its layout or appearance.
 
 Quick settings work in the player/video window and leave rating values
 unchanged. Dialogs and popups retain normal keyboard behavior.
@@ -130,7 +132,8 @@ unchanged. Dialogs and popups retain normal keyboard behavior.
 | Alt+G / Alt+Shift+G | Next/previous: Flubber → 2D grid → affective face morph map → Flubber. Retains the selected face preset. Held keys do not repeatedly cycle. |
 | Alt+H / Alt+Shift+H | Next/previous face character across the original portrait and eight synthetic characters, wrapping in both directions. Selects face morph. Held keys do not repeatedly cycle. |
 | Ctrl+Alt+Left/Right/Up/Down | With affect arrows on, move the main feedback by two percentage points. With them off, VLC keeps these keys. |
-| Ctrl+Shift+S | Open Flubber Settings. Use Tab/Shift+Tab and the native controls to edit input, appearance and layout. |
+| Ctrl+Shift+S | Open all settings, including input and JSON import/export. |
+| Ctrl+Shift+1 / 2 / 3 | Open the Flubber / 2D grid / Face morph popup. Edits preview in the open player; OK keeps them and Cancel restores the prior display. |
 
 If a desktop screenshot utility reserves Alt+S, hold Ctrl+Alt and use arrows
 with affect arrows on to move the feedback instead.

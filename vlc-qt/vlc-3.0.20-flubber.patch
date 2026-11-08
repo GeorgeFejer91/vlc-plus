@@ -167,7 +167,7 @@ index 9633a8c..4c21cdb 100644
      void nameChanged( const QString& );
      /// Used to signal whether we should show navigation buttons
 diff --git a/modules/gui/qt/main_interface.cpp b/modules/gui/qt/main_interface.cpp
-index 6e66afb..57c0450 100644
+index 6e66afb..a5d08e4 100644
 --- a/modules/gui/qt/main_interface.cpp
 +++ b/modules/gui/qt/main_interface.cpp
 @@ -38,6 +38,13 @@
@@ -427,17 +427,13 @@ index 6e66afb..57c0450 100644
          controls );
  
      /* Visualisation, disabled for now, they SUCK */
-@@ -530,6 +673,177 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
+@@ -530,6 +673,173 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
          setWindowFlags( windowFlags() | Qt::WindowStaysOnTopHint );
  }
  
-+void MainInterface::showFlubberControls()
++void MainInterface::showFlubberControls( int target )
 +{
-+    if( flubberPanel && !flubberPanel->rejectAppearanceChange() )
-+    {
-+        flubberPanel->stopRating();
-+        flubberPanel->showControls( this );
-+    }
++    if( flubberPanel ) flubberPanel->showControls( this, target );
 +}
 +
 +bool MainInterface::flubberAppearanceLocked() const
@@ -605,7 +601,7 @@ index 6e66afb..57c0450 100644
  inline void MainInterface::initSystray()
  {
      bool b_systrayAvailable = QSystemTrayIcon::isSystemTrayAvailable();
-@@ -745,6 +1059,8 @@ void MainInterface::getVideoSlot( struct vout_window_t *p_wnd,
+@@ -745,6 +1055,8 @@ void MainInterface::getVideoSlot( struct vout_window_t *p_wnd,
      {
          videoWidget = new VideoWidget( p_intf, stackCentralW );
          stackCentralW->addWidget( videoWidget );
@@ -614,7 +610,7 @@ index 6e66afb..57c0450 100644
      }
      *res = videoWidget->request( p_wnd );
      if( *res ) /* The videoWidget is available */
-@@ -1698,6 +2014,8 @@ void MainInterface::toolBarConfUpdated()
+@@ -1698,6 +2010,8 @@ void MainInterface::toolBarConfUpdated()
  
  void MainInterface::setInterfaceFullScreen( bool fs )
  {
@@ -623,7 +619,7 @@ index 6e66afb..57c0450 100644
      if( fs )
          setWindowState( windowState() | Qt::WindowFullScreen );
      else
-@@ -1766,6 +2084,26 @@ void MainInterface::voutReleaseMouseEvents()
+@@ -1766,6 +2080,26 @@ void MainInterface::voutReleaseMouseEvents()
   *  We don't show the menu directly here because we don't want the
   *  caller to block for a too long time.
   *****************************************************************************/
@@ -651,7 +647,7 @@ index 6e66afb..57c0450 100644
                          vlc_value_t, vlc_value_t new_val, void *param )
  {
 diff --git a/modules/gui/qt/main_interface.hpp b/modules/gui/qt/main_interface.hpp
-index c567c5b..addea02 100644
+index c567c5b..4097852 100644
 --- a/modules/gui/qt/main_interface.hpp
 +++ b/modules/gui/qt/main_interface.hpp
 @@ -42,6 +42,8 @@ class QKeyEvent;
@@ -680,7 +676,7 @@ index c567c5b..addea02 100644
      int i_kc_offset;
  
  public slots:
-+    void showFlubberControls();
++    void showFlubberControls( int target = -1 );
 +    bool flubberUsesArrows() const;
 +    bool flubberAppearanceLocked() const;
 +    void recordVlcHotkey( int action );
@@ -697,18 +693,29 @@ index c567c5b..addea02 100644
      void toggleMinimalView( bool );
      void togglePlaylist();
 diff --git a/modules/gui/qt/menus.cpp b/modules/gui/qt/menus.cpp
-index b3ec20c..9c43dd7 100644
+index b3ec20c..74e4cf6 100644
 --- a/modules/gui/qt/menus.cpp
 +++ b/modules/gui/qt/menus.cpp
-@@ -341,6 +341,48 @@ void VLCMenuBar::createMenuBar( MainInterface *mi,
+@@ -341,6 +341,60 @@ void VLCMenuBar::createMenuBar( MainInterface *mi,
      /* View menu, a bit different */
      BAR_DADD( ViewMenu( p_intf, NULL, mi ), qtr( "V&iew" ), 4 );
  
 +    QMenu *flubberMenu = new QMenu( bar );
-+    QAction *flubberSettings = flubberMenu->addAction( qtr( "&Settings…" ), mi,
-+                            SLOT( showFlubberControls() ) );
++    QAction *flubberSettings = flubberMenu->addAction( qtr( "&Settings…" ) );
++    QObject::connect( flubberSettings, &QAction::triggered, mi,
++                      [mi]() { mi->showFlubberControls(); } );
 +    flubberSettings->setShortcut( QKeySequence( "Ctrl+Shift+S" ) );
 +    flubberSettings->setShortcutContext( Qt::WidgetShortcut );
++    QAction *representationSettings[3];
++    const char *settingsNames[] = { "Flubber appearance…", "2D grid settings…", "Face morph settings…" };
++    for( int i = 0; i < 3; ++i )
++    {
++        representationSettings[i] = flubberMenu->addAction( qtr( settingsNames[i] ) );
++        representationSettings[i]->setShortcut( QKeySequence( QString( "Ctrl+Shift+%1" ).arg( i + 1 ) ) );
++        representationSettings[i]->setShortcutContext( Qt::WidgetShortcut );
++        QObject::connect( representationSettings[i], &QAction::triggered, mi,
++                          [mi, i]() { mi->showFlubberControls( i ); } );
++    }
 +    flubberMenu->addSeparator();
 +    QAction *mainLabel = flubberMenu->addAction( qtr( "Visible representation" ) );
 +    mainLabel->setEnabled( false );
@@ -724,9 +731,10 @@ index b3ec20c..9c43dd7 100644
 +                          [mi, i]() { mi->setFlubberPrimary( i ); } );
 +    }
 +    QObject::connect( flubberMenu, &QMenu::aboutToShow, mi,
-+                      [mi, feedbackActions, flubberSettings]() {
++                      [mi, feedbackActions, flubberSettings, representationSettings]() {
 +        const bool editable = !mi->flubberAppearanceLocked();
 +        flubberSettings->setEnabled( editable );
++        for( QAction *action : representationSettings ) action->setEnabled( editable );
 +        for( QAction *action : feedbackActions ) action->setEnabled( editable );
 +        feedbackActions[mi->flubberPrimary()]->setChecked( true );
 +    } );
