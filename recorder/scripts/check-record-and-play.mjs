@@ -134,23 +134,41 @@ try {
     }
     assert.deepEqual([...seen].sort(), vlcHotkeys.map(([keys, action]) => [keys, action]).sort());
   }
+  async function checkRecordButton() {
+    assert.equal(await launch.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
+    await page.waitForFunction(() => [...document.querySelectorAll(".vlc-record-action [data-fit-text]")].every(label => ["fit", "no-fit"].includes(label.dataset.fitState)));
+    const { cones, body, bounds, text, labelFits } = await launch.evaluate(button => {
+      // Clip-path shapes expose their geometry in SVG coordinates.
+      const paintedBounds = shape => {
+        const { x, y, width, height } = shape.getBBox();
+        const transform = shape.getScreenCTM();
+        const start = new DOMPoint(x, y).matrixTransform(transform);
+        const end = new DOMPoint(x + width, y + height).matrixTransform(transform);
+        return { left: start.x, top: start.y, right: end.x, bottom: end.y, width, height };
+      };
+      const label = button.querySelector("[data-fit-text]");
+      return {
+        cones: [...button.querySelectorAll(".vlc-button-cone")].map(paintedBounds),
+        body: paintedBounds(button.querySelector(".vlc-button-body")),
+        bounds: button.getBoundingClientRect().toJSON(),
+        text: label.getBoundingClientRect().toJSON(),
+        labelFits: label.scrollWidth <= label.clientWidth + 1 && label.scrollHeight <= label.clientHeight + 1,
+      };
+    });
+    assert.equal(cones.length, 2, "The orange button has one cone at each end");
+    const [left, right] = cones;
+    assert.ok(left.width > 0 && right.width > 0 && body.width > 0 && body.height > 0);
+    assert.ok(left.left >= bounds.left && left.right < text.left && text.right < right.left && right.right <= bounds.right,
+      "The full label fits between the cones");
+    assert.ok(Math.abs(left.bottom - body.bottom) < 1 && Math.abs(right.bottom - body.bottom) < 1,
+      "Both cone bases align with the orange body");
+    assert.ok(text.top >= body.top && text.bottom <= body.bottom, "The orange body contains the label vertically");
+    assert.equal(labelFits, true);
+  }
   for (const [width, height] of [[320, 600], [320, 900], [720, 600], [1280, 600], [1280, 900], [1920, 1080]]) {
     await page.setViewportSize({ width, height });
     await page.evaluate(() => document.fonts.ready);
-    assert.equal(await launch.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
-    await page.waitForFunction(() => [...document.querySelectorAll(".vlc-record-action [data-fit-text]")].every(label => ["fit", "no-fit"].includes(label.dataset.fitState)));
-    assert.equal(await launch.evaluate(button => {
-        const art = button.querySelector("svg").getBoundingClientRect();
-        const cone = button.querySelector("path").getBBox();
-        const body = button.querySelector("rect").getBBox();
-        const label = button.querySelector("[data-fit-text]");
-        const text = label.getBoundingClientRect();
-        const bounds = button.getBoundingClientRect();
-        return ["fit", "no-fit"].includes(label.dataset.fitState)
-          && label.scrollWidth <= label.clientWidth + 1 && label.scrollHeight <= label.clientHeight + 1
-          && body.width > 0 && body.height > 0
-          && art.left + cone.x + cone.width < text.left && text.right <= bounds.right && text.bottom <= bounds.bottom;
-    }), true, `Cone and full label must fit at ${width}×${height}`);
+    await checkRecordButton();
     assert.equal(await page.locator("#affect-score-list").evaluate(region => region.scrollWidth <= region.clientWidth + 1), true);
     assert.deepEqual(await scores.allTextContents(), ["-0.25", "+0.75"]);
     await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
@@ -173,10 +191,14 @@ try {
     await page.screenshot({ path: resolve(output, `recorder-${width}.png`), fullPage: true });
   }
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.addStyleTag({ content: "html {font-size:200% !important} #vlc-launch-record {line-height:1.5 !important;letter-spacing:.12em !important;word-spacing:.16em !important}" });
-  assert.equal(await launch.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
+  await launch.screenshot({ path: resolve(output, "record-button.png") });
+  await page.addStyleTag({ content: "html {font-size:200% !important} #vlc-launch-record span {line-height:1.5 !important;letter-spacing:.12em !important;word-spacing:.16em !important}" });
+  await checkRecordButton();
   assert.equal(await page.locator(".setup-panel").evaluate(panel => panel.scrollWidth <= panel.clientWidth + 1 && panel.scrollHeight <= panel.clientHeight + 1), true, "Enlarged controls and the session form must remain visible");
   await page.screenshot({ path: resolve(output, "recorder-large-text.png"), fullPage: true });
+  await page.setViewportSize({ width: 320, height: 900 });
+  await checkRecordButton();
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("button", { name: "VLC+ setup", exact: true }).click();
   assert.equal(await page.locator("#vlc-settings").isVisible(), true);
   assert.equal(await page.locator("#vlc-dialog").evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
@@ -214,5 +236,5 @@ try {
     }
   });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
-  console.log("PASS: integrated SVG cone button, received valence/arousal values, missing/disconnected/selection states, launch/record/play, keyboard, 320–1920px, 200% text and bounded hotkey library (mock native IPC).");
+  console.log("PASS: aligned SVG cones, received valence/arousal values, missing/disconnected/selection states, launch/record/play, keyboard, 320–1920px, 200% text and bounded hotkey library (mock native IPC).");
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

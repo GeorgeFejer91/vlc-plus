@@ -37,16 +37,23 @@
           <button id="vlc-launch-record" type="button" class="vlc-record-action">
             <svg class="vlc-button-art" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
               <defs>
-                <linearGradient id="vlc-button-orange" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="64">
+                <linearGradient id="vlc-button-orange" x2="0%" y2="100%">
                   <stop class="vlc-orange-top" offset="0" stop-color="#ffa33e"/>
                   <stop class="vlc-orange-bottom" offset="1" stop-color="#f1841b"/>
                 </linearGradient>
+                <path id="vlc-cone-shape" d="M4 54 19 6Q20 2 24 2h5q4 0 5 4l15 48zM3 51h49v9H3z"/>
+                <path id="vlc-cone-stripes" d="m16 16-2 7h25l-2-7zm-5 16-2 7h35l-2-7z"/>
+                <clipPath id="vlc-button-silhouette">
+                  <rect class="vlc-button-body" x="30" y="12" rx="8"/>
+                  <use class="vlc-button-cone" href="#vlc-cone-shape" y="100%"/>
+                  <use class="vlc-button-cone vlc-button-right" href="#vlc-cone-shape" x="100%" y="100%"/>
+                </clipPath>
               </defs>
-              <g fill="url(#vlc-button-orange)">
-                <rect class="vlc-button-body" x="30" y="12" rx="8"/>
-                <path d="M4 54 19 6Q20 2 24 2h5q4 0 5 4l15 48zM3 51h49v9H3z"/>
+              <rect width="100%" height="100%" fill="url(#vlc-button-orange)" clip-path="url(#vlc-button-silhouette)"/>
+              <g fill="#fff8ee">
+                <use href="#vlc-cone-stripes" y="100%"/>
+                <use class="vlc-button-right" href="#vlc-cone-stripes" x="100%" y="100%"/>
               </g>
-              <path fill="#fff8ee" d="m16 16-2 7h25l-2-7zm-5 16-2 7h35l-2-7z"/>
             </svg>
             <span data-fit-text="action">Start VLC and record</span>
           </button>
