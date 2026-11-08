@@ -230,6 +230,7 @@ public:
     }
     bool setFaceId( const QString &id, QString *error = NULL )
     {
+        if( rejectAppearanceChange() ) return false;
         if( !faceIds().contains( id ) )
         { if( error ) *error = tr( "Unknown face preset." ); return false; }
         const QString path = QCoreApplication::applicationDirPath() + "/assets/face/" + id + ".png";
@@ -246,6 +247,7 @@ public:
     }
     void setPrimary( FeedbackKind kind )
     {
+        if( rejectAppearanceChange() ) return;
         if( kind != primary_ )
         {
             std::swap( layers_[kind].size, layers_[primary_].size );
@@ -253,6 +255,7 @@ public:
             std::swap( layers_[kind].y, layers_[primary_].y );
             primary_ = kind;
             settings_->setValue( "Flubber/primary", kindName( kind ) );
+            recordInteraction( QStringLiteral( "representation" ), { { "kind", kindName( kind ) } } );
         }
         normalizeVisibility();
         update();
@@ -264,6 +267,7 @@ public:
     }
     void setLayout( FeedbackKind kind, ElementLayout layout )
     {
+        if( rejectAppearanceChange() ) return;
         layout.size = qBound( 10, layout.size, 100 );
         layout.x = qBound( 0, layout.x, 100 );
         layout.y = qBound( 0, layout.y, 100 );
@@ -324,6 +328,8 @@ public:
     }
     bool loadSettingsFile( const QString &path, QString &error )
     {
+        if( rejectAppearanceChange() )
+        { error = tr( "Flubber appearance is locked during recording." ); return false; }
         QFile file( path );
         if( !file.open( QIODevice::ReadOnly ) ) { error = file.errorString(); return false; }
         if( file.size() > 131072 ) { error = tr( "Settings JSON exceeds 128 KiB." ); return false; }
@@ -417,9 +423,32 @@ public:
     bool ratingActive() const { return ratingActive_; }
     void stopRating() { clearHeldArrows(); releaseRating(); }
     void setAffectChangedHandler( const std::function<void(float, float)> &handler ) { affectChanged_ = handler; }
+    void setInteractionHandler( const std::function<void(const QJsonObject &)> &handler ) { interaction_ = handler; }
+    void recordInteraction( const QString &event, QJsonObject data = QJsonObject() )
+    {
+        if( !interaction_ ) return;
+        data.insert( "event", event );
+        interaction_( data );
+    }
+    bool appearanceLocked() const { return appearanceLocked_; }
+    void setAppearanceLocked( bool locked )
+    {
+        if( appearanceLocked_ == locked ) return;
+        appearanceLocked_ = locked;
+        recordInteraction( QStringLiteral( "appearance-lock" ), { { "locked", locked } } );
+    }
+    bool rejectAppearanceChange()
+    {
+        if( !appearanceLocked_ ) return false;
+        recordInteraction( QStringLiteral( "appearance-blocked" ) );
+        return true;
+    }
     bool arrowMode() const { return arrowMode_; }
     void setArrowMode( bool enabled, bool syncNative = true )
     {
+        if( enabled != arrowMode_ )
+            recordInteraction( QStringLiteral( "affect-input" ),
+                               { { "mode", enabled ? QStringLiteral( "arrows" ) : QStringLiteral( "mouse" ) } } );
         stopRating();
         arrowMode_ = enabled;
         if( syncNative && nativeKeys_ ) nativeKeys_->setArrowMode( enabled );
@@ -480,7 +509,7 @@ public:
         if( dedicated.action != NoFlubberSetting )
         {
             event->accept();
-            if( event->type() == QEvent::KeyPress && !event->isAutoRepeat() )
+            if( event->type() == QEvent::KeyPress && !event->isAutoRepeat() && !rejectAppearanceChange() )
                 applyDedicatedSetting( dedicated, modifiers.testFlag( Qt::ShiftModifier ) ? -1 : 1 );
             return true;
         }
@@ -511,6 +540,7 @@ public:
         if( !cycle && !faceCycle && !layout && !panel && !altLayout && !snapshot ) return false;
         event->accept();
         if( event->type() != QEvent::KeyPress || event->isAutoRepeat() ) return true;
+        if( !snapshot && rejectAppearanceChange() ) return true;
         if( snapshot )
         {
             QString error;
@@ -585,6 +615,7 @@ public:
 
     void showControls( QWidget *parent )
     {
+        if( rejectAppearanceChange() ) return;
         releaseRating();
         QDialog dialog( parent );
         dialog.setWindowTitle( tr( "Flubber Controls" ) );
@@ -932,6 +963,7 @@ protected:
             { clearHeldArrows(); nativeKeys_->setArrowMode( arrowMode_ ); event->accept(); return; }
             const FlubberNativeKeyEvent *native = static_cast<FlubberNativeKeyEvent *>( event );
             if( native->guiRevision != nativeKeys_->guiRevision() ) { event->accept(); return; }
+            recordKey( native->key, native->modifiers, native->down, native->repeat );
             if( native->arrowModeAfter >= 0 ) setArrowMode( native->arrowModeAfter != 0, false );
             else if( native->key >= Qt::Key_1 && native->key <= Qt::Key_3 &&
                 ( native->modifiers == ( Qt::ControlModifier | Qt::ShiftModifier ) ||
@@ -952,6 +984,7 @@ protected:
     }
     bool eventFilter( QObject *watched, QEvent *event ) Q_DECL_OVERRIDE
     {
+        if( interaction_ ) recordPlayerInput( watched, event );
         if( event->type() == QEvent::KeyRelease && heldArrows_ )
         {
             const auto *key = static_cast<QKeyEvent *>( event );
@@ -1069,6 +1102,45 @@ protected:
     }
 
 private:
+    void recordKey( int key, Qt::KeyboardModifiers modifiers, bool down, bool repeat )
+    {
+        recordInteraction( QStringLiteral( "key" ), {
+            { "key", key }, { "modifiers", int( modifiers ) }, { "down", down }, { "repeat", repeat }
+        } );
+    }
+    void recordPlayerInput( QObject *watched, QEvent *event )
+    {
+        const QEvent::Type type = event->type();
+        if( type != QEvent::KeyPress && type != QEvent::KeyRelease && type != QEvent::MouseButtonPress &&
+            type != QEvent::MouseButtonRelease && type != QEvent::MouseButtonDblClick && type != QEvent::Wheel ) return;
+        QWidget *target = qobject_cast<QWidget *>( watched );
+        if( !target || QApplication::activeModalWidget() ) return;
+        QWidget *root = target;
+        while( root && root != window() ) root = root->parentWidget();
+        if( !root ) return;
+        if( type == QEvent::KeyPress || type == QEvent::KeyRelease )
+        {
+            if( target != QApplication::focusWidget() || textEditorOwnsShortcut( target ) ) return;
+            const auto *key = static_cast<QKeyEvent *>( event );
+            recordKey( key->key(), key->modifiers(), type == QEvent::KeyPress, key->isAutoRepeat() );
+        }
+        else if( type == QEvent::Wheel )
+        {
+            const auto *wheel = static_cast<QWheelEvent *>( event );
+            if( target != QApplication::widgetAt( wheel->globalPosition().toPoint() ) ) return;
+            recordInteraction( QStringLiteral( "wheel" ),
+                               { { "x", wheel->angleDelta().x() }, { "y", wheel->angleDelta().y() } } );
+        }
+        else
+        {
+            const auto *mouse = static_cast<QMouseEvent *>( event );
+            QWidget *grabber = QWidget::mouseGrabber();
+            if( target != ( grabber ? grabber : QApplication::widgetAt( mouse->globalPos() ) ) ) return;
+            recordInteraction( QStringLiteral( "mouse-button" ),
+                { { "button", int( mouse->button() ) }, { "down", type != QEvent::MouseButtonRelease },
+                  { "double", type == QEvent::MouseButtonDblClick } } );
+        }
+    }
     void clearHeldArrows()
     {
         heldArrows_ = 0;
@@ -1624,6 +1696,8 @@ private:
     int cursorHideCalls_;
     std::function<void()> interrupted_;
     std::function<void(float, float)> affectChanged_;
+    std::function<void(const QJsonObject &)> interaction_;
+    bool appearanceLocked_ = false;
     std::function<bool()> rateAllowed_;
     unsigned heldArrows_ = 0;
     QTimer arrowRepeat_;

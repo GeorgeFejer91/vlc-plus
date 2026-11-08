@@ -37,6 +37,28 @@ static int checkTranslatedDedicatedKeys( const QString &directory )
 {
     QSettings settings( directory + "/translated.ini", QSettings::IniFormat );
     FlubberPanel panel( &settings );
+    const QJsonObject unlockedAppearance = panel.settingsJson();
+    QStringList lockEvents;
+    panel.setInteractionHandler( [&lockEvents]( const QJsonObject &action ) {
+        lockEvents << action.value( "event" ).toString();
+    } );
+    panel.setAppearanceLocked( true );
+    QKeyEvent cycleDuringRecording( QEvent::KeyPress, Qt::Key_G, Qt::AltModifier );
+    panel.handleSettingsKey( &cycleDuringRecording, Qt::AltModifier );
+    panel.setPrimary( FlubberPanel::FaceKind );
+    auto moved = panel.layoutFor( panel.primary() );
+    moved.x += 10;
+    panel.setLayout( panel.primary(), moved );
+    if( panel.settingsJson() != unlockedAppearance ||
+        lockEvents.count( "appearance-blocked" ) != 3 ) return 193;
+    panel.setAffect( -.25, .5 );
+    if( panel.valence() != -.25 || panel.arousal() != .5 ) return 194;
+    panel.setAppearanceLocked( false );
+    panel.setPrimary( FlubberPanel::GridKind );
+    if( panel.primary() != FlubberPanel::GridKind ) return 195;
+    panel.setPrimary( FlubberPanel::FlubberKind );
+    panel.setAffect( 0, 0 );
+    panel.setInteractionHandler( {} );
     QJsonObject baseline = panel.settingsJson(); baseline.insert( "stepPercent", 37 ); baseline.insert( "primary", "face" );
     replaceSetting( baseline, { "layers", "face", "size" }, 40 );
     const QStringList names{ "oscillationFrequency", "edgeSmoothness", "projectionAmplitude", "pulseSynchrony", "waveSizeVariation", "saturation" };

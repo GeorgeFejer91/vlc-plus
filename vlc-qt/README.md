@@ -97,6 +97,23 @@ VLC 3.0.20's stock `oldrc` interface supports
 `pause`, `stop`, `volume`, `is_playing`, and `f on|off` commands. An armed Recorder
 can launch idle VLC, wait for the two LSL outlets, then send `add <media>`.
 
+The `VLC_Flubber_Markers` outlet carries the existing filename playback
+markers and additional `VLC_Action ` messages followed by a JSON object.
+The `event` field identifies playback state, seek or track requests, playback
+rate, volume, mute, fullscreen, playlist changes, player input or a Flubber
+appearance lock event. `input-control` records VLC's control name and value.
+Time and delay controls use microseconds, and position is a fraction from
+zero to one. `vlc-action.id` uses VLC 3.0.20's action enum. Key markers use
+numeric Qt keys and modifiers from player controls, with text editing and
+modal dialog input excluded. Continuous affect values use the separate
+`VLC_Flubber_Affect` outlet.
+
+The Recorder's **Start VLC and record** action launches VLC+ in fullscreen
+and waits for the player's appearance-lock acknowledgement and the XDF
+subscriptions before playback. The lock covers appearance, layout and rating
+step edits while the Recorder owns that player session. Stopping the recording
+or closing Recorder releases the lock. Playback and affect input remain active.
+
 The Flubber menu selects Flubber, 2D grid, or face morph with Ctrl+Shift+1/2/3.
 Ctrl+Alt+1/2/3 provides the same exclusive selection. Exactly one representation
 is visible; older saved profiles and imported settings use their selected

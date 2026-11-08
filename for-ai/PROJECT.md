@@ -182,6 +182,20 @@ and [Windows standalone and joint installer gates](https://github.com/GeorgeFeje
 The hosted player probe observed 473.53 Hz and decoded 188 video frames.
 Public GitHub asset digests match the tested receipts and checksum inventory.
 
+## Recorder-controlled VLC+ interactions
+
+The next matching VLC+ and Recorder builds add `VLC_Action ` JSON messages to
+the existing marker outlet. Recorder requires a Windows appearance-lock
+acknowledgement for the exact fullscreen player it launches, waits for
+subscriptions before playback, and releases the lock on stop or exit.
+
+The local staged playback probe decoded 207 frames and captured 22 action
+markers alongside the original playback markers at 480.01 Hz affect cadence.
+Native Recorder-core and LabRecorder verification produced a finalized XDF
+with 1,208 affect samples and 11 action markers. It observed monitor-sized
+fullscreen, a blocked appearance change during recording, and a successful
+change after stop. Windows Security held the foreground during the probe.
+
 ## Architecture
 
 | Path | Responsibility |

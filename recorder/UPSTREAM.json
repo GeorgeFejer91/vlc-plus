@@ -163,13 +163,13 @@
     "web/vlc-hotkeys.js": "38baa2c557082fd6a3efeb7966bd0d01dadc339132bc8d770fb8015555a95149"
   },
   "adaptations": {
-    "src-tauri/src/vlc.rs": "Start the verified VLC+ child fullscreen and hand off Windows focus after paused readiness.",
+    "src-tauri/src/vlc.rs": "Start the verified VLC+ child fullscreen, hand off Windows focus and require a per-session appearance-lock acknowledgement.",
     "package.json": "Version the Recorder build embedded in the VLC+ suite.",
     "src-tauri/Cargo.lock": "Match the embedded Recorder package version.",
     "src-tauri/Cargo.toml": "Version the Recorder build embedded in the VLC+ suite.",
     "src-tauri/tauri.conf.json": "Set the embedded Recorder Windows installer version.",
     "README.md": "Embedded component build and local links; VLC+ companion URL.",
-    "src-tauri/src/state.rs": "Use VLC+ hosted companion; require positive current-child subscription acknowledgements as well as exact XDF headers before playback.",
+    "src-tauri/src/state.rs": "Use the VLC+ companion, require current-child subscriptions and exact XDF headers before playback, and hold the launched player's appearance lock through recording.",
     "scripts/check-native-vlc-recording.mjs": "Use bundled sample; poll awaited marker snapshots; query volume while playing; refuse existing apps and require exact current listener PID for commands/cleanup; preserve and recover the original workspace across interrupted retries.",
     "scripts/smoke-windows-installer.ps1": "Read current embedded version and verify the exact built executable before hosted installer qualification.",
     "web/vlc-hotkeys.js": "Shared 64-group library for exclusive modes, all characters, layout, appearance, colors, mappings, grid and v3 JSON save/restore; bounded category pagination with measured labels.",

@@ -2,6 +2,7 @@
 //! All caller strings are copied before return; no VLC, Qt, or HWND pointer is retained.
 
 use labstream::{Channel, Format, Outlet, StreamInfo};
+use std::cell::Cell;
 use std::ffi::{c_char, c_int, c_void, CStr};
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
@@ -22,6 +23,34 @@ use windows_sys::Win32::System::Threading::{
 const AFFECT_HZ: u32 = 480;
 const AFFECT_PERIOD: Duration = Duration::from_nanos(1_000_000_000 / AFFECT_HZ as u64);
 const RECORD_PERIOD: Duration = Duration::from_nanos(33_333_333);
+const ACTION_QUEUE_CAPACITY: usize = 1024;
+
+struct Action {
+    stamp: f64,
+    json: String,
+}
+
+struct Markers {
+    outlet: Outlet,
+    latest: Cell<f64>,
+}
+
+impl Markers {
+    fn push_text_at(&self, text: &str, stamp: f64) -> Result<(), String> {
+        // Lifecycle markers can be backdated to video onset. Keep the shared
+        // stream ordered when an interaction has already been published.
+        let stamp = stamp.max(self.latest.get());
+        self.outlet
+            .push_text_at(text, stamp)
+            .map_err(|error| error.to_string())?;
+        self.latest.set(stamp);
+        Ok(())
+    }
+
+    fn action(&self, action: Action) -> Result<(), String> {
+        self.push_text_at(&format!("VLC_Action {}", action.json), action.stamp)
+    }
+}
 
 #[derive(Default)]
 struct AffectPair(AtomicU64);
@@ -149,7 +178,7 @@ impl Session {
     fn start(
         snapshot: &Snapshot,
         stamp: f64,
-        markers: &Outlet,
+        markers: &Markers,
         csv: &mpsc::SyncSender<CsvCommand>,
     ) -> Result<Self, String> {
         let name = if snapshot.name.is_empty() {
@@ -162,9 +191,7 @@ impl Session {
             csv.try_send(CsvCommand::Open(path.clone()))
                 .map_err(|e| e.to_string())?;
         }
-        markers
-            .push_text_at(&format!("{name}_Start"), origin)
-            .map_err(|e| e.to_string())?;
+        markers.push_text_at(&format!("{name}_Start"), origin)?;
         Ok(Self {
             name: name.into(),
             path: snapshot.path.clone(),
@@ -173,17 +200,15 @@ impl Session {
             last_state: snapshot.state,
         })
     }
-    fn marker(&self, markers: &Outlet, suffix: &str, stamp: f64) -> Result<(), String> {
-        markers
-            .push_text_at(&format!("{}_{}", self.name, suffix), stamp)
-            .map_err(|e| e.to_string())
+    fn marker(&self, markers: &Markers, suffix: &str, stamp: f64) -> Result<(), String> {
+        markers.push_text_at(&format!("{}_{}", self.name, suffix), stamp)
     }
     fn sample(
         &mut self,
         snapshot: &Snapshot,
         pair: [f32; 2],
         stamp: f64,
-        markers: &Outlet,
+        markers: &Markers,
         csv: &mpsc::SyncSender<CsvCommand>,
     ) -> Result<(), String> {
         if snapshot.state != self.last_state {
@@ -215,7 +240,7 @@ impl Session {
     }
     fn stop(
         self,
-        markers: &Outlet,
+        markers: &Markers,
         stamp: f64,
         suffix: Option<&str>,
         csv: &mpsc::SyncSender<CsvCommand>,
@@ -340,6 +365,8 @@ fn worker(
     shared: Arc<Mutex<Snapshot>>,
     pair: Arc<AffectPair>,
     stop: mpsc::Receiver<()>,
+    actions: mpsc::Receiver<Action>,
+    dropped_actions: Arc<AtomicU64>,
     status: Arc<AtomicU8>,
 ) -> Result<(), String> {
     let session = match std::env::var("VLC_FLUBBER_SESSION_ID") {
@@ -370,7 +397,7 @@ fn worker(
         let timer = WorkerTimer::new().map_err(str::to_owned)?;
         Ok((affect, markers, timer, period))
     })();
-    let (affect, markers, timer, _period) = match result {
+    let (affect, marker_outlet, timer, _period) = match result {
         Ok(value) => {
             status.store(1, Ordering::Release);
             value
@@ -379,6 +406,10 @@ fn worker(
             status.store(2, Ordering::Release);
             return Err(error);
         }
+    };
+    let markers = Markers {
+        outlet: marker_outlet,
+        latest: Cell::new(0.),
     };
     let (csv_tx, csv_rx) = mpsc::sync_channel(256);
     let csv_failure = Arc::new(Mutex::new(None::<String>));
@@ -404,7 +435,17 @@ fn worker(
             let now = Instant::now();
             let coordinates = pair.load();
             let stamp = labstream::clock();
+            for action in actions.try_iter().take(16) {
+                markers.action(action)?;
+            }
             if now >= next_record {
+                let dropped = dropped_actions.swap(0, Ordering::Relaxed);
+                if dropped != 0 {
+                    markers.push_text_at(
+                        &format!(r#"VLC_Action {{"event":"events-dropped","count":{dropped}}}"#),
+                        stamp,
+                    )?;
+                }
                 if let Ok(failure) = csv_failure.lock() {
                     if let Some(message) = failure.as_ref() {
                         return Err(format!("CSV writer: {message}"));
@@ -456,6 +497,9 @@ fn worker(
             }
             timer.wait_until(next_affect).map_err(str::to_owned)?;
         }
+        for action in actions.try_iter() {
+            markers.action(action)?;
+        }
         if let Some(active) = session {
             active.stop(&markers, labstream::clock(), None, &csv_tx)?;
         }
@@ -472,6 +516,8 @@ pub struct Bridge {
     shared: Arc<Mutex<Snapshot>>,
     pair: Arc<AffectPair>,
     stop: mpsc::Sender<()>,
+    actions: mpsc::SyncSender<Action>,
+    dropped_actions: Arc<AtomicU64>,
     worker: Option<JoinHandle<Result<(), String>>>,
     status: Arc<AtomicU8>,
     error: Arc<Mutex<String>>,
@@ -484,10 +530,13 @@ pub extern "C" fn flubber_bridge_new() -> *mut c_void {
         let shared = Arc::new(Mutex::new(Snapshot::default()));
         let pair = Arc::new(AffectPair::default());
         let (stop_tx, stop_rx) = mpsc::channel();
+        let (action_tx, action_rx) = mpsc::sync_channel(ACTION_QUEUE_CAPACITY);
+        let dropped_actions = Arc::new(AtomicU64::new(0));
         let status = Arc::new(AtomicU8::new(0));
         let error = Arc::new(Mutex::new(String::new()));
         let worker_shared = Arc::clone(&shared);
         let worker_pair = Arc::clone(&pair);
+        let worker_dropped_actions = Arc::clone(&dropped_actions);
         let worker_status = Arc::clone(&status);
         let worker_error = Arc::clone(&error);
         let thread = thread::spawn(move || {
@@ -495,6 +544,8 @@ pub extern "C" fn flubber_bridge_new() -> *mut c_void {
                 worker_shared,
                 worker_pair,
                 stop_rx,
+                action_rx,
+                worker_dropped_actions,
                 Arc::clone(&worker_status),
             );
             if let Err(message) = &result {
@@ -509,6 +560,8 @@ pub extern "C" fn flubber_bridge_new() -> *mut c_void {
             shared,
             pair,
             stop: stop_tx,
+            actions: action_tx,
+            dropped_actions,
             worker: Some(thread),
             status,
             error,
@@ -516,6 +569,36 @@ pub extern "C" fn flubber_bridge_new() -> *mut c_void {
         .cast()
     })
     .unwrap_or(std::ptr::null_mut())
+}
+
+/// Queue a small action payload without blocking the GUI or the affect producer.
+///
+/// # Safety
+/// `bridge` must be live and `json` must point to a NUL-terminated UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn flubber_bridge_action(bridge: *mut c_void, json: *const c_char) -> c_int {
+    if bridge.is_null() || json.is_null() {
+        return -1;
+    }
+    let bridge = unsafe { &*(bridge as *const Bridge) };
+    let Ok(json) = unsafe { CStr::from_ptr(json) }.to_str() else {
+        return -1;
+    };
+    if json.is_empty() || json.len() > 1024 {
+        return -1;
+    }
+    let action = Action {
+        stamp: labstream::clock(),
+        json: json.to_owned(),
+    };
+    match bridge.actions.try_send(action) {
+        Ok(()) => 0,
+        Err(mpsc::TrySendError::Full(_)) => {
+            bridge.dropped_actions.fetch_add(1, Ordering::Relaxed);
+            -2
+        }
+        Err(mpsc::TrySendError::Disconnected(_)) => -4,
+    }
 }
 
 /// Publish both axes together from the Qt input handler without a playback lock.
@@ -761,6 +844,20 @@ mod tests {
             .postprocess(Post::NONE)
             .open(timeout)
             .unwrap();
+        for json in [
+            c"{\"event\":\"seek\",\"position\":0.5}",
+            c"{\"event\":\"fullscreen\",\"enabled\":true}",
+        ] {
+            assert_eq!(unsafe { flubber_bridge_action(bridge, json.as_ptr()) }, 0);
+        }
+        let (seek_at, seek) = markers.pull_text(timeout).unwrap().unwrap();
+        let (fullscreen_at, fullscreen) = markers.pull_text(timeout).unwrap().unwrap();
+        assert_eq!(seek, [r#"VLC_Action {"event":"seek","position":0.5}"#]);
+        assert_eq!(
+            fullscreen,
+            [r#"VLC_Action {"event":"fullscreen","enabled":true}"#]
+        );
+        assert!(seek_at <= fullscreen_at);
         assert!(affect.pull::<f32>(timeout).unwrap().is_some());
         let mut response_ms = Vec::new();
         for index in 0..48 {

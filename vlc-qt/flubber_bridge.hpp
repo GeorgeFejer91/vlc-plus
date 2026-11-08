@@ -12,7 +12,8 @@ class FlubberBridge
 public:
     FlubberBridge()
         : library_( QDir( QCoreApplication::applicationDirPath() ).filePath( "flubber_bridge.dll" ) ),
-          handle_( NULL ), update_( NULL ), setAffect_( NULL ), interrupt_( NULL ), free_( NULL ), status_( NULL ), error_( NULL )
+          handle_( NULL ), update_( NULL ), setAffect_( NULL ), action_( NULL ), interrupt_( NULL ),
+          free_( NULL ), status_( NULL ), error_( NULL )
     {
         /* Rust/LSL may retain process-lifetime threads or TLS destructors after
          * the owned worker joins. Keep their code mapped until process exit. */
@@ -21,11 +22,12 @@ public:
         Create create = reinterpret_cast<Create>( library_.resolve( "flubber_bridge_new" ) );
         update_ = reinterpret_cast<Update>( library_.resolve( "flubber_bridge_update" ) );
         setAffect_ = reinterpret_cast<SetAffect>( library_.resolve( "flubber_bridge_set_affect" ) );
+        action_ = reinterpret_cast<Action>( library_.resolve( "flubber_bridge_action" ) );
         interrupt_ = reinterpret_cast<Interrupt>( library_.resolve( "flubber_bridge_interrupt" ) );
         free_ = reinterpret_cast<Free>( library_.resolve( "flubber_bridge_free" ) );
         status_ = reinterpret_cast<Status>( library_.resolve( "flubber_bridge_status" ) );
         error_ = reinterpret_cast<Error>( library_.resolve( "flubber_bridge_error" ) );
-        if( create && update_ && setAffect_ && interrupt_ && free_ && status_ && error_ ) handle_ = create();
+        if( create && update_ && setAffect_ && action_ && interrupt_ && free_ && status_ && error_ ) handle_ = create();
         if( !handle_ )
         {
             startupError_ = library_.errorString();
@@ -56,11 +58,13 @@ public:
         return update_( handle_, x, y, state, mediaMs, name.constData(), path.constData() );
     }
     void setAffect( float x, float y ) { if( handle_ ) setAffect_( handle_, x, y ); }
+    void action( const QByteArray &json ) { if( handle_ ) action_( handle_, json.constData() ); }
     int interrupt() { return handle_ ? interrupt_( handle_ ) : -1; }
 private:
     typedef void *(*Create)();
     typedef int (*Update)(void *, float, float, int, qint64, const char *, const char *);
     typedef int (*SetAffect)(void *, float, float);
+    typedef int (*Action)(void *, const char *);
     typedef int (*Interrupt)(void *);
     typedef void (*Free)(void *);
     typedef int (*Status)(void *);
@@ -69,6 +73,7 @@ private:
     void *handle_;
     Update update_;
     SetAffect setAffect_;
+    Action action_;
     Interrupt interrupt_;
     Free free_;
     Status status_;
