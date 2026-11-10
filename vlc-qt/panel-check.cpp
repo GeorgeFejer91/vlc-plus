@@ -276,7 +276,9 @@ static int checkFeedbackSettingsDialog( const QString &directory, const QDir &ev
 
     panel.setArrowMode( true );
     panel.setAffect( -1, .25 );
+    QApplication::setActiveWindow( &panel );
     panel.setFocus();
+    QApplication::processEvents();
     QKeyEvent right( QEvent::KeyPress, Qt::Key_Right, Qt::NoModifier );
     QKeyEvent release( QEvent::KeyRelease, Qt::Key_Right, Qt::NoModifier );
     if( !panel.handleInputKey( &right ) || qAbs( panel.valence() + .9 ) > .00001 ) return 201;
@@ -284,7 +286,12 @@ static int checkFeedbackSettingsDialog( const QString &directory, const QDir &ev
     QElapsedTimer hold; hold.start();
     while( panel.valence() < 1 && hold.elapsed() < 1000 )
         QTest::qWait( 5 );
-    if( panel.valence() != 1 || panel.arousal() != .25 || hold.elapsed() < 590 || hold.elapsed() > 700 ) return 202;
+    if( panel.valence() != 1 || panel.arousal() != .25 || hold.elapsed() < 590 || hold.elapsed() > 700 )
+    {
+        std::fprintf( stderr, "Hold: %lld ms, valence %.3f, arousal %.3f, active window %d\n",
+            static_cast<long long>( hold.elapsed() ), panel.valence(), panel.arousal(), panel.isActiveWindow() );
+        return 202;
+    }
 #endif
     panel.handleInputKey( &release );
     panel.setAffect( -1, .25 );

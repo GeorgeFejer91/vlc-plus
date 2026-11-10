@@ -139,8 +139,13 @@ try {
     assert.deepEqual([...seen].sort(), vlcHotkeys.map(([keys, action]) => [keys, action]).sort());
   }
   async function checkRecordButton() {
-    assert.equal(await launch.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1), true);
-    await page.waitForFunction(() => [...document.querySelectorAll(".vlc-record-action [data-fit-text]")].every(label => ["fit", "no-fit"].includes(label.dataset.fitState)));
+    await page.waitForFunction(() => {
+      const button = document.querySelector("#vlc-launch-record");
+      const label = button.querySelector("[data-fit-text]");
+      return ["fit", "no-fit"].includes(label.dataset.fitState)
+        && button.scrollWidth <= button.clientWidth + 1
+        && button.scrollHeight <= button.clientHeight + 1;
+    });
     const { cones, body, bounds, text, labelFits } = await launch.evaluate(button => {
       // Clip-path shapes expose their geometry in SVG coordinates.
       const paintedBounds = shape => {

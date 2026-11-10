@@ -183,7 +183,7 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "c5ee61b670356053b70f3df137cfa3b4df60bcb2243d12f3d150b67e5768213e",
+      "standaloneSha256": "3349f34f02e7c14528caf26ce3dd353a06b30a30fb103b153abe9a2f7a1cfb37",
       "adaptation": "Native feedback settings provide scoped live previews without changing saved settings or the Recorder appearance lock."
     },
     {
@@ -197,7 +197,7 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "c7901b90060db399f6d3bb7933354efc2fd7bfe21e0aa5016b6e41450da99254",
+      "standaloneSha256": "b130dfbb2c322089703987b5eb05086445343f206be6c80a922c1ba7ba3bbfca",
       "adaptation": "Checks separate popup routing, rendered controls, preview and cancellation, grid rendering, settings imports and snapshots, and input/recording lock regressions."
     },
     {

@@ -779,29 +779,12 @@ public:
         QCheckBox *gridOutline = new QCheckBox( &dialog ); gridOutline->setChecked( grid_.value( "showOutline" ).toBool() );
         QDoubleSpinBox *gridOutlineThickness = real( 0, 20, grid_.value( "outlineThickness" ).toDouble() );
         QDoubleSpinBox *cursorSize = real( 0, 100, grid_.value( "cursorSize" ).toDouble() );
-        QWidget *dimensions = new QWidget( &dialog );
-        QHBoxLayout *dimensionRow = new QHBoxLayout( dimensions );
-        dimensionRow->setContentsMargins( 0, 0, 0, 0 );
-        columns->setAccessibleName( tr( "Columns" ) );
-        rows->setAccessibleName( tr( "Rows" ) );
-        dimensionRow->addWidget( new QLabel( tr( "Columns" ), dimensions ) );
-        dimensionRow->addWidget( columns );
-        dimensionRow->addWidget( new QLabel( tr( "Rows" ), dimensions ) );
-        dimensionRow->addWidget( rows );
-        dimensionRow->addStretch();
-        gridForm->addRow( tr( "Tile counts (odd)" ), dimensions );
+        gridForm->addRow( tr( "Tile columns (odd)" ), columns );
+        gridForm->addRow( tr( "Tile rows (odd)" ), rows );
         gridForm->addRow( tr( "Line thickness" ), gridLine );
-        QWidget *outlineRow = new QWidget( &dialog );
-        QHBoxLayout *outlineLine = new QHBoxLayout( outlineRow );
-        outlineLine->setContentsMargins( 0, 0, 0, 0 );
         gridOutline->setText( tr( "Show outline" ) );
-        gridOutline->setAccessibleName( tr( "Show grid outline" ) );
-        gridOutlineThickness->setAccessibleName( tr( "Grid outline thickness" ) );
-        outlineLine->addWidget( gridOutline );
-        outlineLine->addWidget( new QLabel( tr( "Thickness" ), outlineRow ) );
-        outlineLine->addWidget( gridOutlineThickness );
-        outlineLine->addStretch();
-        gridForm->addRow( tr( "Outline" ), outlineRow );
+        gridForm->addRow( gridOutline );
+        gridForm->addRow( tr( "Outline thickness" ), gridOutlineThickness );
         gridForm->addRow( tr( "Cursor size" ), cursorSize );
         if( sharedAppearance == gridForm )
         {
@@ -840,7 +823,7 @@ public:
             y[i]->setAccessibleName( tr( "%1 vertical position" ).arg( name ) );
             QFormLayout *forms[] = { flubberForm, gridForm, faceForm };
             if( !scoped ) layoutForm->addRow( name, row );
-            else if( i == target && i == FaceKind ) faceForm->addRow( row );
+            else if( i == target && i != FlubberKind ) forms[i]->addRow( row );
             else if( i == target ) forms[i]->addRow( tr( "Layout" ), row );
             else row->hide();
         }
@@ -1273,8 +1256,8 @@ private:
     static void placeFeedbackPopup( QDialog &dialog, QWidget *parent, const QSize &preferred )
     {
         dialog.ensurePolished();
-        dialog.setMinimumSize( dialog.minimumSizeHint().expandedTo( preferred ) );
-        dialog.resize( dialog.sizeHint().expandedTo( dialog.minimumSize() ) );
+        dialog.layout()->setSizeConstraint( QLayout::SetMinimumSize );
+        dialog.resize( dialog.sizeHint().expandedTo( preferred ) );
         if( !parent ) return;
         const QRect screen = parent->screen()->availableGeometry();
         const QPoint upperRight = parent->mapToGlobal( parent->rect().topRight() );
