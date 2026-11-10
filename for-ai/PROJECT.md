@@ -240,6 +240,15 @@ Local portable stage: `build/representation-popups-runtime/`. Branch
 `codex/vlc-feedback-settings` continues from `59cf17d`. No foreground
 physical input test, installation or publication was performed.
 
+## VLC+ 0.3.5 and Recorder 0.1.10
+
+The [experimental release](https://github.com/GeorgeFejer91/vlc-plus/releases/tag/v0.3.5-experimental.1)
+pairs the Recorder appearance lock and VLC action markers with the live
+representation settings popups and v4 snapshots. The three installers share
+source `8a62c28add67e2e66e46e02f18a7bb5daf541f59`.
+The [Windows release run](https://github.com/GeorgeFejer91/vlc-plus/actions/runs/42822482998)
+and the published build and smoke receipts document the exact installer checks.
+
 ## Architecture
 
 | Path | Responsibility |
