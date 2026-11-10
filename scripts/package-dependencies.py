@@ -182,7 +182,7 @@ def main():
             "MSYS2 source packages include their build recipes and upstream inputs.\n"
             "Rust crates are in rust-vendor/ with their Cargo checksums and original licenses.\n",
             encoding="utf-8")
-        companion = out / "VLC_Plus_Source_0.3.4.zip"
+        companion = out / "VLC_Plus_Source_0.3.5.zip"
         with zipfile.ZipFile(companion, "w") as archive:
             for path in sorted(sources.rglob("*")):
                 if path.is_file():

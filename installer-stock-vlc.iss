@@ -1,5 +1,5 @@
 #define ProductName "VLC+"
-#define ProductVersion "0.3.4"
+#define ProductVersion "0.3.5"
 
 [Setup]
 AppId={{F836C1D9-43B0-4A71-95D7-2854030B68AE}

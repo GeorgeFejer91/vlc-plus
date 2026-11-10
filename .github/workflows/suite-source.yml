@@ -42,7 +42,7 @@ jobs:
         run: ./build-windows.ps1 -MsysRoot '${{ steps.msys.outputs.msys2-location }}' -Jobs 2
       - name: Exact VLC+ standalone install, decode, LSL, CSV and uninstall
         shell: pwsh
-        run: ./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.4_x64.exe -EvidenceDirectory build/component-evidence/vlc
+        run: ./scripts/test-installer.ps1 -InstallerPath build/stock-vlc-package/out/VLC_Plus_Setup_0.3.5_x64.exe -EvidenceDirectory build/component-evidence/vlc
       - name: Build embedded Recorder and run source/UI checks
         shell: pwsh
         run: ./build-recorder.ps1
@@ -61,7 +61,7 @@ jobs:
       - name: Fresh joint install, actual shortcut, safe reuse and uninstall
         shell: pwsh
         run: |
-          ./installer-suite/test-installer.ps1 -InstallerPath build/suite-release/01_VLCPlus_and_LSL_Recorder_Setup_0.3.4_x64.exe -ComponentLockPath build/suite-release/components.lock.json
+          ./installer-suite/test-installer.ps1 -InstallerPath build/suite-release/01_VLCPlus_and_LSL_Recorder_Setup_0.3.5_x64.exe -ComponentLockPath build/suite-release/components.lock.json
           Copy-Item build/component-evidence/* build/suite-evidence -Recurse
       - name: Verify exact release inputs before retaining candidates
         run: python installer-suite/verify-release.py --release build/suite-release --evidence build/suite-evidence --source ${{ github.sha }} --check-only
@@ -110,5 +110,5 @@ jobs:
           gh run download "$candidate_run" --name self-contained-suite-release --dir release
           gh run download "$candidate_run" --name self-contained-suite-evidence --dir evidence
           python installer-suite/verify-release.py --release release --evidence evidence --source "$GITHUB_SHA"
-          test -z "$(git ls-remote --tags origin refs/tags/v0.3.4-experimental.1)"
-          gh release create v0.3.4-experimental.1 release/* --target "$GITHUB_SHA" --prerelease --title "VLC+ 0.3.4 and embedded Remote LSL Recorder 0.1.9" --notes-file installer-suite/release-notes.md
+          test -z "$(git ls-remote --tags origin refs/tags/v0.3.5-experimental.1)"
+          gh release create v0.3.5-experimental.1 release/* --target "$GITHUB_SHA" --prerelease --title "VLC+ 0.3.5 and embedded Remote LSL Recorder 0.1.10" --notes-file installer-suite/release-notes.md
