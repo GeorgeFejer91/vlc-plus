@@ -97,12 +97,29 @@ VLC 3.0.20's stock `oldrc` interface supports
 `pause`, `stop`, `volume`, `is_playing`, and `f on|off` commands. An armed Recorder
 can launch idle VLC, wait for the two LSL outlets, then send `add <media>`.
 
-The Flubber menu selects Flubber, 2D grid, or face morph with Ctrl+Shift+1/2/3.
-Ctrl+Alt+1/2/3 provides the same exclusive selection. Exactly one representation
-is visible; older saved profiles and imported settings use their selected
-`primary` representation and retain each layer's geometry. Ctrl+Shift+A and Ctrl+Shift+M
-select arrow and mouse input. **Flubber → Settings…** holds the detailed
-appearance, face preset, and layout controls.
+The `VLC_Flubber_Markers` outlet carries the existing filename playback
+markers and additional `VLC_Action ` messages followed by a JSON object.
+The `event` field identifies playback state, seek or track requests, playback
+rate, volume, mute, fullscreen, playlist changes, player input or a Flubber
+appearance lock event. `input-control` records VLC's control name and value.
+Time and delay controls use microseconds, and position is a fraction from
+zero to one. `vlc-action.id` uses VLC 3.0.20's action enum. Key markers use
+numeric Qt keys and modifiers from player controls, with text editing and
+modal dialog input excluded. Continuous affect values use the separate
+`VLC_Flubber_Affect` outlet.
+
+The Recorder's **Start VLC and record** action launches VLC+ in fullscreen
+and waits for the player's appearance-lock acknowledgement and the XDF
+subscriptions before playback. The lock covers appearance, layout and rating
+step edits while the Recorder owns that player session. Stopping the recording
+or closing Recorder releases the lock. Playback and affect input remain active.
+
+The Flubber menu selects Flubber, 2D grid, or face morph and switches between
+mouse and arrow input. Exactly one representation is visible at a time. Each
+retains its own layout. **Flubber → Settings…** and **Ctrl+Shift+S** open the
+same dialog. The three representation popups also have separate entries in
+the Flubber menu. Opening one previews that representation without committing
+changes to its layout or appearance.
 
 Quick settings work in the player/video window and leave rating values
 unchanged. Dialogs and popups retain normal keyboard behavior.
@@ -115,47 +132,43 @@ unchanged. Dialogs and popups retain normal keyboard behavior.
 | Alt+G / Alt+Shift+G | Next/previous: Flubber → 2D grid → affective face morph map → Flubber. Retains the selected face preset. Held keys do not repeatedly cycle. |
 | Alt+H / Alt+Shift+H | Next/previous face character across the original portrait and eight synthetic characters, wrapping in both directions. Selects face morph. Held keys do not repeatedly cycle. |
 | Ctrl+Alt+Left/Right/Up/Down | With affect arrows on, move the main feedback by two percentage points. With them off, VLC keeps these keys. |
-| Ctrl+Alt+= / Ctrl+Alt+- | Increase/decrease main feedback size by two percentage points. |
-| Ctrl+Shift+PageUp/PageDown | Increase/decrease panel height by 16 px; an explicit session panel-ratio override stays authoritative. |
-| Ctrl+Alt+[ / Ctrl+Alt+] | Decrease/increase the affect arrow step by one percentage point (1–100). German key labels: Ctrl+Alt+ß / Ctrl+Alt+´. |
-| Ctrl+Alt+, / Ctrl+Alt+. | Decrease/increase face transition speed by 0.5 (0.5–20). |
-| Ctrl+Alt+PageUp/PageDown | Increase/decrease grid rows and columns by two, keeping an odd grid (3–2001). |
-| Ctrl+Shift+S | Open detailed settings. **Visible representation** selects one mode. Use Tab/Shift+Tab, arrows and Space to adjust colors, appearance, and individual layer/grid/face controls. |
+| Ctrl+Shift+S | Open all settings, including input and JSON import/export. |
+| Ctrl+Shift+1 / 2 / 3 | Open the Flubber / 2D grid / Face morph popup. Edits preview in the open player; OK keeps them and Cancel restores the prior display. |
 
 If a desktop screenshot utility reserves Alt+S, hold Ctrl+Alt and use arrows
 with affect arrows on to move the feedback instead.
 
-The [full hotkey library](https://georgefejer91.github.io/vlc-plus/remote/vlc.html)
-also lists dedicated Ctrl+Alt controls for every appearance, mapping, color and
-grid field. Ctrl+Alt+T/O/B/H/W/G/E/A adjusts transparency, outline, outline width,
-halo, halo width, halo gradient, halo steepness and color anchors. Ctrl+Alt+X/Y/J/V/P/Z
-adjusts grid columns, rows, line width, outline, outline width and cursor size.
-Add Shift to decrease numeric values. Appearance and mapping actions select
-Flubber exclusively; grid actions select Grid exclusively.
+Use **Flubber** for the transparency slider (0% is opaque) and shape
+controls, and **Colors** for the four directional anchors and other colors.
+**2D grid** defaults to **Tiles**, with configurable odd dimensions and a cursor
+that snaps to a tile, or choose **Continuous** for a smooth field and a freely
+moving cursor. This choice changes only what is drawn; affect values and
+recorded scores remain continuous.
 
-Mappings use the order oscillation frequency, edge smoothness, projection
-amplitude, pulse synchrony, wave-size variation and saturation. Ctrl+Alt+F1–F6
-increases each maximum; F7–F12 increases each minimum. Shift decreases those
-bounds. Ctrl+Alt+4–9 cycles each driver through x-axis, y-axis, angle and radius;
-Shift cycles backward. Ctrl+Shift+F1–F6 toggles each reverse flag. Bounds retain
-their existing ranges and cannot cross. Ctrl+Alt+U/D/L/R/I/K/Q/C opens the color
-picker for up/down/left/right/idle/outline/halo/cursor. Cancel preserves all
-settings; accepting a color selects Flubber. Held keys do not repeat adjustments.
+In **Input & display**, **Tap step** sets how far a single press moves, as a
+percentage of the distance from the center to an edge.
+Enable **Set a target hold time** to enter a full-axis duration of 250–15,000
+ms. The first tap step is immediate; while held, the rest of the range is
+covered at a rate based on elapsed time. For example, with 2,000 ms selected,
+holding Right at the left edge reaches the right edge in about two seconds.
+Turn the target off to repeat the tap step at the original rate.
 
 Alt+F reserves all arrow shortcuts from VLC while affect control is active.
 Plain arrows change affect; modified arrows are reserved, with Ctrl+Alt+arrows
 assigned to feedback layout. Alt+F again restores VLC's arrow shortcuts.
-The existing Ctrl+Shift+1/2/3 and Ctrl+Alt+1/2/3 remain available.
 Quick changes persist in the VLC-owned profile; the environment's rating-step
 override still takes precedence on the next launch. A missing face atlas leaves
 the active feedback intact and reports the load error in the panel tooltip.
 
-Alt+J writes a timestamped `vlc-feedback-settings/v3` JSON into
+Alt+J writes a timestamped `vlc-feedback-settings/v4` JSON into
 `flubber-presets/` beside VLC+'s portable Qt profile, then shows its full path.
 The snapshot includes appearance, all layer geometry, grid/face controls,
-input mode, the exclusive representation and the integer rating `stepPercent`
-(1–100). Legacy v2 files remain accepted and preserve the current rating step;
-appearance-v1 imports retain their existing contract.
+input mode and the selected representation. It also includes the integer
+`stepPercent` (1–100), `arrowHoldMs` (0 for original repeat, or 250–15,000),
+and `gridStyle` (`tiles` or `continuous`). Importing v2 or v3 leaves the
+current hold time and grid style in place; v2 also leaves the tap step in place.
+Appearance-v1 imports still update appearance only.
+
 Earlier snapshots remain available. Startup reloads the remembered file, so
 unsaved adjustments after the last Alt+J are replaced by that snapshot on the
 next launch. A missing or invalid file retains the current profile and reports

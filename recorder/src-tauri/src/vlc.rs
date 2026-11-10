@@ -4,7 +4,77 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
-pub struct VlcControl(TcpStream);
+pub struct VlcControl {
+    stream: TcpStream,
+    pub appearance_lock: Option<AppearanceLock>,
+}
+
+pub struct AppearanceLock {
+    #[cfg(windows)]
+    release: std::os::windows::io::OwnedHandle,
+    #[cfg(windows)]
+    ready: std::os::windows::io::OwnedHandle,
+}
+
+impl AppearanceLock {
+    #[cfg(windows)]
+    fn new(session: &str) -> Result<Self, String> {
+        Ok(Self {
+            release: Self::event(session, "release")?,
+            ready: Self::event(session, "ready")?,
+        })
+    }
+
+    #[cfg(windows)]
+    fn event(session: &str, kind: &str) -> Result<std::os::windows::io::OwnedHandle, String> {
+        use std::os::windows::io::{FromRawHandle, OwnedHandle};
+        use windows_sys::Win32::System::Threading::CreateEventW;
+        let name: Vec<_> = format!("Local\\VLCPlus.Appearance.{session}.{kind}")
+            .encode_utf16()
+            .chain([0])
+            .collect();
+        // SAFETY: The event name is NUL-terminated, with no custom security pointer.
+        let event = unsafe { CreateEventW(std::ptr::null(), 1, 0, name.as_ptr()) };
+        if event.is_null() {
+            return Err(format!(
+                "Could not create the VLC+ appearance lock: {}",
+                std::io::Error::last_os_error()
+            ));
+        }
+        // SAFETY: CreateEventW returned a live, owned Windows handle.
+        Ok(unsafe { OwnedHandle::from_raw_handle(event) })
+    }
+
+    #[cfg(windows)]
+    fn wait_until_ready(&self) -> Result<(), String> {
+        use std::os::windows::io::AsRawHandle;
+        use windows_sys::Win32::{
+            Foundation::WAIT_OBJECT_0, System::Threading::WaitForSingleObject,
+        };
+        // SAFETY: The event handle is owned for the duration of this bounded wait.
+        if unsafe { WaitForSingleObject(self.ready.as_raw_handle(), 2000) } != WAIT_OBJECT_0 {
+            return Err("VLC+ did not confirm the Flubber appearance lock. Recording has not started; VLC+ remains paused.".into());
+        }
+        Ok(())
+    }
+
+    #[cfg(not(windows))]
+    fn new(_session: &str) -> Result<Self, String> {
+        Err("VLC+ launch is currently supported on Windows.".into())
+    }
+}
+
+impl Drop for AppearanceLock {
+    fn drop(&mut self) {
+        #[cfg(windows)]
+        {
+            use std::os::windows::io::AsRawHandle;
+            use windows_sys::Win32::System::Threading::SetEvent;
+            // SAFETY: The event remains owned until after this method returns.
+            unsafe { SetEvent(self.release.as_raw_handle()) };
+        }
+    }
+}
 
 pub fn launch_paused(video: &str, port: u16, session: &str) -> Result<(Child, VlcControl), String> {
     let video = validate_video(video)?;
@@ -14,42 +84,29 @@ pub fn launch_paused(video: &str, port: u16, session: &str) -> Result<(Child, Vl
     let probe = std::net::TcpListener::bind((Ipv4Addr::LOCALHOST, port))
         .map_err(|_| format!("Local port {port} is already in use. Choose another VLC+ port."))?;
     let player = installed_player()?;
+    let appearance_lock = AppearanceLock::new(session)?;
     drop(probe);
-    let mut command = Command::new(player);
-    command
-        .args([
-            "--no-one-instance",
-            "--language=en",
-            "--extraintf=rc",
-            &format!("--rc-host=127.0.0.1:{port}"),
-            "--rc-quiet",
-            "--start-paused",
-        ])
-        .arg(video)
-        .env("VLC_FLUBBER_SESSION_ID", session)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(0x0800_0000);
-    }
-    let mut child = command
+    let mut child = paused_command(player, video, port, session)
         .spawn()
         .map_err(|error| format!("Could not launch VLC+: {error}"))?;
     let deadline = Instant::now() + Duration::from_secs(15);
     loop {
         if let Some(status) = child.try_wait().map_err(|e| e.to_string())? {
             return Err(format!(
-                "VLC+ exited before its paused video was ready: {status}"
+                "VLC+ exited before its paused video was ready: {status}. Install the matching VLC+ build for this Recorder."
             ));
         }
         match VlcControl::connect(port) {
-            Ok(control) => {
+            Ok(mut control) => {
                 if !listener_owned(port, child.id())? {
                     return Err("The VLC+ control port belongs to another process. Recording has not started.".into());
                 }
+                #[cfg(windows)]
+                {
+                    appearance_lock.wait_until_ready()?;
+                    foreground_player(child.id());
+                }
+                control.appearance_lock = Some(appearance_lock);
                 return Ok((child, control));
             }
             Err(error) if Instant::now() >= deadline => {
@@ -60,6 +117,69 @@ pub fn launch_paused(video: &str, port: u16, session: &str) -> Result<(Child, Vl
             Err(_) => std::thread::sleep(Duration::from_millis(100)),
         }
     }
+}
+
+fn paused_command(player: PathBuf, video: PathBuf, port: u16, session: &str) -> Command {
+    let mut command = Command::new(player);
+    command
+        .args([
+            "--no-one-instance",
+            "--language=en",
+            "--extraintf=rc",
+            &format!("--rc-host=127.0.0.1:{port}"),
+            "--rc-quiet",
+            "--start-paused",
+            "--fullscreen",
+            "--no-qt-start-minimized",
+            "--flubber-recording-lock",
+        ])
+        .arg(video)
+        .env("VLC_FLUBBER_SESSION_ID", session)
+        .env("VLC_FLUBBER_RECORDER_PID", std::process::id().to_string())
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x0800_0000);
+    }
+    command
+}
+
+#[cfg(windows)]
+fn foreground_player(process_id: u32) {
+    use windows_sys::Win32::{
+        Foundation::{HWND, LPARAM},
+        UI::WindowsAndMessaging::{
+            EnumWindows, GW_OWNER, GetForegroundWindow, GetWindow, GetWindowThreadProcessId,
+            IsWindowVisible, SetForegroundWindow,
+        },
+    };
+    use windows_sys::core::BOOL;
+
+    unsafe extern "system" fn activate(window: HWND, target: LPARAM) -> BOOL {
+        let mut owner = 0;
+        // SAFETY: EnumWindows supplies the HWND and both PID buffers live for each call.
+        unsafe {
+            GetWindowThreadProcessId(window, &mut owner);
+            if owner != target as u32
+                || IsWindowVisible(window) == 0
+                || !GetWindow(window, GW_OWNER).is_null()
+            {
+                return 1;
+            }
+            let mut foreground_owner = 0;
+            GetWindowThreadProcessId(GetForegroundWindow(), &mut foreground_owner);
+            if foreground_owner == std::process::id() {
+                SetForegroundWindow(window);
+            }
+        }
+        0
+    }
+
+    // SAFETY: The synchronous callback receives a numeric PID and retains no HWND.
+    unsafe { EnumWindows(Some(activate), process_id as LPARAM) };
 }
 
 #[cfg(windows)]
@@ -152,7 +272,10 @@ impl VlcControl {
         stream
             .set_write_timeout(Some(Duration::from_secs(2)))
             .map_err(|e| e.to_string())?;
-        let mut control = Self(stream);
+        let mut control = Self {
+            stream,
+            appearance_lock: None,
+        };
         if control.number("get_length")? == 0 {
             return Err("Load a video in VLC+ and pause it before recording.".into());
         }
@@ -209,7 +332,7 @@ impl VlcControl {
     }
 
     fn command(&mut self, command: &str, acknowledgement: &str) -> Result<String, String> {
-        self.0
+        self.stream
             .write_all(format!("{command}\n").as_bytes())
             .map_err(|e| e.to_string())?;
         let mut bytes = Vec::new();
@@ -220,10 +343,10 @@ impl VlcControl {
             let remaining = deadline
                 .checked_duration_since(Instant::now())
                 .ok_or("VLC+ control response timed out.")?;
-            self.0
+            self.stream
                 .set_read_timeout(Some(remaining))
                 .map_err(|e| e.to_string())?;
-            self.0
+            self.stream
                 .read_exact(&mut byte)
                 .map_err(|e| format!("VLC+ control response failed: {e}"))?;
             bytes.push(byte[0]);
@@ -250,6 +373,52 @@ mod tests {
     use super::*;
     use std::io::{BufRead, BufReader};
     use std::net::TcpListener;
+
+    #[cfg(windows)]
+    #[test]
+    fn recording_guard_requires_player_ack_and_signals_release_on_drop() {
+        use std::os::windows::io::AsRawHandle;
+        use windows_sys::Win32::{
+            Foundation::{WAIT_OBJECT_0, WAIT_TIMEOUT},
+            System::Threading::{SetEvent, WaitForSingleObject},
+        };
+        let session = format!("lock-test-{}", std::process::id());
+        let guard = AppearanceLock::new(&session).unwrap();
+        let release = AppearanceLock::event(&session, "release").unwrap();
+        let ready = AppearanceLock::event(&session, "ready").unwrap();
+        // SAFETY: The test retains each valid event handle across the Win32 call.
+        assert_eq!(
+            unsafe { WaitForSingleObject(ready.as_raw_handle(), 0) },
+            WAIT_TIMEOUT
+        );
+        assert_eq!(
+            unsafe { WaitForSingleObject(release.as_raw_handle(), 0) },
+            WAIT_TIMEOUT
+        );
+        assert_ne!(unsafe { SetEvent(ready.as_raw_handle()) }, 0);
+        guard.wait_until_ready().unwrap();
+        drop(guard);
+        assert_eq!(
+            unsafe { WaitForSingleObject(release.as_raw_handle(), 0) },
+            WAIT_OBJECT_0
+        );
+    }
+
+    #[test]
+    fn button_launches_video_in_fullscreen_while_waiting_for_recording() {
+        let command = paused_command(
+            "vlc.exe".into(),
+            "C:/Videos/test clip.mp4".into(),
+            42123,
+            "test",
+        );
+        let args: Vec<_> = command.get_args().collect();
+        assert!(args.contains(&std::ffi::OsStr::new("--fullscreen")));
+        assert!(args.contains(&std::ffi::OsStr::new("--start-paused")));
+        assert!(args.contains(&std::ffi::OsStr::new("--no-qt-start-minimized")));
+        assert!(args.contains(&std::ffi::OsStr::new("--flubber-recording-lock")));
+        assert_eq!(args.last().unwrap(), &"C:/Videos/test clip.mp4");
+    }
 
     #[test]
     #[cfg(windows)]

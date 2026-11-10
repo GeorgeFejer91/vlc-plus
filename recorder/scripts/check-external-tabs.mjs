@@ -125,7 +125,7 @@ try {
     await page.getByRole("button", { name: "Load page", exact: true }).click();
     const frame = page.frameLocator("iframe");
     await frame.locator("#connect:enabled").press("Enter");
-    await frame.getByRole("button", { name: "Start experiment" }).click();
+    await frame.locator("#start:enabled").press("Enter");
     await frame.getByText("Confirmed running revision 1").waitFor();
     assert.equal(await page.locator("iframe").getAttribute("sandbox"), "allow-scripts allow-forms");
     const child = page.frames()[1];
@@ -269,7 +269,7 @@ try {
   target.publishState();
   await page.getByRole("tab", { name: "Desktop experiment", exact: true }).click();
   await page.frameLocator('section[data-origin="desktop"] iframe').locator("#connect:enabled").press("Enter");
-  await page.frameLocator('section[data-origin="desktop"] iframe').getByRole("button", { name: "Start experiment" }).click();
+  await page.frameLocator('section[data-origin="desktop"] iframe').locator("#start:enabled").press("Enter");
   await page.frameLocator('section[data-origin="desktop"] iframe').getByText("Confirmed running revision 1").waitFor();
   assert.ok(!await page.evaluate(() => JSON.stringify({ ...localStorage }).includes("private-desktop-invite")));
   for (let i = 0; i < 3; i += 1) { snapshot.revision += 1; target.publishState(); }

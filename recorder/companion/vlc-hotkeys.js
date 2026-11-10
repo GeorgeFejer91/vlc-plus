@@ -8,43 +8,10 @@ export const vlcHotkeys = [
   ["Alt+H / Alt+Shift+H", "Next / previous face character (9 total). Selects face morph.", "Player"],
   ["Alt+W / A / S / D", "Move feedback up / left / down / right in either input mode. If Alt+S is reserved for screenshots, hold Ctrl+Alt and use arrows with affect input on.", "Layout"],
   ["Alt+plus / minus", "Increase / decrease selected feedback size. Alt+= and numpad keys also work.", "Layout"],
-  ["Alt+J", "Save a full v3 settings JSON snapshot, including affect step. The last successful snapshot loads automatically next launch. v2 imports remain supported.", "Player"],
-  ["Ctrl+Shift+1 / 2 / 3", "Select Flubber / grid / face directly.", "Player"],
-  ["Ctrl+Alt+1 / 2 / 3", "Select Flubber / grid / face directly (alternate keys).", "Player"],
-  ["Ctrl+Alt+arrows", "With affect arrows on, move the main feedback. With them off, VLC keeps these keys.", "Layout"],
-  ["Ctrl+Alt+= / -", "Increase / decrease feedback size.", "Layout"],
-  ["Ctrl+Alt+[ / ]", "Decrease / increase affect step. German keyboards: Ctrl+Alt+ß / Ctrl+Alt+´.", "Player"],
-  ["Ctrl+Alt+, / .", "Slower / faster face transitions.", "Player"],
-  ["Ctrl+Alt+PageUp / PageDown", "Increase / decrease grid density.", "Grid"],
-  ["Ctrl+Shift+PageUp / PageDown", "Increase / decrease panel height.", "Layout"],
-  ["Ctrl+Shift+S", "Open detailed Flubber settings.", "Player"],
+  ["Alt+J", "Save a settings snapshot. VLC+ restores the last successful snapshot on launch.", "Player"],
+  ["Ctrl+Shift+S", "Open all settings, including shared arrow hold time and JSON import/export.", "Player"],
+  ["Ctrl+Shift+1 / 2 / 3", "Open the Flubber, 2D grid or Face morph popup. Edits preview in VLC+; OK keeps them.", "Player"],
   ["Escape", "Release mouse rating capture.", "Player"],
-  ["Ctrl+Alt+T / Ctrl+Alt+Shift+T", "Increase / decrease Flubber transparency by 0.05. Selects Flubber.", "Flubber"],
-  ["Ctrl+Alt+O", "Toggle the Flubber outline. Selects Flubber.", "Flubber"],
-  ["Ctrl+Alt+B / Ctrl+Alt+Shift+B", "Increase / decrease Flubber outline width by 0.25. Selects Flubber.", "Flubber"],
-  ["Ctrl+Alt+H", "Toggle the Flubber halo. Selects Flubber.", "Flubber"],
-  ["Ctrl+Alt+W / Ctrl+Alt+Shift+W", "Increase / decrease Flubber halo width by 5 percentage points. Selects Flubber.", "Flubber"],
-  ["Ctrl+Alt+G", "Toggle the Flubber halo gradient. Selects Flubber.", "Flubber"],
-  ["Ctrl+Alt+E / Ctrl+Alt+Shift+E", "Increase / decrease Flubber halo steepness by 0.1. Selects Flubber.", "Flubber"],
-  ["Ctrl+Alt+A", "Switch Flubber axes / corners. Selects Flubber.", "Flubber"],
-  ["Ctrl+Alt+X / Ctrl+Alt+Shift+X", "Increase / decrease grid columns by 2, independently of rows. Selects grid.", "Grid"],
-  ["Ctrl+Alt+Y / Ctrl+Alt+Shift+Y", "Increase / decrease grid rows by 2, independently of columns. Selects grid.", "Grid"],
-  ["Ctrl+Alt+J / Ctrl+Alt+Shift+J", "Increase / decrease grid line width by 0.25. Selects grid.", "Grid"],
-  ["Ctrl+Alt+V", "Toggle the grid outline. Selects grid.", "Grid"],
-  ["Ctrl+Alt+P / Ctrl+Alt+Shift+P", "Increase / decrease grid outline width by 0.25. Selects grid.", "Grid"],
-  ["Ctrl+Alt+Z / Ctrl+Alt+Shift+Z", "Increase / decrease cursor size by 1. Selects grid.", "Grid"],
-  ...["frequency", "edge smoothness", "projection amplitude", "pulse synchrony", "wave-size variation", "saturation"].flatMap((name, index) => {
-    const step = index === 0 ? "0.1" : "0.05";
-    return [
-      [`Ctrl+Alt+F${index + 1} / Ctrl+Alt+Shift+F${index + 1}`, `Increase / decrease ${name} maximum by ${step}. Selects Flubber.`, "Mappings"],
-      [`Ctrl+Alt+F${index + 7} / Ctrl+Alt+Shift+F${index + 7}`, `Increase / decrease ${name} minimum by ${step}. Selects Flubber.`, "Mappings"],
-      [`Ctrl+Alt+${index + 4} / Ctrl+Alt+Shift+${index + 4}`, `Next / previous ${name} driver: x-axis, y-axis, angle, radius. Selects Flubber.`, "Drivers"],
-      [`Ctrl+Shift+F${index + 1}`, `Toggle ${name} mapping direction. Selects Flubber.`, "Direction"],
-    ];
-  }),
-  ...[["U", "up"], ["D", "down"], ["L", "left"], ["R", "right"], ["I", "idle"], ["K", "outline"], ["Q", "halo"], ["C", "cursor"]].map(([key, color]) => [
-    `Ctrl+Alt+${key}`, `Choose ${color} color. Cancel preserves settings. Selects Flubber.`, "Colors",
-  ]),
 ];
 
 export function showVlcHotkeys(list, shortcuts = vlcHotkeys) {

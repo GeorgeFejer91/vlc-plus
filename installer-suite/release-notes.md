@@ -1,8 +1,8 @@
 Three Windows x64 installers built and tested from this repository.
 
-1. **01 — VLC+ 0.3.4 and Remote LSL Recorder 0.1.9.** Installs both apps and adds one desktop shortcut that opens them together.
-2. **02 — VLC+ 0.3.4.** Hold arrow keys for continuous affect rating. Combine perpendicular arrows for diagonal movement and opposite arrows to cancel that axis. The grid and face respond to key changes immediately. The affect LSL stream samples at 480 Hz while the CSV log stays at 30 Hz. Press Alt+F to enable the arrows.
-3. **03 — Remote LSL Recorder 0.1.9.** Use the orange **Start VLC+ and record** button with the integrated cone to record and play the selected local video. Recorder confirms subscriptions before playback and retains partial XDF on failure. The Recorder signal viewer shows live valence and arousal scores.
+1. **01 — VLC+ 0.3.5 and Remote LSL Recorder 0.1.10.** Installs the matching pair and adds one desktop shortcut that opens both apps.
+2. **02 — VLC+ 0.3.5.** Tune Flubber, the 2D grid and Face morph in separate settings popups with a live preview. Choose Tiles or Continuous for the grid and adjust full-axis hold time independently of the tap step. VLC+ publishes playback and control actions on the LSL marker stream alongside the existing playback markers.
+3. **03 — Remote LSL Recorder 0.1.10.** The orange **Start VLC and record** button launches the selected video fullscreen. Recorder confirms the Flubber appearance lock and LSL subscriptions before playback. Appearance and layout unlock after recording stops. Use this workflow with VLC+ 0.3.5.
 
 The Recorder source, UI, browser controller, locks and notices are included in this repository. Its per-launch session ID identifies the intended VLC LSL streams even when different computers have matching PIDs. Sampling and XDF recording remain in the native applications, independently of browser rendering.
 
@@ -11,11 +11,7 @@ Stop/save recordings and close both apps before updating. The joint shortcut sta
 
 Matching source archives, native dependency sources, component build receipts, SHA-256 checksums and exact-run install/shortcut evidence accompany these unsigned experimental installers. Physical-phone/device and scientific timing qualification remain separate from synthetic LSL, injected keys and hosted Windows installer checks.
 
-The shared hotkey library has 64 groups covering
-all 60 detailed settings plus affect step. Dedicated shortcuts adjust appearance,
-grid, mapping bounds/drivers/direction and exact colors; Shift reverses numeric
-changes. Alt+J saves a complete v3 JSON snapshot with rating step and restores
-the last successful snapshot on launch. Legacy v2 settings still load. Recorder
-help provides category pages that fit its bounded dialog; the live guide retains
-the complete list. Windows GUI shortcuts normalize physical OEM keys after
-focus changes, including German bracket and resize keys.
+Use Ctrl+Shift+1/2/3 for the representation popups or Ctrl+Shift+S for the full
+settings dialog. Alt+J saves a v4 settings snapshot and the last saved snapshot
+loads on launch. VLC+ also reads v2 and v3 snapshots. Affect streaming runs at
+480 Hz and the video-local CSV runs at 30 Hz.

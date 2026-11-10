@@ -161,8 +161,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/bridge/src/lib.rs",
       "upstreamSha256": "d1f34eb4902ea8245cffdfce9113fc9beaf7d2cca32273fbfc3e769acebd04cd",
       "adapted": true,
-      "adaptation": "Retain PID and optional validated Recorder session IDs. Accept atomic affect updates and publish at 480 Hz while preserving the separate 30 Hz CSV and marker schedule.",
-      "standaloneSha256": "e19f2024e433399b68f092f521a2b963cf4d091647d7d205cfc7e479eca4ec84"
+      "adaptation": "Retain session IDs, 480 Hz affect and 30 Hz CSV. Queue timestamped VLC actions on the existing LSL marker outlet and report any overflow.",
+      "standaloneSha256": "14cb9555f55a70ec274e54a52ba13250ee2c6f7adb0f8b62d892319431a093ba"
     },
     {
       "path": "vlc-qt/build-bridge.ps1",
@@ -175,16 +175,16 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_bridge.hpp",
       "upstreamSha256": "806f20ff8e7b3f08103035bba7dc9d6c958c5829a7b9308b54aad661dd91cf88",
       "adapted": true,
-      "adaptation": "Resolve the atomic affect update ABI and retain Rust/LSL DLL mapping through process exit with QLibrary PreventUnloadHint. Join the worker and close CSV and outlets before release.",
-      "standaloneSha256": "a7e6e16285dc23be20d81ced66c290e7e066a0066e505d408183a88ab686f00b"
+      "adaptation": "Resolve the affect and action marker ABI. Keep the Rust/LSL DLL mapped through process exit, then join its worker and close its outlets and CSV.",
+      "standaloneSha256": "17118c5b918372233b8ea5af42f304a1a57a81d07d861cf4003a11a912f90c5f"
     },
     {
       "path": "vlc-qt/flubber_panel.hpp",
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/flubber_panel.hpp",
       "upstreamSha256": "2a0c89d9d31d5e76b28f41667e342f05c6a16d2c71268ea34cf782b4bba40e33",
       "adapted": true,
-      "standaloneSha256": "c965e99aa95497acc09e72d57b689cded038e8fda74d1a03c355597da95342ed",
-      "adaptation": "Retain exclusive representations, nine faces, detailed shortcuts, v3 settings and v2 import. Track held arrows as one direction, publish affect changes directly and reuse the painted grid field."
+      "standaloneSha256": "3349f34f02e7c14528caf26ce3dd353a06b30a30fb103b153abe9a2f7a1cfb37",
+      "adaptation": "Native feedback settings provide scoped live previews without changing saved settings or the Recorder appearance lock."
     },
     {
       "path": "vlc-qt/flubberctl.ps1",
@@ -197,8 +197,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/panel-check.cpp",
       "upstreamSha256": "b6acf80290abd35f7fd2f22b6178e04a9e7e61010a420309f663f11241f92319",
       "adapted": true,
-      "standaloneSha256": "eb411c95c93a3033850237607bfac7cd0826c3d2114aa6c8a89b9ecb910e237b",
-      "adaptation": "Cover representations, faces, shortcuts, v3 settings and v2 import. Check diagonal movement, release, opposing keys and typematic suppression."
+      "standaloneSha256": "b130dfbb2c322089703987b5eb05086445343f206be6c80a922c1ba7ba3bbfca",
+      "adaptation": "Checks separate popup routing, rendered controls, preview and cancellation, grid rendering, settings imports and snapshots, and input/recording lock regressions."
     },
     {
       "path": "vlc-qt/test-panel.ps1",
@@ -213,8 +213,8 @@
       "upstreamPath": "experiments/vlc-flubber/vlc-qt/vlc-3.0.20-flubber.patch",
       "upstreamSha256": "c12c4e801db760e702dbd5170b2038d33e82a1e4017570a4bda642e5fc5a9c6e",
       "adapted": true,
-      "adaptation": "Integrate native input and exclusive feedback. Connect Qt affect changes directly to the Rust bridge and clear the callback before teardown.",
-      "standaloneSha256": "df679c3a515d9f77a8aea5a1c96d6250c297ef18b32b41148f978288a63630a5"
+      "adaptation": "Connect VLC interaction events to LSL and the Recorder lock, and expose shared and representation settings in the Flubber menu.",
+      "standaloneSha256": "94a5c96414bb8d5d760851d7507baa09e86af3012a0495a9f189384b30bc1aa2"
     },
     {
       "path": "licenses/AFFECT-RESEARCH-BSD-3-Clause.txt",

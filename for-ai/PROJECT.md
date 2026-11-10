@@ -182,6 +182,64 @@ and [Windows standalone and joint installer gates](https://github.com/GeorgeFeje
 The hosted player probe observed 473.53 Hz and decoded 188 video frames.
 Public GitHub asset digests match the tested receipts and checksum inventory.
 
+## Recorder-controlled VLC+ interactions
+
+The next matching VLC+ and Recorder builds add `VLC_Action ` JSON messages to
+the existing marker outlet. Recorder requires a Windows appearance-lock
+acknowledgement for the exact fullscreen player it launches, waits for
+subscriptions before playback, and releases the lock on stop or exit.
+
+The local staged playback probe decoded 207 frames and captured 22 action
+markers alongside the original playback markers at 480.01 Hz affect cadence.
+Native Recorder-core and LabRecorder verification produced a finalized XDF
+with 1,208 affect samples and 11 action markers. It observed monitor-sized
+fullscreen, a blocked appearance change during recording, and a successful
+change after stop. Windows Security held the foreground during the probe.
+
+## Feedback settings consolidation — 2026-11-08
+
+- [x] Use Ctrl+Shift+S or Flubber → Settings for tuning. Ten documented
+  shortcut groups remain for rating, playback feedback, layout and snapshots.
+- [x] Set Flubber colors/transparency, choose Tiles or Continuous, and enter
+  full-axis hold time with the tap step independent. The duration control
+  follows the Experiment Planner P5 preview at research source `06e017d`.
+  Grid style is presentation only; no Planner response or acquisition policy
+  is imported.
+- [x] Save grid style and hold time in v4 snapshots; import v2/v3 and the
+  unchanged Planner appearance-v1. Retain the Recorder appearance lock.
+- [x] Verify the Windows Qt dialog and native key path, settings round trips,
+  source/patch provenance, and rendered Recorder and site help. The offscreen
+  Qt test failed on the old dialog and passed with the consolidated controls.
+  The local portable stage in `build/feedback-settings-runtime/` decoded
+  191 frames; the independent probe observed 477.59 Hz, 168/31 CSV rows,
+  24 interaction markers and the expected playback markers. Its evidence
+  is in `build/feedback-settings-playback/`.
+
+This is a local candidate on `codex/vlc-feedback-settings` based on
+`0311d1c`. Native settings and hold-time arithmetic were tested without
+foregrounding the user desktop. Physical key timing, a fresh installer and
+publication are outside this pass. The broader Planner/Runner compatibility
+goal stays open.
+
+## Representation settings popups — 2026-11-08
+
+- [x] Ctrl+Shift+1/2/3 and three Flubber menu actions open separate native
+  settings for Flubber, 2D grid and Face morph. Ctrl+Shift+S still opens
+  all settings, including shared input, panel height and JSON.
+- [x] Render each draft in the current VLC+ window before committing.
+  Cancel restores the previous display; OK saves and keeps the selected
+  representation. Shared Flubber/grid colors and transparency are labelled.
+  The Recorder lock, stored v4 format and acquisition path are preserved.
+- [x] Windows Qt and native key checks, rendered popup size checks, source
+  checks and rendered Recorder/site guides passed. The final local runtime
+  decoded 207 synthetic frames, observed 479.89 Hz affect LSL, recorded
+  169/31 CSV rows and emitted 24 interaction markers and the expected
+  playback markers. Evidence: `build/representation-popups-final/`.
+
+Local portable stage: `build/representation-popups-runtime/`. Branch
+`codex/vlc-feedback-settings` continues from `59cf17d`. No foreground
+physical input test, installation or publication was performed.
+
 ## Architecture
 
 | Path | Responsibility |

@@ -220,6 +220,8 @@ fn main() -> Result<()> {
     command(&mut socket, "flubber input arrows")?;
     command(&mut socket, &format!("add {}", media.display()))?;
     let mut labels = Vec::new();
+    let mut action_markers = 0;
+    let mut playback_actions = 0;
     let mut marker_log = File::create(evidence.join("observed-markers.txt"))?;
     let mut rc_log = File::create(evidence.join("rc-output.txt"))?;
     let mut stamps = Vec::new();
@@ -253,6 +255,16 @@ fn main() -> Result<()> {
             }
             let label = values[0].clone();
             writeln!(marker_log, "{label}")?;
+            if let Some(action) = label.strip_prefix("VLC_Action ") {
+                if action.contains(r#""event":"events-dropped""#) {
+                    return Err("player dropped interaction markers during qualification".into());
+                }
+                action_markers += 1;
+                if action.contains(r#""event":"playback-state""#) {
+                    playback_actions += 1;
+                }
+                continue;
+            }
             if label == "validation.mp4_Start" {
                 if first_start.is_none() {
                     first_start = Some(Instant::now());
@@ -326,6 +338,9 @@ fn main() -> Result<()> {
     .map(|suffix| format!("validation.mp4_{suffix}"));
     if labels != expected && labels != with_terminal {
         return Err(format!("marker chronology mismatch: {labels:?}").into());
+    }
+    if playback_actions < 2 {
+        return Err("player did not emit playback interaction markers".into());
     }
     let decoded = rc_output
         .lines()
@@ -435,7 +450,7 @@ fn main() -> Result<()> {
         return Err(format!("observed LSL rate {rate:.2} Hz").into());
     }
     let receipt = format!(
-        "{{\n  \"schema\": \"vlc-plus-installed-probe/v1\",\n  \"result\": \"VERIFIED\",\n  \"offscreen\": true,\n  \"physicalInputTested\": false,\n  \"terminalEndMayIncludeManualStop\": true,\n  \"decodedVideoFrames\": {decoded},\n  \"affectSamples\": {},\n  \"observedLslHz\": {rate:.4},\n  \"csvRows\": {rows:?},\n  \"csvFirstSeconds\": {csv_first_seconds:?},\n  \"csvActiveSeconds\": {csv_seconds:?},\n  \"markers\": {labels:?},\n  \"shutdownMs\": {}\n}}\n",
+        "{{\n  \"schema\": \"vlc-plus-installed-probe/v1\",\n  \"result\": \"VERIFIED\",\n  \"offscreen\": true,\n  \"physicalInputTested\": false,\n  \"terminalEndMayIncludeManualStop\": true,\n  \"decodedVideoFrames\": {decoded},\n  \"affectSamples\": {},\n  \"observedLslHz\": {rate:.4},\n  \"csvRows\": {rows:?},\n  \"csvFirstSeconds\": {csv_first_seconds:?},\n  \"csvActiveSeconds\": {csv_seconds:?},\n  \"markers\": {labels:?},\n  \"actionMarkers\": {action_markers},\n  \"shutdownMs\": {}\n}}\n",
         stamps.len(), shutdown.as_millis()
     );
     fs::write(evidence.join("installed-probe.json"), &receipt)?;

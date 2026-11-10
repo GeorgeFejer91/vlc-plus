@@ -1,3 +1,32 @@
+# Session scope — Representation popups
+
+From clean local VLC+ source `59cf17d`, add Ctrl+Shift+1/2/3 and three
+Flubber menu actions for representation-specific native settings. Preview edits
+in the playing window; OK keeps the settings and Cancel reverts the display.
+Keep shared input and JSON controls under Ctrl+Shift+S. The preview must not
+change saved settings, recorded affect or the Recorder lock. Scope: Qt
+settings, rendering and key routing; their regressions, hotkey guide and docs.
+Build and verify a local portable candidate. No installation or publication.
+
+# Session scope — 2026-11-08
+
+Consolidate VLC+ tuning shortcuts into the existing native Settings dialog,
+available from Ctrl+Shift+S and the Flubber menu. Group appearance, grid and
+arrow input; add a visual grid style and full-axis hold duration. Keep playback
+controls, legacy settings imports, snapshot restore and the Recorder lock.
+
+Initial Git state: clean at 0311d1c on codex/vlc-paired-cones. The local
+codex/vlc-feedback-settings branch includes that recording-lock baseline.
+Scope: Qt panel/key routing/menu, focused tests, the shared hotkey guide and
+its generated copy, and settings/verification docs. The Planner is a read-only
+reference for grouped controls and duration units. No changes to the Planner,
+Rust bridge, Recorder authority, stream formats or installed user profile.
+
+Acceptance: a tested modal and clean key handoff, timed full-axis travel,
+distinct grid rendering, and v4 snapshot/legacy import coverage. Run native
+Qt/key tests, source/context checks and rendered help checks. Build locally
+with the existing VLC toolchain. Publication is outside this pass.
+
 # Session scope — 2026-11-07
 
 The VLC+ keyboard feedback and LSL goal starts from `4bf8649` on

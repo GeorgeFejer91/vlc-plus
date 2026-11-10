@@ -3,7 +3,8 @@
 | Format | Producer / consumer | Current meaning |
 | --- | --- | --- |
 | `vlc-flubber-appearance/v1` | Planner export ↔ VLC+ native settings | Flubber colors, transparency, outline/halo, color anchors and six visual mappings |
-| `vlc-feedback-settings/v2` | VLC+ settings export ↔ VLC+ settings import | Appearance plus panel height, primary layer, input mode, layer positions/visibility, grid and face settings |
+| `vlc-feedback-settings/v4` | VLC+ settings export ↔ VLC+ settings import | v3 fields plus the target arrow hold duration and grid display style |
+| `vlc-feedback-settings/v2`, `v3` | Earlier VLC+ exports → VLC+ settings import | Appearance plus panel, input, layout, grid and face settings; v3 also includes the tap step |
 | `affect-research-planner-recipe` with explicit version | Planner → Experiment Runner | Complete study recipe; VLC+ intake is not implemented |
 | `flubbercorder-experiment/v1` | Separate Flubbercorder console | Companion configuration; not a Planner master and not loaded as a full study by VLC+ |
 

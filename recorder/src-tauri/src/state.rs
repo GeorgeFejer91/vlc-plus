@@ -32,6 +32,7 @@ const COMPANION_URL: &str = "https://georgefejer91.github.io/vlc-plus/remote/";
 struct RecordingProcess {
     child: Child,
     stdin: Option<ChildStdin>,
+    _vlc_appearance_lock: Option<crate::vlc::AppearanceLock>,
     output_file: PathBuf,
     subscriptions: Arc<Mutex<SubscriptionProgress>>,
 }
@@ -416,10 +417,13 @@ impl AppState {
             .recording_transition
             .lock()
             .map_err(|_| "Recording transition lock failed.")?;
-        self.start_recording_inner()
+        self.start_recording_inner(None)
     }
 
-    fn start_recording_inner(&self) -> Result<AppSnapshot, String> {
+    fn start_recording_inner(
+        &self,
+        vlc_appearance_lock: Option<crate::vlc::AppearanceLock>,
+    ) -> Result<AppSnapshot, String> {
         if self.shutting_down.load(Ordering::Acquire) {
             return Err("Recorder is shutting down.".into());
         }
@@ -523,6 +527,7 @@ impl AppState {
         *recorder = Some(RecordingProcess {
             child,
             stdin,
+            _vlc_appearance_lock: vlc_appearance_lock,
             output_file: output_file.clone(),
             subscriptions,
         });
@@ -633,7 +638,7 @@ impl AppState {
             Some(player) => player,
             None => crate::vlc::VlcControl::connect(port)?,
         };
-        let snapshot = self.start_recording_inner()?;
+        let snapshot = self.start_recording_inner(player.appearance_lock.take())?;
         let result = self.wait_for_recording_headers(&snapshot).and_then(|()| {
             if self.shutting_down.load(Ordering::Acquire) {
                 return Err("Recorder is shutting down; video remains paused.".into());

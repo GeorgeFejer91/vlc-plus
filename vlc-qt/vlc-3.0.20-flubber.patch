@@ -108,11 +108,69 @@ index 11a0bd9..bfadba5 100644
  
  public slots:
      void setSize( unsigned int, unsigned int );
+diff --git a/modules/gui/qt/input_manager.cpp b/modules/gui/qt/input_manager.cpp
+index c866033..597ee18 100644
+--- a/modules/gui/qt/input_manager.cpp
++++ b/modules/gui/qt/input_manager.cpp
+@@ -48,6 +48,23 @@ static int InputEvent( vlc_object_t *, const char *,
+ static int VbiEvent( vlc_object_t *, const char *,
+                      vlc_value_t, vlc_value_t, void * );
+ 
++static const char *const interactionVariables[] = {
++    "position", "time", "time-offset", "title", "chapter", "video-es",
++    "audio-es", "spu-es", "audio-delay", "spu-delay"
++};
++
++static int InputInteraction( vlc_object_t *, const char *name,
++                             vlc_value_t, vlc_value_t value, void *param )
++{
++    InputManager *im = static_cast<InputManager *>( param );
++    const QString control = QString::fromLatin1( name );
++    const double numeric = control == QLatin1String( "position" ) ? value.f_float : double( value.i_int );
++    QMetaObject::invokeMethod( im, [im, control, numeric]() {
++        emit im->interaction( control, numeric );
++    }, Qt::QueuedConnection );
++    return VLC_SUCCESS;
++}
++
+ /* Ensure arbitratry (not dynamically allocated) event IDs are not in use */
+ static inline void registerAndCheckEventIds( int start, int end )
+ {
+@@ -306,11 +323,17 @@ void InputManager::customEvent( QEvent *event )
+ inline void InputManager::addCallbacks()
+ {
+     var_AddCallback( p_input, "intf-event", InputEvent, this );
++    // Explicit controls use var_Set. Routine playback progress uses
++    // VLC_VAR_SETVALUE and does not fire these callbacks.
++    for( const char *name : interactionVariables )
++        var_AddCallback( p_input, name, InputInteraction, this );
+ }
+ 
+ /* Delete the callbacks on Input. Self explanatory */
+ inline void InputManager::delCallbacks()
+ {
++    for( const char *name : interactionVariables )
++        var_DelCallback( p_input, name, InputInteraction, this );
+     var_DelCallback( p_input, "intf-event", InputEvent, this );
+ }
+ 
+diff --git a/modules/gui/qt/input_manager.hpp b/modules/gui/qt/input_manager.hpp
+index 9633a8c..4c21cdb 100644
+--- a/modules/gui/qt/input_manager.hpp
++++ b/modules/gui/qt/input_manager.hpp
+@@ -218,6 +218,7 @@ signals:
+     void positionUpdated( float , int64_t, int );
+     void remainingTimeChanged( bool );
+     void seekRequested( float pos );
++    void interaction( const QString &control, double value );
+     void rateChanged( float );
+     void nameChanged( const QString& );
+     /// Used to signal whether we should show navigation buttons
 diff --git a/modules/gui/qt/main_interface.cpp b/modules/gui/qt/main_interface.cpp
-index 6e66afb..7a5f9bd 100644
+index 6e66afb..a5d08e4 100644
 --- a/modules/gui/qt/main_interface.cpp
 +++ b/modules/gui/qt/main_interface.cpp
-@@ -38,6 +38,10 @@
+@@ -38,6 +38,13 @@
  #include "util/imagehelper.hpp"
  
  #include "components/interface_widgets.hpp"     // bgWidget, videoWidget
@@ -120,19 +178,24 @@ index 6e66afb..7a5f9bd 100644
 +#include "flubber_bridge.hpp"
 +#include <QUrl>
 +#include <QDir>
++#ifdef Q_OS_WIN
++#include <QWinEventNotifier>
++#endif
  #include "components/controller.hpp"            // controllers
  #include "components/playlist/playlist.hpp"     // plWidget
  #include "dialogs/firstrun.hpp"                 // First Run
-@@ -87,6 +91,8 @@ static int IntfBossCB( vlc_object_t *p_this, const char *psz_variable,
+@@ -87,6 +94,10 @@ static int IntfBossCB( vlc_object_t *p_this, const char *psz_variable,
  static int IntfRaiseMainCB( vlc_object_t *p_this, const char *psz_variable,
                             vlc_value_t old_val, vlc_value_t new_val,
                             void *param );
 +static int FlubberCommandCB( vlc_object_t *, const char *,
 +                             vlc_value_t, vlc_value_t, void * );
++static int FlubberHotkeyCB( vlc_object_t *, const char *,
++                            vlc_value_t, vlc_value_t, void * );
  
  const QEvent::Type MainInterface::ToolbarsNeedRebuild =
          (QEvent::Type)QEvent::registerEventType();
-@@ -96,6 +102,12 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
+@@ -96,6 +107,12 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
      /* Variables initialisation */
      bgWidget             = NULL;
      videoWidget          = NULL;
@@ -145,7 +208,7 @@ index 6e66afb..7a5f9bd 100644
      playlistWidget       = NULL;
      stackCentralOldWidget= NULL;
      lastWinScreen        = NULL;
-@@ -167,6 +179,36 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
+@@ -167,6 +184,98 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
               THEDP, destroyPopupMenu() );
  
      createMainWidget( settings );
@@ -162,6 +225,68 @@ index 6e66afb..7a5f9bd 100644
 +    flubberBridge = new FlubberBridge();
 +    flubberPanel->setAffectChangedHandler( [this]( float x, float y ) {
 +        flubberBridge->setAffect( x, y );
++    } );
++    flubberPanel->setInteractionHandler( [this]( const QJsonObject &action ) {
++        flubberBridge->action( QJsonDocument( action ).toJson( QJsonDocument::Compact ) );
++    } );
++#ifdef Q_OS_WIN
++    if( var_InheritBool( p_intf, "flubber-recording-lock" ) )
++    {
++        const QString lockName = QStringLiteral( "Local\\VLCPlus.Appearance." ) +
++                                 qEnvironmentVariable( "VLC_FLUBBER_SESSION_ID" );
++        HANDLE release = OpenEventW( SYNCHRONIZE, FALSE,
++            reinterpret_cast<LPCWSTR>( ( lockName + ".release" ).utf16() ) );
++        HANDLE ready = OpenEventW( EVENT_MODIFY_STATE, FALSE,
++            reinterpret_cast<LPCWSTR>( ( lockName + ".ready" ).utf16() ) );
++        const DWORD pid = qgetenv( "VLC_FLUBBER_RECORDER_PID" ).toUInt();
++        HANDLE owner = pid ? OpenProcess( SYNCHRONIZE, FALSE, pid ) : NULL;
++        if( release && ready && owner )
++        {
++            flubberPanel->setAppearanceLocked( true );
++            for( HANDLE handle : { release, owner } )
++            {
++                auto *watch = new QWinEventNotifier( handle, this );
++                connect( watch, &QWinEventNotifier::activated, this, [this, watch]() {
++                    watch->setEnabled( false );
++                    flubberPanel->setAppearanceLocked( false );
++                } );
++                connect( watch, &QObject::destroyed, [handle]() { CloseHandle( handle ); } );
++            }
++            SetEvent( ready );
++        }
++        else
++        {
++            if( release ) CloseHandle( release );
++            if( owner ) CloseHandle( owner );
++        }
++        if( ready ) CloseHandle( ready );
++    }
++#endif
++    connect( THEMIM->getIM(), &InputManager::interaction, this,
++             [this]( const QString &variable, double value ) {
++        flubberPanel->recordInteraction( QStringLiteral( "input-control" ),
++                                        { { "control", variable }, { "value", value } } );
++    } );
++    connect( THEMIM->getIM(), &InputManager::rateChanged, this, [this]( float rate ) {
++        flubberPanel->recordInteraction( QStringLiteral( "playback-rate" ), { { "rate", rate } } );
++    } );
++    connect( THEMIM, &MainInputManager::volumeChanged, this, [this]( float level ) {
++        flubberPanel->recordInteraction( QStringLiteral( "volume" ), { { "level", level } } );
++    } );
++    connect( THEMIM, &MainInputManager::soundMuteChanged, this, [this]( bool muted ) {
++        flubberPanel->recordInteraction( QStringLiteral( "mute" ), { { "muted", muted } } );
++    } );
++    connect( THEMIM, &MainInputManager::randomChanged, this, [this]( bool enabled ) {
++        flubberPanel->recordInteraction( QStringLiteral( "shuffle" ), { { "enabled", enabled } } );
++    } );
++    connect( THEMIM, &MainInputManager::repeatLoopChanged, this, [this]( int mode ) {
++        flubberPanel->recordInteraction( QStringLiteral( "repeat" ), { { "mode", mode } } );
++    } );
++    connect( THEMIM, &MainInputManager::playlistItemAppended, this, [this]( int id, int ) {
++        flubberPanel->recordInteraction( QStringLiteral( "playlist-add" ), { { "item", id } } );
++    } );
++    connect( THEMIM, &MainInputManager::playlistItemRemoved, this, [this]( int id ) {
++        flubberPanel->recordInteraction( QStringLiteral( "playlist-remove" ), { { "item", id } } );
 +    } );
 +    if( !flubberBridge->ready() )
 +    {
@@ -182,27 +307,35 @@ index 6e66afb..7a5f9bd 100644
  
      /**************
       * Status Bar *
-@@ -248,6 +290,8 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
+@@ -248,6 +357,9 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
  
      /* Register callback for the intf-popupmenu variable */
      var_AddCallback( p_intf->obj.libvlc, "intf-popupmenu", PopupMenuCB, p_intf );
 +    var_Create( p_intf->obj.libvlc, "flubber", VLC_VAR_STRING | VLC_VAR_ISCOMMAND );
 +    var_AddCallback( p_intf->obj.libvlc, "flubber", FlubberCommandCB, this );
++    var_AddCallback( p_intf->obj.libvlc, "key-action", FlubberHotkeyCB, this );
  
  
      /* Final Sizing, restoration and placement of the interface */
-@@ -269,6 +313,10 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
+@@ -269,6 +381,17 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
  
  MainInterface::~MainInterface()
  {
++    var_DelCallback( p_intf->obj.libvlc, "key-action", FlubberHotkeyCB, this );
 +    if( flubberPanel ) flubberPanel->stopRating();
 +    if( flubberPanel ) flubberPanel->setAffectChangedHandler( {} );
++    if( flubberPanel )
++    {
++        flubberPanel->recordInteraction( QStringLiteral( "close-player" ) );
++        flubberPanel->setInteractionHandler( {} );
++    }
 +    flubberSamplingTimer->stop();
 +    delete flubberBridge;
++    flubberBridge = NULL;
      /* Unsure we hide the videoWidget before destroying it */
      if( stackCentralOldWidget == videoWidget )
          showTab( bgWidget );
-@@ -307,6 +355,8 @@ MainInterface::~MainInterface()
+@@ -307,6 +430,8 @@ MainInterface::~MainInterface()
      var_DelCallback( p_intf->obj.libvlc, "intf-show", IntfRaiseMainCB, p_intf );
      var_DelCallback( p_intf->obj.libvlc, "intf-toggle-fscontrol", IntfShowCB, p_intf );
      var_DelCallback( p_intf->obj.libvlc, "intf-popupmenu", PopupMenuCB, p_intf );
@@ -211,7 +344,7 @@ index 6e66afb..7a5f9bd 100644
  
      p_intf->p_sys->p_mi = NULL;
  }
-@@ -332,8 +382,8 @@ void MainInterface::recreateToolbars()
+@@ -332,8 +457,8 @@ void MainInterface::recreateToolbars()
  
      controls = new ControlsWidget( p_intf, b_adv, this );
      inputC = new InputControlsWidget( p_intf, this );
@@ -222,7 +355,7 @@ index 6e66afb..7a5f9bd 100644
                                controls );
  
      if( fullscreenControls )
-@@ -465,21 +515,10 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
+@@ -465,21 +590,10 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
      stackCentralW = new QVLCStackedWidget( main );
  
      /* Bg Cone */
@@ -246,7 +379,7 @@ index 6e66afb..7a5f9bd 100644
  
      /* And video Outputs */
      if( var_InheritBool( p_intf, "embedded-video" ) )
-@@ -488,6 +527,35 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
+@@ -488,6 +602,35 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
          stackCentralW->addWidget( videoWidget );
      }
      mainLayout->insertWidget( 1, stackCentralW );
@@ -282,7 +415,7 @@ index 6e66afb..7a5f9bd 100644
  
      stackWidgetsSizes[bgWidget] =
          creationSettings->value( "MainWindow/bgSize", QSize( 600, 0 ) ).toSize();
-@@ -499,9 +567,9 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
+@@ -499,9 +642,9 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
          creationSettings->value( "MainWindow/adv-controls", false ).toBool(), this );
      inputC = new InputControlsWidget( p_intf, this );
  
@@ -294,17 +427,24 @@ index 6e66afb..7a5f9bd 100644
          controls );
  
      /* Visualisation, disabled for now, they SUCK */
-@@ -530,6 +598,162 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
+@@ -530,6 +673,173 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
          setWindowFlags( windowFlags() | Qt::WindowStaysOnTopHint );
  }
  
-+void MainInterface::showFlubberControls()
++void MainInterface::showFlubberControls( int target )
++{
++    if( flubberPanel ) flubberPanel->showControls( this, target );
++}
++
++bool MainInterface::flubberAppearanceLocked() const
++{
++    return flubberPanel && flubberPanel->appearanceLocked();
++}
++
++void MainInterface::recordVlcHotkey( int action )
 +{
 +    if( flubberPanel )
-+    {
-+        flubberPanel->stopRating();
-+        flubberPanel->showControls( this );
-+    }
++        flubberPanel->recordInteraction( QStringLiteral( "vlc-action" ), { { "id", action } } );
 +}
 +
 +bool MainInterface::flubberUsesArrows() const
@@ -352,6 +492,7 @@ index 6e66afb..7a5f9bd 100644
 +    const int space = command.indexOf( QLatin1Char( ' ' ) );
 +    const QString verb = ( space < 0 ? command : command.left( space ) ).trimmed().toLower();
 +    const QString arg = space < 0 ? QString() : command.mid( space + 1 ).trimmed();
++    if( verb != QLatin1String( "input" ) && flubberPanel->rejectAppearanceChange() ) return;
 +    QString error;
 +    if( verb == QLatin1String( "primary" ) &&
 +        ( arg == QLatin1String( "flubber" ) || arg == QLatin1String( "grid" ) ||
@@ -441,6 +582,9 @@ index 6e66afb..7a5f9bd 100644
 +
 +void MainInterface::flubberPlaybackStateChanged( int state )
 +{
++    if( flubberPanel )
++        flubberPanel->recordInteraction( QStringLiteral( "playback-state" ),
++            { { "state", state }, { "appearance_locked", flubberAppearanceLocked() } } );
 +    if( state == END_S || state == ERROR_S )
 +    {
 +        /* InputManager also emits END_S when it merely drops an input after
@@ -457,7 +601,7 @@ index 6e66afb..7a5f9bd 100644
  inline void MainInterface::initSystray()
  {
      bool b_systrayAvailable = QSystemTrayIcon::isSystemTrayAvailable();
-@@ -745,6 +969,8 @@ void MainInterface::getVideoSlot( struct vout_window_t *p_wnd,
+@@ -745,6 +1055,8 @@ void MainInterface::getVideoSlot( struct vout_window_t *p_wnd,
      {
          videoWidget = new VideoWidget( p_intf, stackCentralW );
          stackCentralW->addWidget( videoWidget );
@@ -466,7 +610,16 @@ index 6e66afb..7a5f9bd 100644
      }
      *res = videoWidget->request( p_wnd );
      if( *res ) /* The videoWidget is available */
-@@ -1766,6 +1992,16 @@ void MainInterface::voutReleaseMouseEvents()
+@@ -1698,6 +2010,8 @@ void MainInterface::toolBarConfUpdated()
+ 
+ void MainInterface::setInterfaceFullScreen( bool fs )
+ {
++    if( flubberPanel && isFullScreen() != fs )
++        flubberPanel->recordInteraction( QStringLiteral( "fullscreen" ), { { "enabled", fs } } );
+     if( fs )
+         setWindowState( windowState() | Qt::WindowFullScreen );
+     else
+@@ -1766,6 +2080,26 @@ void MainInterface::voutReleaseMouseEvents()
   *  We don't show the menu directly here because we don't want the
   *  caller to block for a too long time.
   *****************************************************************************/
@@ -480,11 +633,21 @@ index 6e66afb..7a5f9bd 100644
 +    return VLC_SUCCESS;
 +}
 +
++static int FlubberHotkeyCB( vlc_object_t *, const char *, vlc_value_t,
++                            vlc_value_t value, void *param )
++{
++    MainInterface *mi = static_cast<MainInterface *>( param );
++    const int action = value.i_int;
++    QMetaObject::invokeMethod( mi, [mi, action]() { mi->recordVlcHotkey( action ); },
++                               Qt::QueuedConnection );
++    return VLC_SUCCESS;
++}
++
  static int PopupMenuCB( vlc_object_t *, const char *,
                          vlc_value_t, vlc_value_t new_val, void *param )
  {
 diff --git a/modules/gui/qt/main_interface.hpp b/modules/gui/qt/main_interface.hpp
-index c567c5b..86284a7 100644
+index c567c5b..4097852 100644
 --- a/modules/gui/qt/main_interface.hpp
 +++ b/modules/gui/qt/main_interface.hpp
 @@ -42,6 +42,8 @@ class QKeyEvent;
@@ -509,12 +672,14 @@ index c567c5b..86284a7 100644
      BackgroundWidget    *bgWidget;
      PlaylistWidget      *playlistWidget;
      //VisualSelector      *visualSelector;
-@@ -200,6 +208,17 @@ protected:
+@@ -200,6 +208,19 @@ protected:
      int i_kc_offset;
  
  public slots:
-+    void showFlubberControls();
++    void showFlubberControls( int target = -1 );
 +    bool flubberUsesArrows() const;
++    bool flubberAppearanceLocked() const;
++    void recordVlcHotkey( int action );
 +    void useFlubberArrows();
 +    void useFlubberMouse();
 +    int flubberPrimary() const;
@@ -528,16 +693,29 @@ index c567c5b..86284a7 100644
      void toggleMinimalView( bool );
      void togglePlaylist();
 diff --git a/modules/gui/qt/menus.cpp b/modules/gui/qt/menus.cpp
-index b3ec20c..ff4293f 100644
+index b3ec20c..74e4cf6 100644
 --- a/modules/gui/qt/menus.cpp
 +++ b/modules/gui/qt/menus.cpp
-@@ -341,6 +341,47 @@ void VLCMenuBar::createMenuBar( MainInterface *mi,
+@@ -341,6 +341,60 @@ void VLCMenuBar::createMenuBar( MainInterface *mi,
      /* View menu, a bit different */
      BAR_DADD( ViewMenu( p_intf, NULL, mi ), qtr( "V&iew" ), 4 );
  
 +    QMenu *flubberMenu = new QMenu( bar );
-+    flubberMenu->addAction( qtr( "&Settings…" ), mi,
-+                            SLOT( showFlubberControls() ) );
++    QAction *flubberSettings = flubberMenu->addAction( qtr( "&Settings…" ) );
++    QObject::connect( flubberSettings, &QAction::triggered, mi,
++                      [mi]() { mi->showFlubberControls(); } );
++    flubberSettings->setShortcut( QKeySequence( "Ctrl+Shift+S" ) );
++    flubberSettings->setShortcutContext( Qt::WidgetShortcut );
++    QAction *representationSettings[3];
++    const char *settingsNames[] = { "Flubber appearance…", "2D grid settings…", "Face morph settings…" };
++    for( int i = 0; i < 3; ++i )
++    {
++        representationSettings[i] = flubberMenu->addAction( qtr( settingsNames[i] ) );
++        representationSettings[i]->setShortcut( QKeySequence( QString( "Ctrl+Shift+%1" ).arg( i + 1 ) ) );
++        representationSettings[i]->setShortcutContext( Qt::WidgetShortcut );
++        QObject::connect( representationSettings[i], &QAction::triggered, mi,
++                          [mi, i]() { mi->showFlubberControls( i ); } );
++    }
 +    flubberMenu->addSeparator();
 +    QAction *mainLabel = flubberMenu->addAction( qtr( "Visible representation" ) );
 +    mainLabel->setEnabled( false );
@@ -548,26 +726,26 @@ index b3ec20c..ff4293f 100644
 +    {
 +        feedbackActions[i] = flubberMenu->addAction( qtr( feedbackNames[i] ) );
 +        feedbackActions[i]->setCheckable( true );
-+        feedbackActions[i]->setShortcut( QKeySequence( QString( "Ctrl+Shift+%1" ).arg( i + 1 ) ) );
-+        feedbackActions[i]->setShortcutContext( Qt::WidgetShortcut );
 +        feedbackGroup->addAction( feedbackActions[i] );
 +        QObject::connect( feedbackActions[i], &QAction::triggered, mi,
 +                          [mi, i]() { mi->setFlubberPrimary( i ); } );
 +    }
 +    QObject::connect( flubberMenu, &QMenu::aboutToShow, mi,
-+                      [mi, feedbackActions]() {
++                      [mi, feedbackActions, flubberSettings, representationSettings]() {
++        const bool editable = !mi->flubberAppearanceLocked();
++        flubberSettings->setEnabled( editable );
++        for( QAction *action : representationSettings ) action->setEnabled( editable );
++        for( QAction *action : feedbackActions ) action->setEnabled( editable );
 +        feedbackActions[mi->flubberPrimary()]->setChecked( true );
 +    } );
 +    flubberMenu->addSeparator();
 +    QActionGroup *flubberInput = new QActionGroup( flubberMenu );
 +    QAction *arrowInput = flubberMenu->addAction( qtr( "&Arrow-key control" ), mi,
 +                                                 SLOT( useFlubberArrows() ) );
-+    arrowInput->setShortcut( QKeySequence( "Ctrl+Shift+A" ) );
 +    arrowInput->setCheckable( true );
 +    flubberInput->addAction( arrowInput );
 +    QAction *mouseInput = flubberMenu->addAction( qtr( "&Mouse control" ), mi,
 +                                                 SLOT( useFlubberMouse() ) );
-+    mouseInput->setShortcut( QKeySequence( "Ctrl+Shift+M" ) );
 +    mouseInput->setCheckable( true );
 +    flubberInput->addAction( mouseInput );
 +    QObject::connect( flubberMenu, &QMenu::aboutToShow, mi,
@@ -580,10 +758,10 @@ index b3ec20c..ff4293f 100644
  
  }
 diff --git a/modules/gui/qt/qt.cpp b/modules/gui/qt/qt.cpp
-index a7e6c8d..48b1732 100644
+index a7e6c8d..e846022 100644
 --- a/modules/gui/qt/qt.cpp
 +++ b/modules/gui/qt/qt.cpp
-@@ -223,6 +223,15 @@ vlc_module_begin ()
+@@ -223,6 +223,17 @@ vlc_module_begin ()
  
      add_shortcut("qt")
  
@@ -595,6 +773,8 @@ index a7e6c8d..48b1732 100644
 +                N_( "arrows or mouse" ), false )
 +    add_string( "flubber-face", "", N_( "Flubber face preset" ),
 +                N_( "photo-reference-v3 or photo-synthetic-01 through -08" ), false )
++    add_bool( "flubber-recording-lock", false, N_( "Lock Flubber appearance during recording" ),
++              N_( "Recorder releases the appearance lock when capture finishes." ), false )
 +
      add_bool( "qt-minimal-view", false, QT_MINIMAL_MODE_TEXT,
                QT_MINIMAL_MODE_TEXT, false );

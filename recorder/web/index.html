@@ -37,16 +37,33 @@
           <button id="vlc-launch-record" type="button" class="vlc-record-action">
             <svg class="vlc-button-art" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
               <defs>
-                <linearGradient id="vlc-button-orange" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="64">
+                <linearGradient id="vlc-button-orange" x2="0%" y2="100%">
                   <stop class="vlc-orange-top" offset="0" stop-color="#ffa33e"/>
                   <stop class="vlc-orange-bottom" offset="1" stop-color="#f1841b"/>
                 </linearGradient>
+                <path id="vlc-cone-shape" d="M4 54 19 6Q20 2 24 2h5q4 0 5 4l15 48zM3 51h49v9H3z"/>
+                <path id="vlc-cone-stripes" d="m16 16-2 7h25l-2-7zm-5 16-2 7h35l-2-7z"/>
+                <path id="vlc-cone-left-edge" d="M34 6 48.06 51H52V60"/>
+                <path id="vlc-cone-right-edge" d="M19 6 4.94 51H3V60"/>
+                <rect id="vlc-button-body" class="vlc-button-body" x="30" y="12" rx="8"/>
+                <clipPath id="vlc-button-silhouette">
+                  <use href="#vlc-button-body"/>
+                  <use class="vlc-button-cone" href="#vlc-cone-shape" y="100%"/>
+                  <use class="vlc-button-cone vlc-button-right" href="#vlc-cone-shape" x="100%" y="100%"/>
+                </clipPath>
+                <clipPath id="vlc-button-interior">
+                  <use href="#vlc-button-body"/>
+                </clipPath>
               </defs>
-              <g fill="url(#vlc-button-orange)">
-                <rect class="vlc-button-body" x="30" y="12" rx="8"/>
-                <path d="M4 54 19 6Q20 2 24 2h5q4 0 5 4l15 48zM3 51h49v9H3z"/>
+              <rect width="100%" height="100%" fill="url(#vlc-button-orange)" clip-path="url(#vlc-button-silhouette)"/>
+              <g fill="#fff8ee">
+                <use href="#vlc-cone-stripes" y="100%"/>
+                <use class="vlc-button-right" href="#vlc-cone-stripes" x="100%" y="100%"/>
               </g>
-              <path fill="#fff8ee" d="m16 16-2 7h25l-2-7zm-5 16-2 7h35l-2-7z"/>
+              <g class="vlc-cone-outlines" clip-path="url(#vlc-button-interior)" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round">
+                <use href="#vlc-cone-left-edge" y="100%"/>
+                <use class="vlc-button-right" href="#vlc-cone-right-edge" x="100%" y="100%"/>
+              </g>
             </svg>
             <span data-fit-text="action">Start VLC and record</span>
           </button>
@@ -135,7 +152,7 @@
         <label for="vlc-video">Video path</label>
         <input id="vlc-video" type="text" placeholder="C:\Videos\clip.mp4" autocomplete="off" aria-describedby="vlc-help">
       </div>
-      <p id="vlc-help">Use an unused port. Start VLC and record opens this video in VLC+ and records the selected streams before playback. Stop recording finishes the XDF; control playback in VLC+.</p>
+      <p id="vlc-help">Use an unused port. Start VLC and record opens this video fullscreen in VLC+ and starts recording before playback. Flubber appearance and layout unlock when recording ends.</p>
     </section>
     <section id="vlc-library" class="vlc-library" aria-label="VLC+ hotkey library" hidden>
       <div class="vlc-library-heading">

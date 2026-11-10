@@ -51,11 +51,15 @@ after recording starts. Input in other applications is outside this capture.
 Open **VLC+ setup**, enter an absolute local video path
 and unused control port, and apply the participant and recording folder.
 Select any additional streams, then choose the single orange button with its
-integrated SVG cone,
+integrated SVG cones,
 **Start VLC and record**. Recorder
-opens the default current-user VLC+ installation paused, selects that local
+opens the default current-user VLC+ installation paused in fullscreen and
+hands it foreground focus. It selects that local
 process's affect and marker streams, starts XDF capture of all selected streams,
 and waits for subscriptions before playback. It verifies RC listener ownership.
+Use the matching VLC+ build. The launched player's Flubber appearance and layout
+are locked until Recorder finishes. Affect ratings and playback controls remain
+available. VLC+ interaction markers are captured in the selected VLC marker stream.
 An occupied port fails without starting another player. Stop VLC+ before
 **Stop recording** to capture its terminal marker. Launch is local-only and
 does not grant phone access to files or programs.

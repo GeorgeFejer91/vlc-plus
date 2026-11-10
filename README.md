@@ -49,15 +49,20 @@ it, and **Alt+J** to save a JSON snapshot. The last successful snapshot loads
 automatically on the next launch. These layout shortcuts work with mouse or
 arrow input and leave the affect rating unchanged.
 
-VLC+ 0.3.3 includes dedicated shortcuts for all 60 detailed settings and
-the affect step. Use Ctrl+Alt controls for appearance, grid and colors; add
-Shift to decrease numeric values. Animation bounds, drivers and direction
-have dedicated function/number keys. The [64-group hotkey library](https://georgefejer91.github.io/vlc-plus/remote/vlc.html)
-and Recorder's **VLC+ setup → Hotkeys** list every key. Alt+J saves
-`vlc-feedback-settings/v3`, including rating step, appearance, colors, mappings,
-all three layouts, grid and selected face; v2 imports remain supported. An
-explicit session environment or command-line override keeps its documented
-precedence.
+**Ctrl+Shift+1**, **Ctrl+Shift+2** and **Ctrl+Shift+3** open dedicated popups
+for Flubber, 2D grid and Face morph. Changes preview in the open VLC+ window.
+Choose OK to keep them or Cancel to restore the previous display.
+
+**Ctrl+Shift+S** opens all settings, including shared input and JSON, from the player or
+video. Use **Flubber** and **Colors** for transparency and colors, **2D grid**
+to choose Tiles or Continuous, and **Input & display** to set how many
+milliseconds a held arrow takes to cross an affect axis. Settings keep the
+tap step separate from hold time. The Recorder's **VLC+ setup → Hotkeys**
+and the [player guide](vlc-qt/README.md) list the remaining shortcuts.
+
+Alt+J saves a full `vlc-feedback-settings/v4` snapshot including the grid
+style and hold time. Earlier v2 and v3 files can still be imported. Explicit
+session overrides retain their documented precedence.
 
 Press **Alt+F** to toggle affect arrows. Left/Right changes valence and Up/Down
 changes arousal. Hold Left and Up together to move diagonally. The first step
@@ -92,7 +97,7 @@ JSON and assets → Experiment Runner or VLC+**, with explicit capability checks
 That complete-recipe workflow remains to be implemented in VLC+.
 
 Today VLC+ imports Planner's standalone `vlc-flubber-appearance/v1` JSON and
-reads/writes its own `vlc-feedback-settings/v3` settings, with v2 imports supported. A complete Planner
+reads/writes its own `vlc-feedback-settings/v4` settings, with v2 and v3 imports supported. A complete Planner
 master JSON, language route, questionnaire protocol or experiment schedule
 cannot yet be executed here. The formats are distinct and must not be renamed
 or silently converted. See [JSON formats](docs/experiment-formats.md) and
